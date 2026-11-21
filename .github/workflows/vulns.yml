@@ -1,0 +1,35 @@
+# Weekly: fail when a dependency has a known vulnerability, so a new advisory
+# never fails an unrelated pull request. A failure means: bump that dependency.
+
+name: vulns
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  MISE_YES: '1'
+
+jobs:
+  pub:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust && mise install osv-scanner
+      - run: PATH="$HOME/.local/share/mise/shims:$PATH" osv-scanner scan --lockfile pubspec.lock

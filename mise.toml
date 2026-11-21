@@ -1,0 +1,9 @@
+# Toolchain versions for development and CI. `mise install` fetches them; CI installs the same.
+[tools]
+flutter = "3.50.1"
+java = "temurin-17.0.21.1+2"
+shellcheck = "0.11.0"
+actionlint = "1.7.12"
+zizmor = "1.32.0"
+gitleaks = "8.30.1"
+osv-scanner = "2.7.1"

@@ -1,5 +1,5 @@
 name: lillith
-description: "A new Flutter project."
+description: "Private cycle tracking from skin temperature, stored on your own Solid pod."
 publish_to: 'none'
 version: 0.1.0+1
 

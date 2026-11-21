@@ -46,3 +46,12 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Private planning and local overrides
+CLAUDE.local.md
+PLAN.md
+.claude/settings.local.json
+
+# Agent files stay private
+CLAUDE.md
+.claude/

@@ -1,5 +1,14 @@
 include: package:flutter_lints/flutter.yaml
 
+linter:
+  rules:
+    avoid_print: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    prefer_const_constructors: true
+    always_declare_return_types: true
+    unawaited_futures: true
+
 analyzer:
   exclude:
     - build/**
