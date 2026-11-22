@@ -1,0 +1,104 @@
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/design/design_screen.dart';
+import 'package:lilith/ui/pod/pod_screen.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../fakes/fake_pod_session_service.dart';
+import '../../fakes/fake_pod_setup_service.dart';
+import '../../fakes/fake_settings_store.dart';
+import '../../harness.dart';
+
+void main() {
+  late FakePodSessionService auth;
+  late SessionRepository session;
+  late SetupRepository setup;
+  late RecordingUrlOpener urls;
+
+  setUp(() async {
+    auth = FakePodSessionService();
+    session = SessionRepository(auth, FakeSettingsStore());
+    setup = SetupRepository(
+      FakePodSetupService()
+        ..inspection = const PodInspection(
+          plainDocumentExists: false,
+          keysOnPod: true,
+          keyOnDevice: true,
+        ),
+    );
+    await setup.inspect();
+    urls = RecordingUrlOpener();
+  });
+
+  Future<void> pump(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        setup: setup,
+        openUrl: urls.call,
+        child: const PodScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('shows who, where and how the data is protected', (tester) async {
+    await pump(tester);
+    expect(find.text(auth.webId), findsOneWidget);
+    expect(find.text(PodProvider.unstableUnicorn.name), findsOneWidget);
+    expect(find.text('solid.unstableunicorn.dev'), findsOneWidget);
+    expect(find.byKey(PodKeys.protection), findsOneWidget);
+    expect(find.textContaining('encrypted'), findsOneWidget);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('copies the WebID', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    await pump(tester);
+    await tester.tap(find.byKey(PodKeys.copy));
+    await tester.pumpAndSettle();
+    expect(copied, auth.webId);
+    expect(find.text('WebID copied'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('manage opens the provider and log out ends the session', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(PodKeys.manage));
+    expect(urls.opened, [PodProvider.unstableUnicorn.manageUrl]);
+    await tester.tap(find.byKey(PodKeys.logout));
+    await tester.pumpAndSettle();
+    expect(session.session, isNull);
+  });
+
+  testWidgets('a debug build links to the design gallery', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(PodKeys.design));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(DesignKeys.page), findsOneWidget);
+  });
+}

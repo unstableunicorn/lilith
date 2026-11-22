@@ -95,6 +95,24 @@ different version by hand.
 - Anything else is a one-liner, and only for a non-obvious *why*.
 - No decision narratives in code. `checks/comment-density.sh` measures it.
 
+### The look: one theme, shared pieces, no drift
+
+- Colours, type, spacing and radii come from `lib/ui/theme/`. A screen writes
+  no literal colour, text style, radius or size; `checks/style-drift.sh`
+  fails CI when one does.
+- A piece of UI is a component the first time, not the second. Shared pieces
+  live in `lib/ui/components/` and are used as they look; a look a piece
+  lacks is a change to the piece, agreed first, never a screen's own copy.
+- The design gallery (`lib/ui/design/`, reachable from the Pod tab in debug
+  builds) shows every piece in both themes.
+- Accessibility is tested, not hoped for: every screen test runs Flutter's
+  guidelines (text contrast 4.5:1, 48dp targets, labelled controls), and the
+  theme test checks WCAG contrast for every colour pairing in both themes.
+- Tests assert structure and behaviour, never pixels. The owner checks the
+  look by eye; there is no screenshot comparison.
+- The font is bundled (`assets/fonts/`, Roboto, Apache 2.0). The app fetches
+  nothing from Google at run time.
+
 ## Pull requests
 
 1. Branch from `main`. Never commit to `main`: the pre-push hook refuses it.

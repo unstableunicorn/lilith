@@ -14,9 +14,10 @@ import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/core/url_opener.dart';
-import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
+import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,7 +66,8 @@ class LilithApp extends StatelessWidget {
     ],
     child: MaterialApp(
       title: 'Lilith',
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF7B4FB6)),
+      theme: lilithTheme(Brightness.light),
+      darkTheme: lilithTheme(Brightness.dark),
       home: const _Root(),
     ),
   );
@@ -136,6 +138,6 @@ class _RootState extends State<_Root> {
       unawaited(repo.load());
       return repo;
     },
-    child: const HomeScreen(),
+    child: const AppShell(),
   );
 }

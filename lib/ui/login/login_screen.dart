@@ -3,8 +3,10 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/login/login_view_model.dart';
+import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:provider/provider.dart';
 
 /// Keys the tests find the screen's parts by.
@@ -38,81 +40,64 @@ class _LoginView extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.watch<LoginViewModel>();
     final openUrl = context.read<UrlOpener>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lilith')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text('Where is your pod?'),
-          const SizedBox(height: 8),
-          RadioGroup<Object>(
-            groupValue: vm.isCustom ? _other : vm.selected,
-            onChanged: (value) => value == _other
-                ? vm.chooseCustom()
-                : vm.choose(value! as PodProvider),
-            child: Column(
-              children: [
-                for (final p in vm.builtIn)
-                  RadioListTile<Object>(
-                    key: LoginKeys.provider(p),
-                    title: Text(p.name),
-                    subtitle: Text(p.serverUrl.host),
-                    value: p,
-                  ),
-                const RadioListTile<Object>(
-                  key: LoginKeys.other,
-                  title: Text('Another provider'),
-                  value: _other,
+    return PageScaffold(
+      title: 'Lilith',
+      children: [
+        const SectionHeading('Where is your pod?'),
+        RadioGroup<Object>(
+          groupValue: vm.isCustom ? _other : vm.selected,
+          onChanged: (value) => value == _other
+              ? vm.chooseCustom()
+              : vm.choose(value! as PodProvider),
+          child: Column(
+            children: [
+              for (final p in vm.builtIn)
+                RadioListTile<Object>(
+                  key: LoginKeys.provider(p),
+                  title: Text(p.name),
+                  subtitle: Text(p.serverUrl.host),
+                  value: p,
                 ),
-              ],
+              const RadioListTile<Object>(
+                key: LoginKeys.other,
+                title: Text('Another provider'),
+                value: _other,
+              ),
+            ],
+          ),
+        ),
+        if (vm.isCustom)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.lg),
+            child: TextField(
+              key: LoginKeys.server,
+              controller: _controllerFor(vm),
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Pod server',
+                hintText: 'pods.example.org',
+              ),
+              onChanged: vm.setCustomServer,
             ),
           ),
-          if (vm.isCustom)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
-                key: LoginKeys.server,
-                controller: _controllerFor(vm),
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  labelText: 'Pod server',
-                  hintText: 'pods.example.org',
-                ),
-                onChanged: vm.setCustomServer,
-              ),
-            ),
-          const SizedBox(height: 16),
-          if (vm.error case final error?)
-            Padding(
-              key: LoginKeys.error,
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _describe(error),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (vm.isBusy)
-            const Center(
-              key: LoginKeys.busy,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          FilledButton(
-            key: LoginKeys.login,
-            onPressed: vm.canLogin ? () => vm.login(context) : null,
-            child: const Text('Log in'),
+        const SizedBox(height: Space.lg),
+        if (vm.error case final error?)
+          ProblemText(key: LoginKeys.error, _describe(error)),
+        if (vm.isBusy)
+          const BusyIndicator(key: LoginKeys.busy, label: 'Logging in'),
+        FilledButton(
+          key: LoginKeys.login,
+          onPressed: vm.canLogin ? () => vm.login(context) : null,
+          child: const Text('Log in'),
+        ),
+        if (vm.manageUrl case final url?)
+          TextButton(
+            key: LoginKeys.manage,
+            onPressed: () => openUrl(url),
+            child: const Text('Manage your pod and data'),
           ),
-          if (vm.manageUrl case final url?)
-            TextButton(
-              key: LoginKeys.manage,
-              onPressed: () => openUrl(url),
-              child: const Text('Manage your pod and data'),
-            ),
-        ],
-      ),
+      ],
     );
   }
 

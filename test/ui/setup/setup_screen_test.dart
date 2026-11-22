@@ -39,6 +39,12 @@ void main() {
     );
   }
 
+  testWidgets('meets the accessibility guidelines', (tester) async {
+    await setup.inspect();
+    await pump(tester);
+    await expectAccessible(tester);
+  });
+
   group('choosing', () {
     setUp(() => setup.inspect());
 

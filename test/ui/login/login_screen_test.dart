@@ -24,6 +24,13 @@ void main() {
     harness(session: session, openUrl: urls.call, child: const LoginScreen()),
   );
 
+  testWidgets('meets the accessibility guidelines', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(LoginKeys.other));
+    await tester.pump();
+    await expectAccessible(tester);
+  });
+
   testWidgets('offers every built-in provider and another one', (tester) async {
     await pump(tester);
     for (final p in PodProvider.builtIn) {

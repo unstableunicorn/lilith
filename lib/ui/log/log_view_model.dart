@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/ui/core/dates.dart';
 
 class LogViewModel extends ChangeNotifier {
   LogViewModel(this._repo, {required this.now, DateTime? date}) {
@@ -107,23 +108,3 @@ class LogViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-
-const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-/// "Wed 10 Jun 2026", without pulling in a locale library.
-String formatDay(DateTime day) =>
-    '${_weekdays[day.weekday - 1]} ${day.day} ${_months[day.month - 1]} ${day.year}';
