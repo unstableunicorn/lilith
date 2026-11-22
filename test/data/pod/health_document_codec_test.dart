@@ -146,7 +146,7 @@ void main() {
     test('steps version 3 up by adding empty shares and received only', () {
       final got = migrate({'version': 3, 'shopping': <Object>[]});
       expect(got, {
-        'version': 5,
+        'version': 6,
         'shopping': <Object>[],
         'shares': <Object>[],
         'received': <Object>[],
@@ -155,7 +155,26 @@ void main() {
 
     test('steps version 4 up by adding empty received only', () {
       final got = migrate({'version': 4, 'shares': <Object>[]});
-      expect(got, {'version': 5, 'shares': <Object>[], 'received': <Object>[]});
+      expect(got, {'version': 6, 'shares': <Object>[], 'received': <Object>[]});
+    });
+
+    test('steps version 5 up by naming what each share holds', () {
+      final got = migrate({
+        'version': 5,
+        'shares': [
+          {'recipient': 'https://x.example/a#me', 'label': 'A'},
+        ],
+      });
+      expect(got, {
+        'version': 6,
+        'shares': [
+          {
+            'recipient': 'https://x.example/a#me',
+            'label': 'A',
+            'content': 'cycleData',
+          },
+        ],
+      });
     });
 
     test('leaves the current version alone', () {

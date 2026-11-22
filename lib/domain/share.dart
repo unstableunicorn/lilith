@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 
 /// The folder name of the share for [recipientWebId]: the first 16 hex digits
@@ -40,6 +41,31 @@ enum ShareDuration {
       days == null ? null : addDays(dateOnly(today), days!);
 }
 
+/// What a share's folder holds.
+enum ShareContent {
+  /// The cycle data for the Lilith app: a JSON copy, encrypted when the
+  /// sharer's data is.
+  cycleData(
+    'The app view',
+    'For someone with Lilith: their app shows your cycle, read-only.',
+  ),
+
+  /// A PDF report and a CSV, readable without the app, never encrypted.
+  report(
+    'A PDF report and CSV',
+    'For a doctor or anyone without the app: files they open from your pod.',
+  );
+
+  const ShareContent(this.label, this.description);
+  final String label;
+  final String description;
+
+  static ShareContent fromName(String? name) => values.firstWhere(
+    (c) => c.name == name,
+    orElse: () => ShareContent.cycleData,
+  );
+}
+
 /// One share, as the sharer keeps it in their pod document.
 class Share {
   Share({
@@ -48,8 +74,13 @@ class Share {
     required DateTime createdOn,
     DateTime? expiresOn,
     this.code,
+    this.content = ShareContent.cycleData,
+    ExportRange? range,
   }) : createdOn = dateOnly(createdOn),
-       expiresOn = expiresOn == null ? null : dateOnly(expiresOn);
+       expiresOn = expiresOn == null ? null : dateOnly(expiresOn),
+       range = content == ShareContent.report
+           ? range ?? ExportRange.sixMonths
+           : null;
 
   factory Share.fromJson(Map<String, dynamic> json) => Share(
     recipientWebId: json['recipient'] as String,
@@ -60,6 +91,11 @@ class Share {
       _ => null,
     },
     code: json['code'] as String?,
+    content: ShareContent.fromName(json['content'] as String?),
+    range: switch (json['range']) {
+      final String r => ExportRange.values.firstWhere((e) => e.name == r),
+      _ => null,
+    },
   );
 
   final String recipientWebId;
@@ -72,11 +108,18 @@ class Share {
   final DateTime? expiresOn;
 
   /// The share key as a code, kept so the copy can be rewritten after every
-  /// save. Null when the sharer's data is plain and so is the copy.
+  /// save. Null when the sharer's data is plain and so is the copy, and for
+  /// a report, which is never encrypted.
   final String? code;
+
+  final ShareContent content;
+
+  /// How far back a report reaches; null for the app view.
+  final ExportRange? range;
 
   String get id => shareId(recipientWebId);
   bool get isEncrypted => code != null;
+  bool get isReport => content == ShareContent.report;
 
   /// True from the day after [expiresOn].
   bool isExpired(DateTime today) =>
@@ -88,6 +131,8 @@ class Share {
     'createdOn': createdOn.toIso8601String(),
     if (expiresOn != null) 'expiresOn': expiresOn!.toIso8601String(),
     if (code != null) 'code': code,
+    'content': content.name,
+    if (range != null) 'range': range!.name,
   };
 
   @override
@@ -97,11 +142,20 @@ class Share {
       other.label == label &&
       other.createdOn == createdOn &&
       other.expiresOn == expiresOn &&
-      other.code == code;
+      other.code == code &&
+      other.content == content &&
+      other.range == range;
 
   @override
-  int get hashCode =>
-      Object.hash(recipientWebId, label, createdOn, expiresOn, code);
+  int get hashCode => Object.hash(
+    recipientWebId,
+    label,
+    createdOn,
+    expiresOn,
+    code,
+    content,
+    range,
+  );
 }
 
 /// A share someone else gave this user, as the recipient keeps it in their
