@@ -15,10 +15,14 @@ class SetupRepository extends ChangeNotifier {
   SetupState _state = const SetupState.unknown();
   bool _busy = false;
   SetupError? _error;
+  String? _errorDetail;
 
   SetupState get state => _state;
   bool get isBusy => _busy;
   SetupError? get error => _error;
+
+  /// What the pod or the library said about [error], for the user to report.
+  String? get errorDetail => _errorDetail;
 
   /// Finds out what the pod needs. On failure the state stays as it was.
   Future<void> inspect() => _run(() async {
@@ -44,21 +48,25 @@ class SetupRepository extends ChangeNotifier {
   void reset() {
     _state = const SetupState.unknown();
     _error = null;
+    _errorDetail = null;
     notifyListeners();
   }
 
   Future<void> _run(Future<void> Function() action) async {
     _busy = true;
     _error = null;
+    _errorDetail = null;
     notifyListeners();
     try {
       await action();
     } on PodWrongKeyException {
       _error = SetupError.wrongKey;
-    } on PodUnavailableException {
+    } on PodUnavailableException catch (e) {
       _error = SetupError.unreachable;
-    } on PodException {
+      _errorDetail = e.message;
+    } on PodException catch (e) {
       _error = SetupError.failed;
+      _errorDetail = e.message;
     } finally {
       _busy = false;
       notifyListeners();

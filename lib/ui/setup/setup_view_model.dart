@@ -25,6 +25,7 @@ class SetupViewModel extends ChangeNotifier {
   String get key => _key;
   bool get isBusy => _setup.isBusy;
   SetupError? get error => _setup.error;
+  String? get errorDetail => _setup.errorDetail;
   SetupState get state => _setup.state;
 
   /// Why the new key cannot be used yet, or null when it can.

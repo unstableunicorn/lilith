@@ -16,6 +16,7 @@ abstract final class SetupKeys {
   static const Key unlock = Key('setup.unlock');
   static const Key retry = Key('setup.retry');
   static const Key error = Key('setup.error');
+  static const Key errorDetail = Key('setup.errorDetail');
   static const Key busy = Key('setup.busy');
 }
 
@@ -53,6 +54,12 @@ class _SetupView extends StatelessWidget {
                 _describe(error),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
+            ),
+          if (vm.errorDetail case final detail?)
+            SelectableText(
+              key: SetupKeys.errorDetail,
+              detail,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           if (vm.isBusy)
             const Center(

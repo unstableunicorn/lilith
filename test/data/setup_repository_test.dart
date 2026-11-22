@@ -68,12 +68,26 @@ void main() {
       expect(repo.state, const SetupState.ready(DataProtection.plain));
     });
 
-    test('a failed set-up keeps the choice open with an error', () async {
+    test(
+      'a failed set-up keeps the choice open with an error and its detail',
+      () async {
+        await repo.inspect();
+        pod.failSetUp = const PodAccessException('403 on /lilith/.acl');
+        await repo.chooseEncrypted('k');
+        expect(repo.state, const SetupState.choose());
+        expect(repo.error, SetupError.failed);
+        expect(repo.errorDetail, contains('403 on /lilith/.acl'));
+      },
+    );
+
+    test('the detail clears with the error', () async {
       await repo.inspect();
       pod.failSetUp = const PodAccessException('403');
       await repo.chooseEncrypted('k');
-      expect(repo.state, const SetupState.choose());
-      expect(repo.error, SetupError.failed);
+      pod.failSetUp = null;
+      await repo.chooseEncrypted('k');
+      expect(repo.error, isNull);
+      expect(repo.errorDetail, isNull);
     });
   });
 
