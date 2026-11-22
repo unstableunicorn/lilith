@@ -32,7 +32,7 @@ class UnsupportedDocumentVersionException implements Exception {
 /// Brings [doc] up to [HealthDocumentCodec.currentVersion], one step at a time.
 ///
 /// A document without a version is version 1. Version 2 was never written.
-/// Version 4 added the shares.
+/// Version 4 added the shares, version 5 the shares received.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -43,6 +43,7 @@ Map<String, dynamic> migrate(Map<String, dynamic> doc) {
     current = switch (version) {
       1 => _v1ToV3(current),
       3 => _v3ToV4(current),
+      4 => _v4ToV5(current),
       _ => throw UnsupportedDocumentVersionException(version),
     };
     version = current['version'] as int;
@@ -64,11 +65,17 @@ Map<String, dynamic> _v3ToV4(Map<String, dynamic> doc) => {
   'shares': <Object>[],
 };
 
+Map<String, dynamic> _v4ToV5(Map<String, dynamic> doc) => {
+  ...doc,
+  'version': 5,
+  'received': <Object>[],
+};
+
 /// Encodes and decodes [HealthData] as the pod document.
 class HealthDocumentCodec {
   const HealthDocumentCodec();
 
-  static const int currentVersion = 4;
+  static const int currentVersion = 5;
 
   String encode(HealthData data) => jsonEncode({
     'version': currentVersion,
@@ -79,6 +86,7 @@ class HealthDocumentCodec {
     'shopping': [for (final s in data.shopping) s.toJson()],
     'profile': data.profile.toJson(),
     'shares': [for (final s in data.shares) s.toJson()],
+    'received': [for (final r in data.received) r.toJson()],
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -98,6 +106,7 @@ class HealthDocumentCodec {
         ),
         shopping: _section(doc, 'shopping', ShoppingItem.fromJson),
         shares: _section(doc, 'shares', Share.fromJson),
+        received: _section(doc, 'received', ReceivedShare.fromJson),
         profile: profile is Map<String, dynamic>
             ? HealthProfile.fromJson(profile)
             : null,

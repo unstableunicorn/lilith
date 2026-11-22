@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/setup_repository.dart';
@@ -25,6 +26,7 @@ Widget harness({
   HealthRepository? health,
   SetupRepository? setup,
   ShareRepository? shares,
+  ReceivedShareRepository? received,
   ShellTabs? tabs,
   UrlOpener? openUrl,
   FileSharer? shareFile,
@@ -35,6 +37,7 @@ Widget harness({
     if (health != null) ChangeNotifierProvider.value(value: health),
     if (setup != null) ChangeNotifierProvider.value(value: setup),
     if (shares != null) ChangeNotifierProvider.value(value: shares),
+    if (received != null) ChangeNotifierProvider.value(value: received),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
     Provider<FileSharer>.value(value: shareFile ?? (_) async {}),

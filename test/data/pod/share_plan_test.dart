@@ -14,6 +14,16 @@ void main() {
     expect(plan.documentPath, 'shares/${shareId(wife)}/cycle_data.json');
   });
 
+  test('the recipient fetches the copy under the sharer\'s pod root', () {
+    expect(
+      plan.documentUrl(Uri.parse('https://solid.unstableunicorn.dev/owner/')),
+      Uri.parse(
+        'https://solid.unstableunicorn.dev/owner/lilith/data/shares/'
+        '${shareId(wife)}/cycle_data.json',
+      ),
+    );
+  });
+
   group('the folder ACL', () {
     const acl = 'http://www.w3.org/ns/auth/acl#';
     late Map<String, Map<String, dynamic>> rules;
