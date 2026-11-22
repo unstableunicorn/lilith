@@ -1,13 +1,16 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
+import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
@@ -18,6 +21,7 @@ void main() {
   late SessionRepository session;
   late SetupRepository setup;
   late RecordingUrlOpener urls;
+  late HealthRepository health;
 
   setUp(() async {
     auth = FakePodSessionService();
@@ -32,6 +36,11 @@ void main() {
     );
     await setup.inspect();
     urls = RecordingUrlOpener();
+    health = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await health.load();
   });
 
   Future<void> pump(WidgetTester tester) async {
@@ -47,6 +56,7 @@ void main() {
       harness(
         session: session,
         setup: setup,
+        health: health,
         openUrl: urls.call,
         child: const PodScreen(),
       ),
@@ -92,6 +102,14 @@ void main() {
     await tester.tap(find.byKey(PodKeys.logout));
     await tester.pumpAndSettle();
     expect(session.session, isNull);
+  });
+
+  testWidgets('summarises the health profile and opens it', (tester) async {
+    await pump(tester);
+    expect(find.text('Nothing recorded yet'), findsOneWidget);
+    await tester.tap(find.byKey(PodKeys.profile));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ProfileKeys.save), findsOneWidget);
   });
 
   testWidgets('a debug build links to the design gallery', (tester) async {
