@@ -26,6 +26,7 @@ class HealthData {
     Iterable<ShoppingItem> shopping = const [],
     HealthProfile? profile,
     Iterable<Share> shares = const [],
+    Iterable<ReceivedShare> received = const [],
   }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
        periods = List.unmodifiable(periods.sortedBy((p) => p.startDate)),
        dailyLogs = List.unmodifiable(dailyLogs.sortedBy((l) => l.date)),
@@ -34,7 +35,8 @@ class HealthData {
          shopping.sortedBy<num>((s) => s.bought ? 1 : 0),
        ),
        profile = profile ?? HealthProfile(),
-       shares = List.unmodifiable(shares);
+       shares = List.unmodifiable(shares),
+       received = List.unmodifiable(received);
 
   static final HealthData empty = HealthData();
 
@@ -57,6 +59,9 @@ class HealthData {
   /// Who the cycle data is shared with, one share per recipient.
   final List<Share> shares;
 
+  /// Who shares their cycle data with this user.
+  final List<ReceivedShare> received;
+
   /// True once any cycle data has been logged.
   bool get hasData =>
       readings.isNotEmpty || periods.isNotEmpty || dailyLogs.isNotEmpty;
@@ -69,6 +74,7 @@ class HealthData {
     Iterable<ShoppingItem>? shopping,
     HealthProfile? profile,
     Iterable<Share>? shares,
+    Iterable<ReceivedShare>? received,
   }) => HealthData(
     readings: readings ?? this.readings,
     periods: periods ?? this.periods,
@@ -77,6 +83,7 @@ class HealthData {
     shopping: shopping ?? this.shopping,
     profile: profile ?? this.profile,
     shares: shares ?? this.shares,
+    received: received ?? this.received,
   );
 
   HealthData withReading(TemperatureReading reading) => withReadings([reading]);
@@ -178,6 +185,17 @@ class HealthData {
   HealthData withoutShare(String recipientWebId) =>
       copyWith(shares: shares.where((s) => s.recipientWebId != recipientWebId));
 
+  /// Adds [share], replacing any earlier one from the same sharer.
+  HealthData withReceived(ReceivedShare share) => copyWith(
+    received: [
+      ...received.where((r) => r.sharerWebId != share.sharerWebId),
+      share,
+    ],
+  );
+
+  HealthData withoutReceived(String sharerWebId) =>
+      copyWith(received: received.where((r) => r.sharerWebId != sharerWebId));
+
   @override
   bool operator ==(Object other) =>
       other is HealthData &&
@@ -187,7 +205,8 @@ class HealthData {
       _list.equals(other.remedyFeedback, remedyFeedback) &&
       _list.equals(other.shopping, shopping) &&
       other.profile == profile &&
-      _list.equals(other.shares, shares);
+      _list.equals(other.shares, shares) &&
+      _list.equals(other.received, received);
 
   @override
   int get hashCode => Object.hash(
@@ -198,5 +217,6 @@ class HealthData {
     _list.hash(shopping),
     profile,
     _list.hash(shares),
+    _list.hash(received),
   );
 }

@@ -103,3 +103,49 @@ class Share {
   int get hashCode =>
       Object.hash(recipientWebId, label, createdOn, expiresOn, code);
 }
+
+/// A share someone else gave this user, as the recipient keeps it in their
+/// own pod document. The folder on the sharer's pod is named after the
+/// recipient, so the recipient's own WebID finds it.
+class ReceivedShare {
+  ReceivedShare({
+    required this.sharerWebId,
+    required this.label,
+    required DateTime addedOn,
+    this.code,
+  }) : addedOn = dateOnly(addedOn);
+
+  factory ReceivedShare.fromJson(Map<String, dynamic> json) => ReceivedShare(
+    sharerWebId: json['sharer'] as String,
+    label: json['label'] as String,
+    addedOn: DateTime.parse(json['addedOn'] as String),
+    code: json['code'] as String?,
+  );
+
+  final String sharerWebId;
+
+  /// What the recipient calls the sharer.
+  final String label;
+  final DateTime addedOn;
+
+  /// The share's code, when the copy is encrypted.
+  final String? code;
+
+  Map<String, dynamic> toJson() => {
+    'sharer': sharerWebId,
+    'label': label,
+    'addedOn': addedOn.toIso8601String(),
+    if (code != null) 'code': code,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReceivedShare &&
+      other.sharerWebId == sharerWebId &&
+      other.label == label &&
+      other.addedOn == addedOn &&
+      other.code == code;
+
+  @override
+  int get hashCode => Object.hash(sharerWebId, label, addedOn, code);
+}

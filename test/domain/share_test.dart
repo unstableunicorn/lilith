@@ -9,6 +9,7 @@ import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  receivedShareTests();
   const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   final may1 = DateTime(2026, 5, 1);
 
@@ -147,6 +148,57 @@ void main() {
       final d = HealthData.empty.withShare(a);
       expect(d, isNot(HealthData.empty));
       expect(d.hasData, isFalse);
+    });
+  });
+}
+
+void receivedShareTests() {
+  const owner =
+      'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
+  final may1 = DateTime(2026, 5, 1);
+
+  group('ReceivedShare', () {
+    final share = ReceivedShare(
+      sharerWebId: owner,
+      label: 'Elric',
+      addedOn: DateTime(2026, 5, 1, 9),
+      code: 'ABCD-EFGH-JKMN-PQRS',
+    );
+
+    test('round-trips through JSON, with and without a code', () {
+      expect(share.addedOn, may1);
+      expect(ReceivedShare.fromJson(share.toJson()), share);
+      final plain = ReceivedShare(
+        sharerWebId: owner,
+        label: 'E',
+        addedOn: may1,
+      );
+      expect(plain.toJson().containsKey('code'), isFalse);
+      expect(ReceivedShare.fromJson(plain.toJson()), plain);
+    });
+  });
+
+  group('HealthData received', () {
+    final a = ReceivedShare(sharerWebId: owner, label: 'A', addedOn: may1);
+    final b = ReceivedShare(
+      sharerWebId: '${owner}2',
+      label: 'B',
+      addedOn: may1,
+    );
+
+    test('adds, replaces by sharer, removes, and counts for equality', () {
+      final d = HealthData.empty.withReceived(a).withReceived(b);
+      expect(d.received, [a, b]);
+      final renamed = ReceivedShare(
+        sharerWebId: owner,
+        label: 'A2',
+        addedOn: may1,
+      );
+      expect(d.withReceived(renamed).received, [b, renamed]);
+      expect(d.withoutReceived(owner).received, [b]);
+      expect(d, isNot(HealthData.empty));
+      expect(d.hasData, isFalse);
+      expect(sharedView(d).received, isEmpty);
     });
   });
 }
