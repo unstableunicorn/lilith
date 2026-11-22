@@ -1,0 +1,39 @@
+// The only way to a Solid pod. Everything else in the app talks to this.
+
+import 'package:lilith/domain/pod_provider.dart';
+
+/// Reads and writes documents in the app's folder on the user's pod.
+/// Paths are relative to that folder. Content is encrypted at rest by the
+/// implementation; callers see plain text.
+abstract interface class PodService {
+  PodProvider get provider;
+
+  /// The document's content, or null when it does not exist.
+  Future<String?> read(String path);
+
+  /// Creates or replaces the document.
+  Future<void> write(String path, String content);
+}
+
+/// Something went wrong talking to the pod.
+sealed class PodException implements Exception {
+  const PodException(this.message);
+  final String message;
+  @override
+  String toString() => '$runtimeType: $message';
+}
+
+/// There is no session; the user has to log in.
+class PodNotLoggedInException extends PodException {
+  const PodNotLoggedInException() : super('not logged in');
+}
+
+/// The pod refused the request.
+class PodAccessException extends PodException {
+  const PodAccessException(super.message);
+}
+
+/// The pod could not be reached or did not answer properly.
+class PodUnavailableException extends PodException {
+  const PodUnavailableException(super.message);
+}

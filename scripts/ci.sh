@@ -37,6 +37,24 @@ need() {
 }
 area() { [ -z "$ONLY" ] || [ "$ONLY" = "$1" ]; }
 
+# stop_build_daemons ends the Gradle and Kotlin daemons an APK build leaves
+# behind, and waits for their JVMs to exit, so nothing holds memory beside
+# whatever runs next. Gradle's own --stop returns before the daemon is gone.
+stop_build_daemons() {
+  (cd android && ./gradlew --stop >/dev/null 2>&1)
+  for _ in $(seq 1 30); do
+    pgrep -f '[G]radleDaemon|[K]otlinCompileDaemon' >/dev/null || return 0
+    sleep 2
+  done
+  # Kill by pid: a pkill pattern would match this shell as well.
+  for pid in $(pgrep -f '[G]radleDaemon|[K]otlinCompileDaemon'); do
+    kill "$pid" 2>/dev/null
+  done
+  sleep 2
+  pgrep -f '[G]radleDaemon|[K]otlinCompileDaemon' >/dev/null && fail "build daemons still running"
+  return 0
+}
+
 # coverage_total prints the line coverage of coverage/lcov.info as a percentage.
 coverage_total() {
   awk -F: '/^LF:/ { lf += $2 } /^LH:/ { lh += $2 } END { if (lf) printf "%.1f%%\n", lh * 100 / lf; else print "n/a" }' coverage/lcov.info
@@ -71,8 +89,7 @@ step "android"
 if need flutter "the Android build"; then
   run flutter pub get
   run flutter build apk --debug
-  # The daemon would otherwise hold memory beside whatever runs next.
-  (cd android && ./gradlew --stop >/dev/null 2>&1)
+  stop_build_daemons
 fi
 fi
 
