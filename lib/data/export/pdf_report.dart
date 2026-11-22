@@ -271,14 +271,7 @@ class PdfReport {
               ],
             ),
           ],
-          if (content.chart case final chart?)
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Header(level: 1, text: 'Temperature (°C)'),
-                _chartWidget(chart),
-              ],
-            ),
+          if (content.chart case final chart?) _chartWidget(chart),
           if (content.rows.isNotEmpty) ...[
             pw.Header(level: 1, text: 'Logged days'),
             _table(
@@ -345,9 +338,11 @@ class PdfReport {
     ];
   }
 
+  // The heading is the chart's own title, so a page break never parts them.
   pw.Widget _chartWidget(ReportChart chart) => pw.SizedBox(
-    height: 200,
+    height: 240,
     child: pw.Chart(
+      title: pw.Header(level: 1, text: 'Temperature (°C)'),
       grid: pw.CartesianGrid(
         xAxis: pw.FixedAxis<int>(
           chart.xTicks,
