@@ -22,6 +22,15 @@ void main() {
     vm = HomeViewModel(repo, now: () => today);
   });
 
+  test('is loaded once the repository is', () async {
+    final fresh = HomeViewModel(
+      HealthRepository(FakePodService(), protection: DataProtection.plain),
+      now: () => today,
+    );
+    expect(fresh.isLoaded, isFalse);
+    expect(vm.isLoaded, isTrue);
+  });
+
   test('with nothing logged there is no prediction and no data', () {
     expect(vm.hasData, isFalse);
     expect(vm.prediction.method, PredictionMethod.insufficientData);

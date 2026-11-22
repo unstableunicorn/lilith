@@ -29,6 +29,9 @@ class HomeViewModel extends ChangeNotifier {
 
   DateTime get today => dateOnly(now());
   bool get isLoading => _repo.isLoading;
+
+  /// False until the first load has succeeded; nothing can be logged before.
+  bool get isLoaded => _repo.isLoaded;
   RepositoryError? get error => _repo.error;
   bool get hasData => _repo.data.hasData;
 
