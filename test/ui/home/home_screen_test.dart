@@ -2,10 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/log/log_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_pod_service.dart';
@@ -64,6 +66,29 @@ void main() {
 
   group('once loaded', () {
     setUp(() => health.load());
+
+    testWidgets('summarises today\'s log and opens the log screen', (
+      tester,
+    ) async {
+      await health.apply(
+        (d) => d.withDailyLog(
+          DailyLog(
+            date: today,
+            flow: FlowIntensity.medium,
+            symptoms: {Symptom.cramps, Symptom.fatigue},
+            painLevel: 4,
+          ),
+        ),
+      );
+      await pump(tester);
+      expect(
+        find.text('Today: medium flow, cramps, fatigue, pain 4/10'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(HomeKeys.logDay));
+      await tester.pumpAndSettle();
+      expect(find.byKey(LogKeys.save), findsOneWidget);
+    });
 
     testWidgets('with nothing logged it invites the first period start', (
       tester,

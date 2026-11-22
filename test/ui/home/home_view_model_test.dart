@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -10,6 +11,7 @@ import 'package:lilith/ui/home/home_view_model.dart';
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  todaysLogTests();
   final today = DateTime(2026, 6, 10, 9, 30);
   late FakePodService pod;
   late HealthRepository repo;
@@ -124,5 +126,21 @@ void main() {
     vm.addListener(() => notified++);
     await vm.logPeriodStart();
     expect(notified, greaterThan(0));
+  });
+}
+
+void todaysLogTests() {
+  final today = DateTime(2026, 6, 10, 9, 30);
+  test('todaysLog is the log for today, if any', () async {
+    final repo = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await repo.load();
+    final vm = HomeViewModel(repo, now: () => today);
+    expect(vm.todaysLog, isNull);
+    final log = DailyLog(date: today, flow: FlowIntensity.light, painLevel: 2);
+    await repo.apply((d) => d.withDailyLog(log));
+    expect(vm.todaysLog, log);
   });
 }

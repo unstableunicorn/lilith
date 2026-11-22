@@ -8,6 +8,7 @@ import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  withoutDailyLogTests();
   final may1 = DateTime(2026, 5, 1);
   final may2 = DateTime(2026, 5, 2);
   TemperatureReading reading(DateTime d, double c) =>
@@ -184,5 +185,15 @@ void main() {
         isEmpty,
       );
     });
+  });
+}
+
+void withoutDailyLogTests() {
+  test('withoutDailyLog drops that day and leaves the others', () {
+    final a = DailyLog(date: DateTime(2026, 6, 9), flow: FlowIntensity.light);
+    final b = DailyLog(date: DateTime(2026, 6, 10), painLevel: 3);
+    final data = HealthData().withDailyLog(a).withDailyLog(b);
+    expect(data.withoutDailyLog(DateTime(2026, 6, 10, 15)).dailyLogs, [a]);
+    expect(data.withoutDailyLog(DateTime(2026, 1, 1)), data);
   });
 }
