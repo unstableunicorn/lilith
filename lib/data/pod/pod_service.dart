@@ -37,3 +37,13 @@ class PodAccessException extends PodException {
 class PodUnavailableException extends PodException {
   const PodUnavailableException(super.message);
 }
+
+/// The user did not finish logging in.
+class PodLoginCancelledException extends PodException {
+  const PodLoginCancelledException() : super('login cancelled');
+}
+
+/// The identity provider did not log the user in.
+class PodLoginFailedException extends PodException {
+  const PodLoginFailedException(super.message);
+}

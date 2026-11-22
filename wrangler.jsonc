@@ -6,7 +6,8 @@
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./build/web",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "html_handling": "none"
   },
   "routes": [
     { "pattern": "lilith.unstableunicorn.dev", "custom_domain": true }

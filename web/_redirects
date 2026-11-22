@@ -1,0 +1,2 @@
+# Cloudflare static assets: serve the app at the root without rewriting .html paths.
+/  /index.html  200
