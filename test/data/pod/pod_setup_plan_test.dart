@@ -26,31 +26,47 @@ void main() {
     },
   );
 
-  test('every rule solidpod would open to anyone is written for logged-in users instead', () {
-    expect(
-      plan.acls.map((a) => a.resourcePath),
-      unorderedEquals([
-        'lilith/sharing/public-key.ttl',
-        'lilith/logs/permissions-log.ttl',
-        'lilith/shared',
-        'lilith/notifications',
-      ]),
-    );
-    final byPath = {for (final a in plan.acls) a.resourcePath: a};
-    expect(byPath['lilith/sharing/public-key.ttl']!.modes, {AclMode.read});
-    expect(byPath['lilith/sharing/public-key.ttl']!.isFile, isTrue);
-    expect(byPath['lilith/logs/permissions-log.ttl']!.modes, {AclMode.append});
-    expect(byPath['lilith/shared']!.modes, {AclMode.read, AclMode.write});
-    expect(byPath['lilith/shared']!.isFile, isFalse);
-    expect(byPath['lilith/notifications']!.modes, {AclMode.append});
-    expect(byPath['lilith/notifications']!.isFile, isFalse);
-  });
+  test(
+    'the key is readable and the log appendable by logged-in users only',
+    () {
+      expect(
+        plan.acls.map((a) => a.resourcePath),
+        unorderedEquals([
+          'lilith/sharing/public-key.ttl',
+          'lilith/logs/permissions-log.ttl',
+        ]),
+      );
+      final byPath = {for (final a in plan.acls) a.resourcePath: a};
+      expect(byPath['lilith/sharing/public-key.ttl']!.modes, {AclMode.read});
+      expect(byPath['lilith/sharing/public-key.ttl']!.isFile, isTrue);
+      expect(byPath['lilith/logs/permissions-log.ttl']!.modes, {
+        AclMode.append,
+      });
+      expect(byPath['lilith/logs/permissions-log.ttl']!.isFile, isTrue);
+    },
+  );
+
+  test(
+    'shared and notifications get no rule at all, so they stay owner-only',
+    () {
+      expect(plan.filesForInitPod, isNot(contains('lilith/shared/.acl')));
+      expect(
+        plan.filesForInitPod,
+        isNot(contains('lilith/notifications/.acl')),
+      );
+      expect(
+        plan.acls.map((a) => a.resourcePath),
+        isNot(contains('lilith/shared')),
+      );
+      expect(
+        plan.acls.map((a) => a.resourcePath),
+        isNot(contains('lilith/notifications')),
+      );
+    },
+  );
 
   test('no file is both left to solidpod and written by the app', () {
-    final ours = plan.acls.map(
-      (a) =>
-          '${a.resourcePath}${a.isFile ? '' : '/'}.acl'.replaceAll('//', '/'),
-    );
+    final ours = plan.acls.map((a) => '${a.resourcePath}.acl');
     expect(plan.filesForInitPod.toSet().intersection(ours.toSet()), isEmpty);
   });
 }
