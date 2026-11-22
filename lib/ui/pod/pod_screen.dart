@@ -3,12 +3,15 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/design/design_screen.dart';
+import 'package:lilith/ui/profile/profile_screen.dart';
+import 'package:lilith/ui/profile/profile_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +23,8 @@ abstract final class PodKeys {
   static const Key manage = Key('pod.manage');
   static const Key logout = Key('pod.logout');
   static const Key design = Key('pod.design');
+  static const Key profile = Key('pod.profile');
+  static const Key profileSummary = Key('pod.profileSummary');
 }
 
 class PodScreen extends StatelessWidget {
@@ -74,6 +79,26 @@ class PodScreen extends StatelessWidget {
             ],
           ),
         ),
+        AppCard(
+          icon: Icons.favorite_border_rounded,
+          title: 'Your health profile',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                key: PodKeys.profileSummary,
+                profileSummary(context.watch<HealthRepository>().data.profile),
+              ),
+              const SizedBox(height: Space.sm),
+              TextButton.icon(
+                key: PodKeys.profile,
+                onPressed: () => _openProfile(context),
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('Conditions, treatments and notes'),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: Space.lg),
         FilledButton.tonalIcon(
           key: PodKeys.logout,
@@ -92,6 +117,19 @@ class PodScreen extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+
+  /// The profile is a page of its own, so it gets the repository by hand.
+  void _openProfile(BuildContext context) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: const ProfileScreen(),
+        ),
+      ),
     );
   }
 
