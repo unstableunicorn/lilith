@@ -20,6 +20,11 @@ abstract final class SolidClient {
 
   /// The custom URL scheme Android and iOS return to after login.
   static const String nativeScheme = 'dev.unstableunicorn.lilith';
+
+  /// The app's folder in the user's pod, `/<pod>/lilith/`. solidpod builds
+  /// every path from it and leaves it empty until told, which once sent the
+  /// app's writes to `/<pod>//…` and the server root.
+  static const String appDirName = 'lilith';
 }
 
 /// The redirect URIs to offer the identity provider. On the web the redirect
