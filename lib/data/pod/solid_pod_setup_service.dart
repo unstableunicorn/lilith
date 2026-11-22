@@ -36,9 +36,9 @@ class SolidPodSetupService implements PodSetupService {
     }
   }
 
-  /// solidpod creates the folders and key files; the rules it would open to
-  /// anyone are written here for logged-in users instead, so no public rule
-  /// exists at any moment. See PodSetupPlan.
+  /// solidpod creates the folders and key files. The rules it would write
+  /// for others are left out, so everything keeps the owner-only rule of its
+  /// folder. See PodSetupPlan.
   @override
   Future<void> setUpEncryption(String securityKey) async {
     await solidPodReady;
@@ -50,30 +50,10 @@ class SolidPodSetupService implements PodSetupService {
           for (final f in plan.filesForInitPod) await solid.getFileUrl(f),
         ],
       );
-      for (final acl in plan.acls) {
-        final resourceUrl = acl.isFile
-            ? await solid.getFileUrl(acl.resourcePath)
-            : await solid.getDirUrl(acl.resourcePath);
-        final aclUrl = acl.isFile ? '$resourceUrl.acl' : '$resourceUrl.acl';
-        await solid.createResource(
-          aclUrl,
-          content: await solid.genAclTurtle(
-            resourceUrl,
-            isFile: acl.isFile,
-            authUserAccess: {for (final m in acl.modes) _accessMode(m)},
-          ),
-        );
-      }
     } catch (e) {
       throw toPodException(e);
     }
   }
-
-  solid.AccessMode _accessMode(AclMode mode) => switch (mode) {
-    AclMode.read => solid.AccessMode.read,
-    AclMode.write => solid.AccessMode.write,
-    AclMode.append => solid.AccessMode.append,
-  };
 
   @override
   Future<void> setUpPlain() async {
