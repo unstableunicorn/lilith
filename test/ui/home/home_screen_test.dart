@@ -29,7 +29,8 @@ void main() {
     urls = RecordingUrlOpener();
   });
 
-  Future<void> pump(WidgetTester tester) async {
+  // The wait indicator animates forever, so a test that expects it cannot settle.
+  Future<void> pump(WidgetTester tester, {bool settle = true}) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -46,7 +47,11 @@ void main() {
         child: HomeScreen(now: () => today),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
 
   testWidgets('before the data has loaded it shows a wait indicator', (
