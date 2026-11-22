@@ -1,0 +1,94 @@
+# A thin wrapper: each job runs scripts/ci.sh --only <area>, the script developers run.
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # bash runs with -eo pipefail; the default sh hides a failure before a pipe.
+    shell: bash
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MISE_YES: '1'
+
+jobs:
+  dart:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust && mise install flutter
+      - run: PATH="$HOME/.local/share/mise/shims:$PATH" bash scripts/ci.sh --only dart
+
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust && mise install flutter
+      - run: PATH="$HOME/.local/share/mise/shims:$PATH" bash scripts/ci.sh --only web
+
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust && mise install flutter java
+      # The runner image provides the Android SDK; mise provides Flutter and the JDK.
+      - run: PATH="$HOME/.local/share/mise/shims:$PATH" JAVA_HOME="$(mise where java)" bash scripts/ci.sh --only android
+
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # gitleaks scans every commit.
+          fetch-depth: 0
+      - name: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust && mise install shellcheck actionlint zizmor gitleaks
+      - run: PATH="$HOME/.local/share/mise/shims:$PATH" bash scripts/ci.sh --only checks
+      # gitleaks passes "0 commits scanned" when git fails, so require a scan.
+      - name: secrets
+        if: ${{ !cancelled() }}
+        run: |
+          PATH="$HOME/.local/share/mise/shims:$PATH" gitleaks git --redact --no-banner --no-color --log-opts="--full-history --diff-filter=tuxdb HEAD" . 2>&1 | tee "$RUNNER_TEMP/gitleaks.log"
+          grep -qE ' [1-9][0-9]* commits scanned' "$RUNNER_TEMP/gitleaks.log"
