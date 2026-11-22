@@ -42,6 +42,10 @@ void main() {
       final appUris = {
         ...redirectUrisFor(isWeb: true, base: Uri.parse(SolidClient.webOrigin)),
         ...redirectUrisFor(isWeb: true, base: Uri.parse(SolidClient.devOrigin)),
+        ...redirectUrisFor(
+          isWeb: true,
+          base: Uri.parse(SolidClient.devTunnelOrigin),
+        ),
         ...redirectUrisFor(isWeb: false, base: Uri.parse('file:///')),
       };
       expect((profile['redirect_uris'] as List).toSet(), appUris);

@@ -12,6 +12,10 @@ abstract final class SolidClient {
   /// Where `scripts/dev.sh` serves the web app.
   static const String devOrigin = 'http://localhost:4400';
 
+  /// The tunnel hostname that exposes the dev server for tests from a phone.
+  static const String devTunnelOrigin =
+      'https://lilith-dev.unstableunicorn.dev';
+
   static const String clientId = '$webOrigin/client-profile.jsonld';
 
   /// The custom URL scheme Android and iOS return to after login.
