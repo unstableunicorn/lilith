@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -53,6 +54,8 @@ class HomeViewModel extends ChangeNotifier {
     }
     return null;
   }
+
+  DailyLog? get todaysLog => _repo.data.logFor(today);
 
   DateTime? get lastPeriodStart => _repo.data.periods.lastOrNull?.startDate;
 

@@ -104,6 +104,11 @@ class HealthData {
     ],
   );
 
+  HealthData withoutDailyLog(DateTime date) {
+    final day = dateOnly(date);
+    return copyWith(dailyLogs: dailyLogs.where((l) => l.date != day));
+  }
+
   DailyLog? logFor(DateTime date) {
     final day = dateOnly(date);
     return dailyLogs.firstWhereOrNull((l) => l.date == day);

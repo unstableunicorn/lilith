@@ -5,6 +5,8 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
+import 'package:lilith/ui/log/log_screen.dart';
+import 'package:lilith/ui/log/log_summary.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -24,6 +26,8 @@ abstract final class HomeKeys {
   static const Key logTemperature = Key('home.logTemperature');
   static const Key temperatureProblem = Key('home.temperatureProblem');
   static const Key todaysReading = Key('home.todaysReading');
+  static const Key logDay = Key('home.logDay');
+  static const Key todaysLog = Key('home.todaysLog');
 }
 
 class HomeScreen extends StatelessWidget {
@@ -166,6 +170,19 @@ class _HomeViewState extends State<_HomeView> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text("Today's reading: ${reading.celsius} °C"),
               ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              key: HomeKeys.logDay,
+              onPressed: () => _openLog(context, vm),
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Log flow, symptoms and pain'),
+            ),
+            if (vm.todaysLog case final log?)
+              Padding(
+                key: HomeKeys.todaysLog,
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('Today: ${logSummary(log)}'),
+              ),
           ],
           const SizedBox(height: 32),
           const Text('Logged in as'),
@@ -177,6 +194,19 @@ class _HomeViewState extends State<_HomeView> {
               child: Text('Manage your pod at ${current.provider.name}'),
             ),
         ],
+      ),
+    );
+  }
+
+  /// The log screen is a route of its own, so it gets the repository by hand.
+  void _openLog(BuildContext context, HomeViewModel vm) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: LogScreen(now: vm.now),
+        ),
       ),
     );
   }
