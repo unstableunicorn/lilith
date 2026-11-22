@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/daily_log.dart';
-import 'package:lillith/domain/period_event.dart';
-import 'package:lillith/domain/symptom_predictor.dart';
+import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/symptom_predictor.dart';
 
 DailyLog log(DateTime date, Set<Symptom> symptoms, {int? pain}) =>
     DailyLog(date: date, symptoms: symptoms, painLevel: pain);

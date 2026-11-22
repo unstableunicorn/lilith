@@ -4,9 +4,9 @@
 // before it). For the days ahead, the logs on the same cycle day, give or
 // take one, say how often each symptom appeared and how bad the pain was.
 
-import 'package:lillith/domain/daily_log.dart';
-import 'package:lillith/domain/day.dart';
-import 'package:lillith/domain/period_event.dart';
+import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/period_event.dart';
 
 /// How often [symptom] appeared at this point of past cycles.
 class SymptomLikelihood {

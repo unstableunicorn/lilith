@@ -1,6 +1,6 @@
-# Lillith
+# Lilith
 
-Private cycle tracking from skin temperature. Lillith reads the temperature
+Private cycle tracking from skin temperature. Lilith reads the temperature
 your smart ring or watch records overnight, spots the rise that follows
 ovulation, and predicts when your next period starts. Everything you log stays
 encrypted on your own [Solid](https://solidproject.org) pod: you own the data,
@@ -12,7 +12,9 @@ A Flutter app for Android, iOS and the web, licensed
 ## Status
 
 A rewrite, in progress, of [CybrKat/LillithApp](https://github.com/CybrKat/LillithApp),
-the original by Kat, whose design and ideas this project builds on. Features
+the original by Kat, whose design and ideas this project builds on. The name
+is [Lilith](https://en.wikipedia.org/wiki/Lilith), one l; the original spelled
+it with two. Features
 are being ported one at a time, each with tests. Nothing here is medical
 advice or a contraceptive tool.
 

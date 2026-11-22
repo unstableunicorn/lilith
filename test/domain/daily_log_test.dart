@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/daily_log.dart';
+import 'package:lilith/domain/daily_log.dart';
 
 void main() {
   final day = DateTime(2026, 5, 2);

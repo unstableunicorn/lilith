@@ -1,6 +1,6 @@
 // The first day of a period, as logged by the user.
 
-import 'package:lillith/domain/day.dart';
+import 'package:lilith/domain/day.dart';
 
 /// A period start on [startDate], at most one per day.
 class PeriodEvent {

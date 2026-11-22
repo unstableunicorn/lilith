@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/remedy_feedback.dart';
+import 'package:lilith/domain/remedy_feedback.dart';
 
 void main() {
   group('RemedyRating', () {

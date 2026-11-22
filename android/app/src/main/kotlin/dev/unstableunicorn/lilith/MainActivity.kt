@@ -1,4 +1,4 @@
-package dev.unstableunicorn.lillith
+package dev.unstableunicorn.lilith
 
 import io.flutter.embedding.android.FlutterActivity
 

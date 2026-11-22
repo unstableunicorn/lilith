@@ -62,7 +62,7 @@ if area web; then
 step "web"
 if need flutter "the web build"; then
   run flutter pub get
-  run flutter build web --release --base-href /lillith/
+  run flutter build web --release --base-href /lilith/
 fi
 fi
 
