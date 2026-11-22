@@ -7,6 +7,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/main.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
@@ -38,6 +39,8 @@ void main() {
     setup: setup,
     podFor: (_) => pod,
     openUrl: (_) async {},
+    shareFile: (_) async {},
+    pdfReport: const PdfReport(),
   );
 
   testWidgets('shows the login screen when nobody is logged in', (

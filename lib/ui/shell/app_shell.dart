@@ -43,7 +43,7 @@ class _ShellView extends StatelessWidget {
           LogScreen(now: now),
           const HistoryScreen(),
           ReliefScreen(now: now),
-          const PodScreen(),
+          PodScreen(now: now),
         ],
       ),
       bottomNavigationBar: NavigationBar(

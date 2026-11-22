@@ -6,6 +6,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/design/design_screen.dart';
+import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:material_ui/material_ui.dart';
@@ -110,6 +111,13 @@ void main() {
     await tester.tap(find.byKey(PodKeys.profile));
     await tester.pumpAndSettle();
     expect(find.byKey(ProfileKeys.save), findsOneWidget);
+  });
+
+  testWidgets('opens the export page', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(PodKeys.export));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ExportKeys.sharePdf), findsOneWidget);
   });
 
   testWidgets('a debug build links to the design gallery', (tester) async {

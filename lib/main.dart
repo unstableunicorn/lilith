@@ -2,6 +2,8 @@
 
 import 'dart:async';
 
+import 'package:lilith/data/export/pdf_report.dart';
+import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
@@ -13,6 +15,7 @@ import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/login/login_screen.dart';
@@ -32,6 +35,8 @@ void main() {
       setup: SetupRepository(const SolidPodSetupService()),
       podFor: (provider) => SolidPodService(provider: provider),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
+      shareFile: shareExportFile,
+      pdfReport: const PdfReport(loadTheme: robotoTheme),
     ),
   );
 }
@@ -46,6 +51,8 @@ class LilithApp extends StatelessWidget {
     required this.setup,
     required this.podFor,
     required this.openUrl,
+    required this.shareFile,
+    required this.pdfReport,
     super.key,
   });
 
@@ -55,6 +62,8 @@ class LilithApp extends StatelessWidget {
   /// The pod behind the logged-in provider.
   final PodService Function(PodProvider provider) podFor;
   final UrlOpener openUrl;
+  final FileSharer shareFile;
+  final PdfReport pdfReport;
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -62,6 +71,8 @@ class LilithApp extends StatelessWidget {
       ChangeNotifierProvider.value(value: session),
       ChangeNotifierProvider.value(value: setup),
       Provider<UrlOpener>.value(value: openUrl),
+      Provider<FileSharer>.value(value: shareFile),
+      Provider<PdfReport>.value(value: pdfReport),
       Provider<PodService Function(PodProvider)>.value(value: podFor),
     ],
     child: MaterialApp(
