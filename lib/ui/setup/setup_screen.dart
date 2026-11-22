@@ -2,7 +2,9 @@
 
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/setup/setup_view_model.dart';
+import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -36,47 +38,30 @@ class _SetupView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<SetupViewModel>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lilith')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ...switch (vm.state) {
-            SetupChoose() => _chooser(context, vm),
-            SetupEnterKey() => _unlocker(vm),
-            SetupUnknown() || SetupReady() => _waiting(vm),
-          },
-          if (vm.error case final error?)
-            Padding(
-              key: SetupKeys.error,
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                _describe(error),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (vm.errorDetail case final detail?)
-            SelectableText(
-              key: SetupKeys.errorDetail,
-              detail,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          if (vm.isBusy)
-            const Center(
-              key: SetupKeys.busy,
-              child: Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-        ],
-      ),
+    return PageScaffold(
+      title: 'Lilith',
+      children: [
+        ...switch (vm.state) {
+          SetupChoose() => _chooser(context, vm),
+          SetupEnterKey() => _unlocker(vm),
+          SetupUnknown() || SetupReady() => _waiting(vm),
+        },
+        if (vm.error case final error?)
+          ProblemText(key: SetupKeys.error, _describe(error)),
+        if (vm.errorDetail case final detail?)
+          Text(
+            key: SetupKeys.errorDetail,
+            detail,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        if (vm.isBusy)
+          const BusyIndicator(key: SetupKeys.busy, label: 'Setting up'),
+      ],
     );
   }
 
   List<Widget> _chooser(BuildContext context, SetupViewModel vm) => [
-    const Text('How should your data be stored on your pod?'),
-    const SizedBox(height: 8),
+    const SectionHeading('How should your data be stored on your pod?'),
     RadioGroup<DataProtection>(
       groupValue: vm.choice,
       onChanged: (value) => vm.choose(value!),
@@ -94,7 +79,7 @@ class _SetupView extends StatelessWidget {
       ),
     ),
     if (vm.choice == DataProtection.encrypted) ...[
-      const SizedBox(height: 8),
+      const SizedBox(height: Space.sm),
       TextField(
         key: SetupKeys.key,
         obscureText: true,
@@ -111,16 +96,12 @@ class _SetupView extends StatelessWidget {
         decoration: const InputDecoration(labelText: 'Security key again'),
       ),
       if (vm.keyProblem case final problem? when vm.key.isNotEmpty)
-        Padding(
-          key: SetupKeys.keyProblem,
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(switch (problem) {
-            KeyProblem.tooShort => 'Make it at least 8 characters.',
-            KeyProblem.mismatch => 'The two entries differ.',
-          }, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        ),
+        ProblemText(key: SetupKeys.keyProblem, switch (problem) {
+          KeyProblem.tooShort => 'Make it at least 8 characters.',
+          KeyProblem.mismatch => 'The two entries differ.',
+        }),
     ],
-    const SizedBox(height: 16),
+    const SizedBox(height: Space.lg),
     FilledButton(
       key: SetupKeys.confirm,
       onPressed: vm.canConfirm ? vm.confirm : null,
@@ -133,14 +114,14 @@ class _SetupView extends StatelessWidget {
       'Your data on this pod is encrypted. Enter the security key you chose '
       'when you set it up.',
     ),
-    const SizedBox(height: 8),
+    const SizedBox(height: Space.sm),
     TextField(
       key: SetupKeys.key,
       obscureText: true,
       onChanged: vm.setKey,
       decoration: const InputDecoration(labelText: 'Security key'),
     ),
-    const SizedBox(height: 16),
+    const SizedBox(height: Space.lg),
     FilledButton(
       key: SetupKeys.unlock,
       onPressed: vm.canUnlock ? vm.unlock : null,

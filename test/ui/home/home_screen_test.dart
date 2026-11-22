@@ -7,7 +7,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/home/home_screen.dart';
-import 'package:lilith/ui/log/log_screen.dart';
+import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_pod_service.dart';
@@ -21,14 +21,14 @@ void main() {
   late SessionRepository session;
   late FakePodService pod;
   late HealthRepository health;
-  late RecordingUrlOpener urls;
+  late ShellTabs tabs;
 
   setUp(() async {
     auth = FakePodSessionService();
     session = SessionRepository(auth, FakeSettingsStore());
     pod = FakePodService();
     health = HealthRepository(pod, protection: DataProtection.encrypted);
-    urls = RecordingUrlOpener();
+    tabs = ShellTabs();
   });
 
   // The wait indicator animates forever, so a test that expects it cannot settle.
@@ -45,7 +45,7 @@ void main() {
       harness(
         session: session,
         health: health,
-        openUrl: urls.call,
+        tabs: tabs,
         child: HomeScreen(now: () => today),
       ),
     );
@@ -86,8 +86,7 @@ void main() {
         findsOneWidget,
       );
       await tester.tap(find.byKey(HomeKeys.logDay));
-      await tester.pumpAndSettle();
-      expect(find.byKey(LogKeys.save), findsOneWidget);
+      expect(tabs.current, ShellTab.log);
     });
 
     testWidgets('with nothing logged it invites the first period start', (
@@ -155,14 +154,12 @@ void main() {
     });
   });
 
-  testWidgets('manage-your-data and logout still work', (tester) async {
+  testWidgets('meets the accessibility guidelines', (tester) async {
+    await health.apply(
+      (d) => d.withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 27))),
+    );
     await health.load();
     await pump(tester);
-    await tester.tap(find.byKey(HomeKeys.manage));
-    await tester.pump();
-    expect(urls.opened, [PodProvider.unstableUnicorn.manageUrl]);
-    await tester.tap(find.byKey(HomeKeys.logout));
-    await tester.pumpAndSettle();
-    expect(session.session, isNull);
+    await expectAccessible(tester);
   });
 }

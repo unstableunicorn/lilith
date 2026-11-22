@@ -40,6 +40,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('meets the accessibility guidelines', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(LogKeys.flow(FlowIntensity.light)));
+    await tester.pumpAndSettle();
+    await expectAccessible(tester);
+  });
+
   testWidgets('shows today, every flow level and every symptom', (
     tester,
   ) async {

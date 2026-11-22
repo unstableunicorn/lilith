@@ -107,6 +107,7 @@ if need zizmor "workflow security"; then
 fi
 run bash checks/secret-scan.sh --all
 run bash checks/comment-density.sh
+run bash checks/style-drift.sh
 for t in checks/*.test.sh; do
   [ -f "$t" ] && run bash "$t"
 done

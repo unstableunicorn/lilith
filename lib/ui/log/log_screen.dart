@@ -2,7 +2,9 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/log/log_view_model.dart';
+import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -45,105 +47,96 @@ class _LogView extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.watch<LogViewModel>();
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Your day')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (vm.error case final error?)
-            MaterialBanner(
-              key: LogKeys.error,
-              content: Text(_describe(error)),
-              actions: [
-                TextButton(
-                  key: LogKeys.dismissError,
-                  onPressed: vm.clearError,
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          _DayPicker(vm: vm),
-          const SizedBox(height: 16),
-          Text('Flow', style: theme.textTheme.titleMedium),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final f in FlowIntensity.values)
-                ChoiceChip(
-                  key: LogKeys.flow(f),
-                  label: Text(_capitalise(f.name)),
-                  selected: vm.flow == f,
-                  onSelected: (_) => vm.setFlow(f),
-                ),
-            ],
+    return PageScaffold(
+      title: 'Your day',
+      children: [
+        if (vm.error case final error?)
+          NoticeBanner(
+            key: LogKeys.error,
+            message: _describe(error),
+            dismissKey: LogKeys.dismissError,
+            onDismiss: vm.clearError,
           ),
-          const SizedBox(height: 16),
-          Text('Pain', style: theme.textTheme.titleMedium),
-          Row(
-            children: [
-              Expanded(
-                child: Slider(
-                  key: LogKeys.pain,
-                  value: (vm.pain ?? 0).toDouble(),
-                  max: 10,
-                  divisions: 10,
-                  label: '${vm.pain ?? 0}',
-                  onChanged: (v) => vm.setPain(v.round()),
-                ),
+        _DayPicker(vm: vm),
+        const SectionHeading('Flow'),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final f in FlowIntensity.values)
+              ChoiceChip(
+                key: LogKeys.flow(f),
+                label: Text(_capitalise(f.name)),
+                selected: vm.flow == f,
+                onSelected: (_) => vm.setFlow(f),
               ),
-              SizedBox(
-                width: 72,
-                child: Text(
-                  vm.pain == null ? 'Not rated' : '${vm.pain}/10',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-          if (vm.pain != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                key: LogKeys.clearPain,
-                onPressed: () => vm.setPain(null),
-                child: const Text('No pain rating'),
+          ],
+        ),
+        const SectionHeading('Pain'),
+        Row(
+          children: [
+            Expanded(
+              child: Slider(
+                key: LogKeys.pain,
+                value: (vm.pain ?? 0).toDouble(),
+                max: 10,
+                divisions: 10,
+                label: '${vm.pain ?? 0}',
+                onChanged: (v) => vm.setPain(v.round()),
               ),
             ),
-          const SizedBox(height: 16),
-          Text('Symptoms', style: theme.textTheme.titleMedium),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final s in Symptom.values)
-                FilterChip(
-                  key: LogKeys.symptom(s),
-                  label: Text(s.label),
-                  selected: vm.symptoms.contains(s),
-                  onSelected: (_) => vm.toggleSymptom(s),
-                ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            key: LogKeys.save,
-            onPressed: vm.isDirty && !vm.isSaving ? vm.save : null,
-            child: Text(vm.isSaving ? 'Saving…' : 'Save my day'),
-          ),
-          TextButton(
-            key: LogKeys.clear,
-            onPressed: vm.isEmpty ? null : vm.clear,
-            child: const Text('Clear the day'),
-          ),
-          if (vm.isSavedAsIs)
-            Text(
-              key: LogKeys.saved,
-              'Saved to your pod.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.colorScheme.primary),
+            SizedBox(
+              width: Space.xxl * 2 + Space.sm,
+              child: Text(
+                vm.pain == null ? 'Not rated' : '${vm.pain}/10',
+                textAlign: TextAlign.center,
+              ),
             ),
-        ],
-      ),
+          ],
+        ),
+        if (vm.pain != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              key: LogKeys.clearPain,
+              onPressed: () => vm.setPain(null),
+              child: const Text('No pain rating'),
+            ),
+          ),
+        const SectionHeading('Symptoms'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            for (final s in Symptom.values)
+              FilterChip(
+                key: LogKeys.symptom(s),
+                label: Text(s.label),
+                selected: vm.symptoms.contains(s),
+                onSelected: (_) => vm.toggleSymptom(s),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.xl),
+        FilledButton(
+          key: LogKeys.save,
+          onPressed: vm.isDirty && !vm.isSaving ? vm.save : null,
+          child: Text(vm.isSaving ? 'Saving…' : 'Save my day'),
+        ),
+        TextButton(
+          key: LogKeys.clear,
+          onPressed: vm.isEmpty ? null : vm.clear,
+          child: const Text('Clear the day'),
+        ),
+        if (vm.isSavedAsIs)
+          Text(
+            key: LogKeys.saved,
+            'Saved to your pod.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+      ],
     );
   }
 
