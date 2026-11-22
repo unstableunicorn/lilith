@@ -20,6 +20,12 @@ abstract final class Space {
   static const EdgeInsets page = EdgeInsets.all(lg);
 }
 
+/// Fixed sizes of things that are not text.
+abstract final class Sizes {
+  static const double chart = 200;
+  static const double chartLabelGutter = 40;
+}
+
 /// Corner radii, from controls up to cards.
 abstract final class Radii {
   static const double tile = 16;

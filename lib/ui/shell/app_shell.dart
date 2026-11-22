@@ -1,6 +1,7 @@
 // The signed-in app: a tab per top-level screen, all kept alive so a
 // half-edited log survives a look at another tab.
 
+import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
@@ -39,6 +40,7 @@ class _ShellView extends StatelessWidget {
         children: [
           HomeScreen(now: now),
           LogScreen(now: now),
+          const HistoryScreen(),
           const PodScreen(),
         ],
       ),
