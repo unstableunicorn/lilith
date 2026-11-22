@@ -1,10 +1,10 @@
 // Which parts of solidpod's pod set-up the app leaves to solidpod, and which
 // access rules it writes itself so that nothing is ever open to the public.
 //
-// solidpod's initPod grants anyone (foaf:Agent) read on the public key,
-// append on the permissions log and the notifications folder, and read and
-// write on the shared folder. The owner's rule is nothing public except the
-// profile card, so those four rules are written for logged-in users instead.
+// solidpod's initPod would open four things to anyone (foaf:Agent). The
+// owner's rule is nothing public except the profile card: the public key and
+// the permissions log are opened to logged-in users instead, and the shared
+// and notifications folders stay owner-only until the app offers sharing.
 
 enum AclMode { read, write, append }
 
@@ -37,13 +37,8 @@ class PodSetupPlan {
         if (_keyFiles.contains(file)) continue;
         final path = '$dir/$file';
         if (file == '.acl') {
-          final modes = _folderModes[dir.split('/').last];
-          if (modes == null) {
+          if (!_ownerOnlyFolders.contains(dir.split('/').last)) {
             files.add(path);
-          } else {
-            acls.add(
-              AuthenticatedAcl(resourcePath: dir, isFile: false, modes: modes),
-            );
           }
         } else if (file.endsWith('.acl')) {
           final resource = file.substring(0, file.length - '.acl'.length);
@@ -81,8 +76,7 @@ class PodSetupPlan {
     'public-key.ttl': {AclMode.read},
     'permissions-log.ttl': {AclMode.append},
   };
-  static const _folderModes = {
-    'shared': {AclMode.read, AclMode.write},
-    'notifications': {AclMode.append},
-  };
+  // Folders solidpod would open to anyone; they keep the owner-only rule of
+  // their parent instead, until sharing is built.
+  static const _ownerOnlyFolders = {'shared', 'notifications'};
 }
