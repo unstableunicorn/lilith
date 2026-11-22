@@ -74,6 +74,8 @@ class LoginViewModel extends ChangeNotifier {
     if (_selected case final provider?) unawaited(_session.prepare(provider));
   }
 
+  /// Logs in. Stays busy when the page has left for the provider, since the
+  /// result comes back with the next app start, not here.
   Future<void> login(BuildContext context) async {
     final provider = _selected;
     if (provider == null || _busy) return;
@@ -81,16 +83,17 @@ class LoginViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      await _session.login(provider, context);
+      _busy = !await _session.login(provider, context);
     } on PodLoginCancelledException {
       _error = LoginError.cancelled;
+      _busy = false;
     } on PodUnavailableException {
       _error = LoginError.unreachable;
+      _busy = false;
     } on PodException {
       _error = LoginError.failed;
-    } finally {
       _busy = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 }

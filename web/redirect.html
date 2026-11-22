@@ -66,12 +66,8 @@
       if (webLaunchMode != 'samePage') {
         return;
       }
-      const original_uri = parsedStateString.original_uri;
-      if (!original_uri) {
-        console.warn("it's preferred that original_uri is used when webLaunchMode is samePage.");
-        return;
-      }
-      window.location.assign(original_uri);
+      // Back to the app: where it left from, or its root when that is unknown.
+      window.location.assign(parsedStateString.original_uri || '/');
     }
 
     function handleFrontChannelLogout() {

@@ -1,6 +1,7 @@
 // Who is logged in, for the whole app. Screens listen to it.
 
 import 'package:flutter/widgets.dart';
+import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -46,19 +47,28 @@ class SessionRepository extends ChangeNotifier {
     }
   }
 
-  /// Logs in at [provider] and remembers the choice. Rethrows the
-  /// PodException on failure, with no session set.
-  Future<void> login(PodProvider provider, BuildContext context) async {
+  /// Logs in at [provider], remembering the choice first so it survives the
+  /// page leaving for the provider on the web. Answers false in that case and
+  /// stays logging in: the session arrives through [restore] on the next
+  /// start. Rethrows the PodException on failure, with no session set.
+  Future<bool> login(PodProvider provider, BuildContext context) async {
     _loggingIn = true;
     notifyListeners();
     try {
-      _session = await _auth.login(provider, context);
-      _provider = provider;
       await _settings.writeProvider(provider);
-    } finally {
+      if (!context.mounted) throw const PodLoginCancelledException();
+      final session = await _auth.login(provider, context);
+      if (session == null) return false;
+      _session = session;
+      _provider = provider;
+    } on Object {
       _loggingIn = false;
       notifyListeners();
+      rethrow;
     }
+    _loggingIn = false;
+    notifyListeners();
+    return true;
   }
 
   Future<void> logout() async {

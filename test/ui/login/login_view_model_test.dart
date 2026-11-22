@@ -128,6 +128,16 @@ void main() {
       expect(vm.isBusy, isFalse);
     });
 
+    testWidgets('stays busy once the page has left for the provider', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const SizedBox());
+      auth.redirects = true;
+      await vm.login(tester.element(find.byType(SizedBox)));
+      expect(vm.isBusy, isTrue);
+      expect(vm.error, isNull);
+    });
+
     testWidgets('is busy while the browser is open', (tester) async {
       await tester.pumpWidget(const SizedBox());
       final busy = <bool>[];

@@ -38,9 +38,11 @@ abstract interface class PodSessionService {
   /// The session saved by an earlier login, if it is still valid.
   Future<PodSession?> restore();
 
-  /// Logs in at [provider] through the system browser. [context] is what the
+  /// Logs in at [provider] through the browser. [context] is what the
   /// underlying library needs to open it. Throws a PodException on failure.
-  Future<PodSession> login(PodProvider provider, BuildContext context);
+  /// Returns null when the page itself has left for the provider: the result
+  /// then arrives through [restore] when the app starts again.
+  Future<PodSession?> login(PodProvider provider, BuildContext context);
 
   Future<void> logout();
 }

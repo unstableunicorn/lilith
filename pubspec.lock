@@ -478,7 +478,7 @@ packages:
     source: hosted
     version: "9.6.4"
   oidc:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: oidc
       sha256: f99dd9f4a1ad03b48f275c9c37ed87430d286a278d4ef574bffc4f03f5dab391
@@ -795,7 +795,7 @@ packages:
     source: sdk
     version: "0.0.0"
   solid_auth:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: solid_auth
       sha256: ea547f4565d9637cb23f3af2d512061b1d744509ee122b0a7bee00990258d2d4
