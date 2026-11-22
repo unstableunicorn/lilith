@@ -9,4 +9,5 @@ export 'page_scaffold.dart';
 export 'problem_text.dart';
 export 'section_heading.dart';
 export 'stat_tile.dart';
+export 'strikeable_text.dart';
 export 'temperature_chart.dart';

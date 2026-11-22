@@ -78,6 +78,9 @@ class ReliefViewModel extends ChangeNotifier {
     return _repo.apply((d) => d.withRating(symptom.name, r.title, next));
   }
 
+  /// Items still to buy, for the link to the list.
+  int get toBuy => _repo.data.shopping.where((i) => !i.bought).length;
+
   bool isOnList(Remedy r) {
     final name = r.shopItem?.toLowerCase();
     return name != null &&

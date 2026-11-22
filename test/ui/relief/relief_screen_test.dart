@@ -7,6 +7,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/ui/core/shop_links.dart';
 import 'package:lilith/ui/relief/relief_screen.dart';
+import 'package:lilith/ui/shopping/shopping_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_pod_service.dart';
@@ -112,6 +113,19 @@ void main() {
       mapsNearMe(heat.shopItem!),
       retailerSearch(heat.shopItem!),
     ]);
+  });
+
+  testWidgets('the list link counts what is to buy and opens the list', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.text('List'), findsOneWidget);
+    await tester.tap(find.byKey(ReliefKeys.addToList(heat.title)));
+    await tester.pumpAndSettle();
+    expect(find.text('List (1)'), findsOneWidget);
+    await tester.tap(find.byKey(ReliefKeys.shopping));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ShoppingKeys.item(heat.shopItem!)), findsOneWidget);
   });
 
   testWidgets('a source chip opens its page', (tester) async {
