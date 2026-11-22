@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
@@ -12,12 +14,18 @@ class FakePodSessionService implements PodSessionService {
 
   String webId;
   PodSession? restored;
+
+  /// When set, restore() waits for it, so a test can observe the wait.
+  Completer<void>? restoreGate;
   PodException? failLogin;
   final List<PodProvider> logins = [];
   int logouts = 0;
 
   @override
-  Future<PodSession?> restore() async => restored;
+  Future<PodSession?> restore() async {
+    if (restoreGate case final gate?) await gate.future;
+    return restored;
+  }
 
   @override
   Future<PodSession> login(PodProvider provider, BuildContext context) async {
