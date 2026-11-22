@@ -57,7 +57,7 @@ void main() {
   testWidgets('before the data has loaded it shows a wait indicator', (
     tester,
   ) async {
-    await pump(tester);
+    await pump(tester, settle: false);
     expect(find.byKey(HomeKeys.loading), findsOneWidget);
     expect(find.byKey(HomeKeys.logPeriod), findsNothing);
   });
