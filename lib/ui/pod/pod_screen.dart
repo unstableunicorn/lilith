@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/url_opener.dart';
@@ -13,6 +14,8 @@ import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/profile/profile_view_model.dart';
+import 'package:lilith/ui/share/share_screen.dart';
+import 'package:lilith/ui/share/share_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +30,8 @@ abstract final class PodKeys {
   static const Key profile = Key('pod.profile');
   static const Key profileSummary = Key('pod.profileSummary');
   static const Key export = Key('pod.export');
+  static const Key sharingSummary = Key('pod.sharingSummary');
+  static const Key sharing = Key('pod.sharing');
 }
 
 class PodScreen extends StatelessWidget {
@@ -105,6 +110,26 @@ class PodScreen extends StatelessWidget {
           ),
         ),
         AppCard(
+          icon: Icons.people_outline_rounded,
+          title: 'Sharing',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                key: PodKeys.sharingSummary,
+                sharingSummary(context.watch<ShareRepository>().shares),
+              ),
+              const SizedBox(height: Space.sm),
+              TextButton.icon(
+                key: PodKeys.sharing,
+                onPressed: () => _openSharing(context),
+                icon: const Icon(Icons.person_add_alt_rounded),
+                label: const Text('Share read-only with someone'),
+              ),
+            ],
+          ),
+        ),
+        AppCard(
           icon: Icons.ios_share_rounded,
           title: 'Export your data',
           child: Column(
@@ -152,6 +177,22 @@ class PodScreen extends StatelessWidget {
         builder: (_) => ChangeNotifierProvider.value(
           value: repo,
           child: const ProfileScreen(),
+        ),
+      ),
+    );
+  }
+
+  void _openSharing(BuildContext context) {
+    final health = context.read<HealthRepository>();
+    final shares = context.read<ShareRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: health),
+            ChangeNotifierProvider.value(value: shares),
+          ],
+          child: ShareScreen(now: now),
         ),
       ),
     );

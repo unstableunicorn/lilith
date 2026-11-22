@@ -3,6 +3,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
@@ -23,6 +24,7 @@ Widget harness({
   required Widget child,
   HealthRepository? health,
   SetupRepository? setup,
+  ShareRepository? shares,
   ShellTabs? tabs,
   UrlOpener? openUrl,
   FileSharer? shareFile,
@@ -32,6 +34,7 @@ Widget harness({
     ChangeNotifierProvider.value(value: session),
     if (health != null) ChangeNotifierProvider.value(value: health),
     if (setup != null) ChangeNotifierProvider.value(value: setup),
+    if (shares != null) ChangeNotifierProvider.value(value: shares),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
     Provider<FileSharer>.value(value: shareFile ?? (_) async {}),

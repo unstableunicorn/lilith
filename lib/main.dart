@@ -7,12 +7,15 @@ import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
+import 'package:lilith/data/pod/share_service.dart';
+import 'package:lilith/data/pod/solid_share_service.dart';
 import 'package:lilith/data/pod/solid_pod_service.dart';
 import 'package:lilith/data/pod/solid_pod_session_service.dart';
 import 'package:lilith/data/pod/solid_pod_setup_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
@@ -34,6 +37,7 @@ void main() {
       session: session,
       setup: SetupRepository(const SolidPodSetupService()),
       podFor: (provider) => SolidPodService(provider: provider),
+      shareService: const SolidShareService(),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
@@ -50,6 +54,7 @@ class LilithApp extends StatelessWidget {
     required this.session,
     required this.setup,
     required this.podFor,
+    required this.shareService,
     required this.openUrl,
     required this.shareFile,
     required this.pdfReport,
@@ -61,6 +66,7 @@ class LilithApp extends StatelessWidget {
 
   /// The pod behind the logged-in provider.
   final PodService Function(PodProvider provider) podFor;
+  final ShareService shareService;
   final UrlOpener openUrl;
   final FileSharer shareFile;
   final PdfReport pdfReport;
@@ -74,6 +80,7 @@ class LilithApp extends StatelessWidget {
       Provider<FileSharer>.value(value: shareFile),
       Provider<PdfReport>.value(value: pdfReport),
       Provider<PodService Function(PodProvider)>.value(value: podFor),
+      Provider<ShareService>.value(value: shareService),
     ],
     child: MaterialApp(
       title: 'Lilith',
@@ -149,6 +156,20 @@ class _RootState extends State<_Root> {
       unawaited(repo.load());
       return repo;
     },
-    child: const AppShell(),
+    child: ChangeNotifierProvider(
+      // Not lazy either: shares past their day end as soon as the data is in.
+      lazy: false,
+      create: (context) {
+        final health = context.read<HealthRepository>();
+        final shares = ShareRepository(
+          health,
+          context.read<ShareService>(),
+          protection: protection,
+        );
+        unawaited(health.load().then((_) => shares.sweep(DateTime.now())));
+        return shares;
+      },
+      child: const AppShell(),
+    ),
   );
 }

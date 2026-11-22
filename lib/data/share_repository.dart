@@ -23,8 +23,8 @@ class ShareRepository extends ChangeNotifier {
     this._pod, {
     required this.protection,
     Random? random,
-    HealthDocumentCodec this._codec = const HealthDocumentCodec(),
-    ShareCipher this._cipher = const ShareCipher(),
+    this._codec = const HealthDocumentCodec(),
+    this._cipher = const ShareCipher(),
   }) : _random = random ?? Random.secure() {
     _health.addListener(_onHealthChanged);
   }
