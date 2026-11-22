@@ -12,6 +12,34 @@ void main() {
       expect(PodProvider.solidCommunityAu.manageUrl, isNotNull);
     });
 
+    test('the built-in list holds the owner\'s cluster pod, login only', () {
+      expect(PodProvider.builtIn, contains(PodProvider.unstableUnicorn));
+      expect(
+        PodProvider.unstableUnicorn.serverUrl,
+        Uri.parse('https://solid.unstableunicorn.dev'),
+      );
+      expect(
+        PodProvider.unstableUnicorn.manageUrl,
+        Uri.parse('https://solid.unstableunicorn.dev/.account/'),
+      );
+      expect(PodProvider.unstableUnicorn.allowsSignup, isFalse);
+      expect(PodProvider.solidCommunityAu.allowsSignup, isTrue);
+    });
+
+    test(
+      'a typed server that matches a built-in provider is that provider',
+      () {
+        expect(
+          PodProvider.custom('solid.unstableunicorn.dev/'),
+          PodProvider.unstableUnicorn,
+        );
+        expect(
+          PodProvider.custom('https://pods.example.org')!.allowsSignup,
+          isTrue,
+        );
+      },
+    );
+
     test('built-in providers have distinct names and servers', () {
       final names = PodProvider.builtIn.map((p) => p.name).toSet();
       final servers = PodProvider.builtIn.map((p) => p.serverUrl).toSet();
