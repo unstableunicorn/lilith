@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/temperature_reading.dart';
+import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
   group('TemperatureReading', () {

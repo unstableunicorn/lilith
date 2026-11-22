@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/main.dart';
+import 'package:lilith/main.dart';
 
 void main() {
   testWidgets('the app starts', (tester) async {

@@ -1,7 +1,7 @@
 // One day's flow, symptoms and pain rating.
 
 import 'package:collection/collection.dart';
-import 'package:lillith/domain/day.dart';
+import 'package:lilith/domain/day.dart';
 
 /// How heavy the flow was, from no bleeding to heavy.
 enum FlowIntensity {

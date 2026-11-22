@@ -5,9 +5,9 @@
 // therefore dates ovulation, and ovulation plus the luteal length dates the
 // next period. Without a visible rise, the average cycle length is used.
 
-import 'package:lillith/domain/day.dart';
-import 'package:lillith/domain/period_event.dart';
-import 'package:lillith/domain/temperature_reading.dart';
+import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_reading.dart';
 
 /// How a prediction was derived.
 enum PredictionMethod { insufficientData, cycleAverage, temperatureShift }

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/cycle_predictor.dart';
-import 'package:lillith/domain/period_event.dart';
-import 'package:lillith/domain/temperature_reading.dart';
+import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_reading.dart';
 
 /// [count] readings of [celsius] on consecutive days from [from].
 List<TemperatureReading> flat(DateTime from, int count, double celsius) => [

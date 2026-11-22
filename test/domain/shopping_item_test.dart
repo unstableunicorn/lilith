@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/shopping_item.dart';
+import 'package:lilith/domain/shopping_item.dart';
 
 void main() {
   group('ShoppingItem', () {

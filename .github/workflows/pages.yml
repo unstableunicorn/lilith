@@ -1,4 +1,4 @@
-# Build the web app on main and publish it to GitHub Pages at /lillith/.
+# Build the web app on main and publish it to GitHub Pages at /lilith/.
 # The Solid OIDC client profile and redirect page ship in web/, so they land beside it.
 
 name: pages

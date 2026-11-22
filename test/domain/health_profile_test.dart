@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lillith/domain/health_profile.dart';
+import 'package:lilith/domain/health_profile.dart';
 
 void main() {
   group('HealthProfile', () {

@@ -1,6 +1,6 @@
 // One skin-temperature reading for one calendar day.
 
-import 'package:lillith/domain/day.dart';
+import 'package:lilith/domain/day.dart';
 
 /// Where a reading came from.
 enum ReadingSource {
