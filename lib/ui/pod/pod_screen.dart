@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
@@ -14,6 +15,8 @@ import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/profile/profile_view_model.dart';
+import 'package:lilith/ui/received/received_screen.dart';
+import 'package:lilith/ui/received/received_view_model.dart';
 import 'package:lilith/ui/share/share_screen.dart';
 import 'package:lilith/ui/share/share_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -32,6 +35,8 @@ abstract final class PodKeys {
   static const Key export = Key('pod.export');
   static const Key sharingSummary = Key('pod.sharingSummary');
   static const Key sharing = Key('pod.sharing');
+  static const Key receivedSummary = Key('pod.receivedSummary');
+  static const Key received = Key('pod.received');
 }
 
 class PodScreen extends StatelessWidget {
@@ -126,6 +131,19 @@ class PodScreen extends StatelessWidget {
                 icon: const Icon(Icons.person_add_alt_rounded),
                 label: const Text('Share read-only with someone'),
               ),
+              Text(
+                key: PodKeys.receivedSummary,
+                receivedSummary(
+                  context.watch<ReceivedShareRepository>().received,
+                ),
+              ),
+              const SizedBox(height: Space.sm),
+              TextButton.icon(
+                key: PodKeys.received,
+                onPressed: () => _openReceived(context),
+                icon: const Icon(Icons.visibility_rounded),
+                label: const Text('Shared with you'),
+              ),
             ],
           ),
         ),
@@ -193,6 +211,18 @@ class PodScreen extends StatelessWidget {
             ChangeNotifierProvider.value(value: shares),
           ],
           child: ShareScreen(now: now),
+        ),
+      ),
+    );
+  }
+
+  void _openReceived(BuildContext context) {
+    final received = context.read<ReceivedShareRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: received,
+          child: ReceivedScreen(now: now),
         ),
       ),
     );

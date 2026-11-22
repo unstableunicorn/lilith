@@ -4,12 +4,14 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
+import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/share/share_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +19,7 @@ import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
+import '../../fakes/fake_share_reader.dart';
 import '../../fakes/fake_share_service.dart';
 import '../../harness.dart';
 
@@ -27,6 +30,7 @@ void main() {
   late RecordingUrlOpener urls;
   late HealthRepository health;
   late ShareRepository shares;
+  late ReceivedShareRepository received;
 
   setUp(() async {
     auth = FakePodSessionService();
@@ -51,10 +55,15 @@ void main() {
       FakeShareService(),
       protection: DataProtection.plain,
     );
+    received = ReceivedShareRepository(
+      health,
+      FakeShareReader(),
+      ownWebId: auth.webId,
+    );
   });
 
   Future<void> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.physicalSize = const Size(800, 2800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const SizedBox());
@@ -68,6 +77,7 @@ void main() {
         setup: setup,
         health: health,
         shares: shares,
+        received: received,
         openUrl: urls.call,
         child: const PodScreen(),
       ),
@@ -129,6 +139,16 @@ void main() {
     await tester.tap(find.byKey(PodKeys.sharing));
     await tester.pumpAndSettle();
     expect(find.byKey(ShareKeys.submit), findsOneWidget);
+  });
+
+  testWidgets('summarises what is shared with you and opens it', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.text('Nobody is sharing with you'), findsOneWidget);
+    await tester.tap(find.byKey(PodKeys.received));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ReceivedKeys.submit), findsOneWidget);
   });
 
   testWidgets('opens the export page', (tester) async {

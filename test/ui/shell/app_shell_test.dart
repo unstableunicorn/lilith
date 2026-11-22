@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -19,6 +20,7 @@ import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
+import '../../fakes/fake_share_reader.dart';
 import '../../fakes/fake_share_service.dart';
 import '../../harness.dart';
 
@@ -54,6 +56,11 @@ void main() {
           health,
           FakeShareService(),
           protection: DataProtection.encrypted,
+        ),
+        received: ReceivedShareRepository(
+          health,
+          FakeShareReader(),
+          ownWebId: 'https://pod.example.org/me/profile/card#me',
         ),
         child: AppShell(now: () => today),
       ),
