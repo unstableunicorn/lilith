@@ -55,3 +55,6 @@ PLAN.md
 # Agent files stay private
 CLAUDE.md
 .claude/
+
+# Wrangler state
+.wrangler/

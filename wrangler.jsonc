@@ -1,0 +1,17 @@
+// The web build, served as static assets by a Cloudflare Worker.
+// scripts/ci.sh builds into build/web; the deploy workflow runs `wrangler deploy`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lilith",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./build/web",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "lilith.unstableunicorn.dev", "custom_domain": true }
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": false }
+}
