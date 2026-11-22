@@ -11,3 +11,8 @@ int daysBetween(DateTime from, DateTime to) {
   final b = DateTime.utc(to.year, to.month, to.day);
   return b.difference(a).inDays;
 }
+
+/// [date] moved by [days] calendar days, still at midnight.
+DateTime addDays(DateTime date, int days) => date.isUtc
+    ? DateTime.utc(date.year, date.month, date.day + days)
+    : DateTime(date.year, date.month, date.day + days);

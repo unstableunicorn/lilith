@@ -29,6 +29,32 @@ void main() {
     }
   });
 
+  group('addDays', () {
+    final cases = <({String name, DateTime from, int days, DateTime want})>[
+      (
+        name: 'adds forwards',
+        from: DateTime(2026, 3, 14),
+        days: 20,
+        want: DateTime(2026, 4, 3),
+      ),
+      (
+        name: 'subtracts with a negative count',
+        from: DateTime(2026, 3, 1),
+        days: -1,
+        want: DateTime(2026, 2, 28),
+      ),
+      (
+        name: 'stays at midnight across a daylight-saving change',
+        from: DateTime(2026, 3, 28),
+        days: 10,
+        want: DateTime(2026, 4, 7),
+      ),
+    ];
+    for (final c in cases) {
+      test(c.name, () => expect(addDays(c.from, c.days), c.want));
+    }
+  });
+
   group('daysBetween', () {
     final cases = <({String name, DateTime from, DateTime to, int want})>[
       (
