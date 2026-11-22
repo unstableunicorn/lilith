@@ -67,6 +67,34 @@ void main() {
   group('once loaded', () {
     setUp(() => health.load());
 
+    testWidgets('a forecast card appears once past cycles allow one', (
+      tester,
+    ) async {
+      await health.apply((d) {
+        var next = d
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+            .withPeriod(PeriodEvent(startDate: today));
+        for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+          for (var i = 0; i < 3; i++) {
+            next = next.withDailyLog(
+              DailyLog(
+                date: start.add(Duration(days: i)),
+                symptoms: {Symptom.cramps, Symptom.fatigue},
+                painLevel: 5,
+              ),
+            );
+          }
+        }
+        return next;
+      });
+      await pump(tester);
+      expect(find.byKey(HomeKeys.forecast), findsOneWidget);
+      expect(find.text('Cramps 100%'), findsOneWidget);
+      expect(find.text('Fatigue 100%'), findsOneWidget);
+      await expectAccessible(tester);
+    });
+
     testWidgets('summarises today\'s log and opens the log screen', (
       tester,
     ) async {

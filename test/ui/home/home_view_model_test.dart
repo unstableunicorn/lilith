@@ -11,6 +11,7 @@ import 'package:lilith/ui/home/home_view_model.dart';
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  forecastTests();
   todaysLogTests();
   final today = DateTime(2026, 6, 10, 9, 30);
   late FakePodService pod;
@@ -142,5 +143,54 @@ void todaysLogTests() {
     final log = DailyLog(date: today, flow: FlowIntensity.light, painLevel: 2);
     await repo.apply((d) => d.withDailyLog(log));
     expect(vm.todaysLog, log);
+  });
+}
+
+void forecastTests() {
+  final today = DateTime(2026, 6, 10, 9, 30);
+
+  Future<HealthRepository> twoCycles() async {
+    final repo = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await repo.load();
+    await repo.apply((d) {
+      var next = d
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 6, 10)));
+      for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+        for (var i = 0; i < 3; i++) {
+          next = next.withDailyLog(
+            DailyLog(
+              date: start.add(Duration(days: i)),
+              symptoms: {Symptom.cramps},
+              painLevel: 6,
+            ),
+          );
+        }
+      }
+      return next;
+    });
+    return repo;
+  }
+
+  test('with little logged there is no forecast', () async {
+    final repo = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await repo.load();
+    final vm = HomeViewModel(repo, now: () => today);
+    expect(vm.forecast.hasData, isFalse);
+  });
+
+  test('past cycles forecast the week ahead in plain words', () async {
+    final vm = HomeViewModel(await twoCycles(), now: () => today);
+    expect(vm.forecast.hasData, isTrue);
+    expect(vm.forecast.likely.first.symptom, Symptom.cramps);
+    expect(vm.forecastSummary, contains('6 logged days'));
+    expect(vm.forecastSummary, contains('6/10'));
   });
 }

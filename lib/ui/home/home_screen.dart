@@ -18,6 +18,7 @@ abstract final class HomeKeys {
   static const Key noData = Key('home.noData');
   static const Key prediction = Key('home.prediction');
   static const Key stats = Key('home.stats');
+  static const Key forecast = Key('home.forecast');
   static const Key daysUntil = Key('home.daysUntil');
   static const Key lastPeriod = Key('home.lastPeriod');
   static const Key logPeriod = Key('home.logPeriod');
@@ -99,6 +100,7 @@ class _HomeViewState extends State<_HomeView> {
           else ...[
             _PredictionCard(vm: vm),
             _StatsRow(vm: vm),
+            if (vm.forecast.hasData) _ForecastCard(vm: vm),
           ],
           AppCard(
             icon: Icons.water_drop_rounded,
@@ -292,4 +294,34 @@ class _PredictionCard extends StatelessWidget {
   };
 
   String _date(DateTime d) => formatShortDate(d, today: vm.today);
+}
+
+class _ForecastCard extends StatelessWidget {
+  const _ForecastCard({required this.vm});
+
+  final HomeViewModel vm;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    key: HomeKeys.forecast,
+    icon: Icons.insights_rounded,
+    title: 'Your forecast for the week',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(vm.forecastSummary),
+        if (vm.forecast.likely.isNotEmpty) ...[
+          const SizedBox(height: Space.md),
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.sm,
+            children: [
+              for (final l in vm.forecast.likely.take(5))
+                LabelBadge(text: '${l.symptom.label} ${l.percent}%'),
+            ],
+          ),
+        ],
+      ],
+    ),
+  );
 }

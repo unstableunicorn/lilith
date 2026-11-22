@@ -7,6 +7,7 @@ import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -14,6 +15,7 @@ class HomeViewModel extends ChangeNotifier {
     this._repo, {
     required this.now,
     this.predictor = const CyclePredictor(),
+    this.symptomPredictor = const SymptomPredictor(),
   }) {
     _repo.addListener(notifyListeners);
   }
@@ -27,6 +29,7 @@ class HomeViewModel extends ChangeNotifier {
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
   final CyclePredictor predictor;
+  final SymptomPredictor symptomPredictor;
 
   DateTime get today => dateOnly(now());
   bool get isLoading => _repo.isLoading;
@@ -41,6 +44,21 @@ class HomeViewModel extends ChangeNotifier {
     periods: _repo.data.periods,
     today: today,
   );
+
+  SymptomForecast get forecast => symptomPredictor.predict(
+    logs: _repo.data.dailyLogs,
+    periods: _repo.data.periods,
+    today: today,
+  );
+
+  /// E.g. "From 6 logged days at this point of past cycles. Pain around 6/10
+  /// has been typical."
+  String get forecastSummary {
+    final f = forecast;
+    final pain = f.typicalPain;
+    return 'From ${f.loggedDays} logged days at this point of past cycles.'
+        '${pain == null ? '' : ' Pain around ${pain.round()}/10 has been typical.'}';
+  }
 
   int? get daysUntilNextPeriod => prediction.daysUntilNextPeriod(today);
 
