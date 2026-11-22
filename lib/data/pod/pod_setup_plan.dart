@@ -1,12 +1,10 @@
 // Which parts of solidpod's pod set-up the app leaves to solidpod, and which
 // access rules it writes itself so that nothing is ever open to the public.
 //
-// solidpod's initPod grants anyone (foaf:Agent) read on the public key,
-// append on the permissions log and the notifications folder, and read and
-// write on the shared folder. The owner's rule is nothing public except the
-// profile card: the key and the log are opened to logged-in users instead,
-// and the shared and notifications folders get no rule at all (owner-only)
-// until the app offers sharing.
+// solidpod's initPod would open four things to anyone (foaf:Agent). The
+// owner's rule is nothing public except the profile card: the public key and
+// the permissions log are opened to logged-in users instead, and the shared
+// and notifications folders stay owner-only until the app offers sharing.
 
 enum AclMode { read, write, append }
 
