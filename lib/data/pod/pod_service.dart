@@ -47,3 +47,8 @@ class PodLoginCancelledException extends PodException {
 class PodLoginFailedException extends PodException {
   const PodLoginFailedException(super.message);
 }
+
+/// The security key does not match the pod's.
+class PodWrongKeyException extends PodException {
+  const PodWrongKeyException() : super('wrong security key');
+}
