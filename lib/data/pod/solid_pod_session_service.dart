@@ -7,8 +7,11 @@
 // the login on the next start and then hand the manager to solidpod, whose
 // read and write functions work through AuthDataManager.
 
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/pod/solid_client.dart';
@@ -50,7 +53,9 @@ PodException? authFailureFor(Object error, {required bool isWeb}) =>
     switch (error) {
       SolidAuthTokenException() when isWeb => null,
       SolidAuthTokenException() => const PodLoginCancelledException(),
-      SolidAuthDiscoveryException() => PodUnavailableException('$error'),
+      SolidAuthDiscoveryException() ||
+      http.ClientException() ||
+      SocketException() => PodUnavailableException('$error'),
       _ => PodLoginFailedException('$error'),
     };
 

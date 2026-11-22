@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/solid_client.dart';
 import 'package:lilith/data/pod/solid_pod_session_service.dart';
@@ -87,6 +90,20 @@ void solidOidcConfigTests() {
           const SolidAuthDiscoveryException('x', webId: 'y'),
           isWeb: true,
         ),
+        isA<PodUnavailableException>(),
+      );
+    });
+
+    test('no network at all is the provider being unreachable', () {
+      expect(
+        authFailureFor(
+          http.ClientException('Failed host lookup', Uri.parse('https://x')),
+          isWeb: false,
+        ),
+        isA<PodUnavailableException>(),
+      );
+      expect(
+        authFailureFor(const SocketException('no route'), isWeb: false),
         isA<PodUnavailableException>(),
       );
     });
