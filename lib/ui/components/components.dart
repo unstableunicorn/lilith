@@ -3,6 +3,7 @@
 
 export 'app_card.dart';
 export 'busy_indicator.dart';
+export 'label_badge.dart';
 export 'notice_banner.dart';
 export 'page_scaffold.dart';
 export 'problem_text.dart';

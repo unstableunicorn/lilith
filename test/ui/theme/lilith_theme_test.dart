@@ -25,6 +25,8 @@ void main() {
         'tonal button label': (s.onSecondaryContainer, s.secondaryContainer),
         'highlighted card text': (s.onPrimaryContainer, s.primaryContainer),
         'error banner text': (s.onErrorContainer, s.errorContainer),
+        'callout card text': (s.onTertiaryContainer, s.tertiaryContainer),
+        'badge text': (s.onSecondaryContainer, s.secondaryContainer),
       };
 
       for (final MapEntry(key: name, value: (fg, bg)) in pairs.entries) {

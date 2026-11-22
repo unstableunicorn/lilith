@@ -7,6 +7,7 @@ enum ShellTab {
   today('Today', Icons.spa_rounded),
   log('Log', Icons.edit_note_rounded),
   history('History', Icons.insights_rounded),
+  relief('Relief', Icons.healing_rounded),
   pod('Pod', Icons.cloud_rounded);
 
   const ShellTab(this.label, this.icon);

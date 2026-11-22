@@ -48,6 +48,25 @@ class _Samples extends StatelessWidget {
         title: 'Card with icon and title',
         child: Text('Body text sits here, in the card\'s own colour.'),
       ),
+      const AppCard(
+        tone: CardTone.highlight,
+        icon: Icons.star_rounded,
+        title: 'Highlighted card',
+        child: Text('For the thing that worked for you.'),
+      ),
+      const AppCard(
+        tone: CardTone.callout,
+        icon: Icons.medical_services_rounded,
+        title: 'Callout card',
+        child: Text('For a note to read before acting.'),
+      ),
+      const Wrap(
+        spacing: Space.sm,
+        children: [
+          LabelBadge(icon: Icons.verified_rounded, text: 'Clinically backed'),
+          LabelBadge(text: 'Plain badge'),
+        ],
+      ),
       const Row(
         children: [
           Expanded(
