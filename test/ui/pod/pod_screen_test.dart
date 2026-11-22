@@ -4,17 +4,20 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
+import 'package:lilith/ui/share/share_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
+import '../../fakes/fake_share_service.dart';
 import '../../harness.dart';
 
 void main() {
@@ -23,6 +26,7 @@ void main() {
   late SetupRepository setup;
   late RecordingUrlOpener urls;
   late HealthRepository health;
+  late ShareRepository shares;
 
   setUp(() async {
     auth = FakePodSessionService();
@@ -42,10 +46,15 @@ void main() {
       protection: DataProtection.plain,
     );
     await health.load();
+    shares = ShareRepository(
+      health,
+      FakeShareService(),
+      protection: DataProtection.plain,
+    );
   });
 
   Future<void> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const SizedBox());
@@ -58,6 +67,7 @@ void main() {
         session: session,
         setup: setup,
         health: health,
+        shares: shares,
         openUrl: urls.call,
         child: const PodScreen(),
       ),
@@ -111,6 +121,14 @@ void main() {
     await tester.tap(find.byKey(PodKeys.profile));
     await tester.pumpAndSettle();
     expect(find.byKey(ProfileKeys.save), findsOneWidget);
+  });
+
+  testWidgets('summarises sharing and opens the sharing page', (tester) async {
+    await pump(tester);
+    expect(find.text('Not shared with anyone'), findsOneWidget);
+    await tester.tap(find.byKey(PodKeys.sharing));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ShareKeys.submit), findsOneWidget);
   });
 
   testWidgets('opens the export page', (tester) async {

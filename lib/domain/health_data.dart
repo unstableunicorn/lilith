@@ -10,12 +10,13 @@ import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 const _list = ListEquality<Object>();
 
-/// The user's cycle data, remedy verdicts, shopping list and profile.
+/// The user's cycle data, remedy verdicts, shopping list, profile and shares.
 class HealthData {
   HealthData({
     Iterable<TemperatureReading> readings = const [],
@@ -24,6 +25,7 @@ class HealthData {
     Iterable<RemedyFeedback> remedyFeedback = const [],
     Iterable<ShoppingItem> shopping = const [],
     HealthProfile? profile,
+    Iterable<Share> shares = const [],
   }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
        periods = List.unmodifiable(periods.sortedBy((p) => p.startDate)),
        dailyLogs = List.unmodifiable(dailyLogs.sortedBy((l) => l.date)),
@@ -31,7 +33,8 @@ class HealthData {
        shopping = List.unmodifiable(
          shopping.sortedBy<num>((s) => s.bought ? 1 : 0),
        ),
-       profile = profile ?? HealthProfile();
+       profile = profile ?? HealthProfile(),
+       shares = List.unmodifiable(shares);
 
   static final HealthData empty = HealthData();
 
@@ -51,6 +54,9 @@ class HealthData {
 
   final HealthProfile profile;
 
+  /// Who the cycle data is shared with, one share per recipient.
+  final List<Share> shares;
+
   /// True once any cycle data has been logged.
   bool get hasData =>
       readings.isNotEmpty || periods.isNotEmpty || dailyLogs.isNotEmpty;
@@ -62,6 +68,7 @@ class HealthData {
     Iterable<RemedyFeedback>? remedyFeedback,
     Iterable<ShoppingItem>? shopping,
     HealthProfile? profile,
+    Iterable<Share>? shares,
   }) => HealthData(
     readings: readings ?? this.readings,
     periods: periods ?? this.periods,
@@ -69,6 +76,7 @@ class HealthData {
     remedyFeedback: remedyFeedback ?? this.remedyFeedback,
     shopping: shopping ?? this.shopping,
     profile: profile ?? this.profile,
+    shares: shares ?? this.shares,
   );
 
   HealthData withReading(TemperatureReading reading) => withReadings([reading]);
@@ -159,6 +167,17 @@ class HealthData {
 
   HealthData withProfile(HealthProfile profile) => copyWith(profile: profile);
 
+  /// Adds [share], replacing any earlier share with the same recipient.
+  HealthData withShare(Share share) => copyWith(
+    shares: [
+      ...shares.where((s) => s.recipientWebId != share.recipientWebId),
+      share,
+    ],
+  );
+
+  HealthData withoutShare(String recipientWebId) =>
+      copyWith(shares: shares.where((s) => s.recipientWebId != recipientWebId));
+
   @override
   bool operator ==(Object other) =>
       other is HealthData &&
@@ -167,7 +186,8 @@ class HealthData {
       _list.equals(other.dailyLogs, dailyLogs) &&
       _list.equals(other.remedyFeedback, remedyFeedback) &&
       _list.equals(other.shopping, shopping) &&
-      other.profile == profile;
+      other.profile == profile &&
+      _list.equals(other.shares, shares);
 
   @override
   int get hashCode => Object.hash(
@@ -177,5 +197,6 @@ class HealthData {
     _list.hash(remedyFeedback),
     _list.hash(shopping),
     profile,
+    _list.hash(shares),
   );
 }

@@ -15,6 +15,7 @@ import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'fakes/fake_pod_service.dart';
+import 'fakes/fake_share_service.dart';
 import 'fakes/fake_pod_session_service.dart';
 import 'fakes/fake_pod_setup_service.dart';
 import 'fakes/fake_settings_store.dart';
@@ -38,6 +39,7 @@ void main() {
     session: session,
     setup: setup,
     podFor: (_) => pod,
+    shareService: FakeShareService(),
     openUrl: (_) async {},
     shareFile: (_) async {},
     pdfReport: const PdfReport(),
