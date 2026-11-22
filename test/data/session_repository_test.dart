@@ -56,6 +56,11 @@ void main() {
     });
   });
 
+  test('prepare warms the service up for the provider', () async {
+    await repo.prepare(PodProvider.unstableUnicorn);
+    expect(auth.prepared, [PodProvider.unstableUnicorn]);
+  });
+
   group('login', () {
     testWidgets('sets the session and remembers the provider', (tester) async {
       await tester.pumpWidget(const SizedBox());

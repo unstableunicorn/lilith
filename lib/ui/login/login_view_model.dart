@@ -1,6 +1,8 @@
 // What the login screen decides: which provider, whether login is possible,
 // and what went wrong.
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
@@ -18,6 +20,7 @@ class LoginViewModel extends ChangeNotifier {
       _customServer = remembered.serverUrl.toString();
       _selected = remembered;
     }
+    _prepare();
   }
 
   final SessionRepository _session;
@@ -45,6 +48,7 @@ class LoginViewModel extends ChangeNotifier {
     _isCustom = false;
     _selected = provider;
     _error = null;
+    _prepare();
     notifyListeners();
   }
 
@@ -52,6 +56,7 @@ class LoginViewModel extends ChangeNotifier {
     _isCustom = true;
     _selected = PodProvider.custom(_customServer);
     _error = null;
+    _prepare();
     notifyListeners();
   }
 
@@ -61,7 +66,12 @@ class LoginViewModel extends ChangeNotifier {
     _error = _selected == null && text.trim().isNotEmpty
         ? LoginError.invalidServer
         : null;
+    _prepare();
     notifyListeners();
+  }
+
+  void _prepare() {
+    if (_selected case final provider?) unawaited(_session.prepare(provider));
   }
 
   Future<void> login(BuildContext context) async {

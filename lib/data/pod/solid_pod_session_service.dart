@@ -15,6 +15,13 @@ class SolidPodSessionService implements PodSessionService {
   final SettingsStore _settings;
 
   @override
+  Future<void> prepare(PodProvider provider) => solid.prewarmSolidAuthenticate(
+    provider.serverUrl.toString(),
+    clientId: SolidClient.clientId,
+    redirectUris: _redirectUris,
+  );
+
+  @override
   Future<PodSession?> restore() async {
     final result = await solid.tryRestoreSession();
     if (result == null) return null;
@@ -36,13 +43,16 @@ class SolidPodSessionService implements PodSessionService {
       provider.serverUrl.toString(),
       context,
       clientId: SolidClient.clientId,
-      redirectUris: redirectUrisFor(isWeb: kIsWeb, base: Uri.base),
+      redirectUris: _redirectUris,
     );
     if (result == null) {
       throw const PodLoginFailedException('the login did not complete');
     }
     return PodSession(webId: result[1] as String, provider: provider);
   }
+
+  List<String> get _redirectUris =>
+      redirectUrisFor(isWeb: kIsWeb, base: Uri.base);
 
   @override
   Future<void> logout() async {

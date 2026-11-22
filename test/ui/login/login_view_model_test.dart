@@ -95,6 +95,21 @@ void main() {
     });
   });
 
+  test('warms the login up for whichever provider is selected', () async {
+    await Future<void>.delayed(Duration.zero);
+    expect(auth.prepared, [PodProvider.builtIn.first]);
+    vm.choose(PodProvider.unstableUnicorn);
+    vm.chooseCustom();
+    vm.setCustomServer('not a url');
+    vm.setCustomServer('pods.example.org');
+    await Future<void>.delayed(Duration.zero);
+    expect(auth.prepared, [
+      PodProvider.builtIn.first,
+      PodProvider.unstableUnicorn,
+      PodProvider.custom('pods.example.org'),
+    ]);
+  });
+
   test('the manage-your-data link follows the selected provider', () {
     expect(vm.manageUrl, PodProvider.builtIn.first.manageUrl);
     vm.choose(PodProvider.unstableUnicorn);

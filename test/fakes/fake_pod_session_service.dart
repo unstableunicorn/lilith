@@ -19,7 +19,11 @@ class FakePodSessionService implements PodSessionService {
   Completer<void>? restoreGate;
   PodException? failLogin;
   final List<PodProvider> logins = [];
+  final List<PodProvider> prepared = [];
   int logouts = 0;
+
+  @override
+  Future<void> prepare(PodProvider provider) async => prepared.add(provider);
 
   @override
   Future<PodSession?> restore() async {

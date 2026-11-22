@@ -30,6 +30,11 @@ class PodSession {
 
 /// Starts, restores and ends the pod session.
 abstract interface class PodSessionService {
+  /// Does the network lookups for [provider] ahead of [login], so the login
+  /// can open its browser window at once when the user taps. Browsers block
+  /// a window opened too long after the tap.
+  Future<void> prepare(PodProvider provider);
+
   /// The session saved by an earlier login, if it is still valid.
   Future<PodSession?> restore();
 

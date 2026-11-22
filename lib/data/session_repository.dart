@@ -37,6 +37,15 @@ class SessionRepository extends ChangeNotifier {
     }
   }
 
+  /// Warms the login up for [provider]; failures are the login's to report.
+  Future<void> prepare(PodProvider provider) async {
+    try {
+      await _auth.prepare(provider);
+    } on Object {
+      // The real login reports what is wrong; a failed warm-up is harmless.
+    }
+  }
+
   /// Logs in at [provider] and remembers the choice. Rethrows the
   /// PodException on failure, with no session set.
   Future<void> login(PodProvider provider, BuildContext context) async {
