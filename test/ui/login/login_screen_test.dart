@@ -101,6 +101,18 @@ void main() {
     );
   });
 
+  testWidgets('a failed login shows what the library said', (tester) async {
+    auth.failLogin = const PodLoginFailedException('OidcException: bad jkt');
+    await pump(tester);
+    await tester.tap(find.byKey(LoginKeys.login));
+    await tester.pumpAndSettle();
+    expect(find.byKey(LoginKeys.errorDetail), findsOneWidget);
+    expect(find.text('OidcException: bad jkt'), findsOneWidget);
+    await tester.tap(find.byKey(LoginKeys.other));
+    await tester.pump();
+    expect(find.byKey(LoginKeys.errorDetail), findsNothing);
+  });
+
   testWidgets('manage-your-data opens the chosen provider\'s site', (
     tester,
   ) async {
