@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -23,6 +25,7 @@ Widget harness({
   SetupRepository? setup,
   ShellTabs? tabs,
   UrlOpener? openUrl,
+  FileSharer? shareFile,
   Brightness brightness = Brightness.light,
 }) => MultiProvider(
   providers: [
@@ -31,6 +34,8 @@ Widget harness({
     if (setup != null) ChangeNotifierProvider.value(value: setup),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
+    Provider<FileSharer>.value(value: shareFile ?? (_) async {}),
+    Provider<PdfReport>.value(value: const PdfReport()),
   ],
   child: MaterialApp(theme: lilithTheme(brightness), home: child),
 );

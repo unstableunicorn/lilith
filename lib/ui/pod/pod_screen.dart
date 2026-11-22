@@ -10,6 +10,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/design/design_screen.dart';
+import 'package:lilith/ui/export/export_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/profile/profile_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -25,10 +26,14 @@ abstract final class PodKeys {
   static const Key design = Key('pod.design');
   static const Key profile = Key('pod.profile');
   static const Key profileSummary = Key('pod.profileSummary');
+  static const Key export = Key('pod.export');
 }
 
 class PodScreen extends StatelessWidget {
-  const PodScreen({super.key});
+  const PodScreen({this.now = DateTime.now, super.key});
+
+  /// The clock, handed on to the export page.
+  final DateTime Function() now;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +104,25 @@ class PodScreen extends StatelessWidget {
             ],
           ),
         ),
+        AppCard(
+          icon: Icons.ios_share_rounded,
+          title: 'Export your data',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'A PDF report for your doctor, or a CSV for a spreadsheet.',
+              ),
+              const SizedBox(height: Space.sm),
+              TextButton.icon(
+                key: PodKeys.export,
+                onPressed: () => _openExport(context),
+                icon: const Icon(Icons.download_rounded),
+                label: const Text('Export as PDF or CSV'),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: Space.lg),
         FilledButton.tonalIcon(
           key: PodKeys.logout,
@@ -128,6 +152,18 @@ class PodScreen extends StatelessWidget {
         builder: (_) => ChangeNotifierProvider.value(
           value: repo,
           child: const ProfileScreen(),
+        ),
+      ),
+    );
+  }
+
+  void _openExport(BuildContext context) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: ExportScreen(now: now),
         ),
       ),
     );
