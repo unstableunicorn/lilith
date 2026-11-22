@@ -4,6 +4,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/log/log_view_model.dart';
+import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -40,12 +41,31 @@ class LogScreen extends StatelessWidget {
   );
 }
 
-class _LogView extends StatelessWidget {
+class _LogView extends StatefulWidget {
   const _LogView();
+
+  @override
+  State<_LogView> createState() => _LogViewState();
+}
+
+class _LogViewState extends State<_LogView> {
+  int _seenRequest = 0;
+
+  // Another tab asked for a day: move there once this frame is done.
+  void _follow(ShellTabs tabs, LogViewModel vm) {
+    if (tabs.logRequest == _seenRequest) return;
+    _seenRequest = tabs.logRequest;
+    final day = tabs.logDate;
+    if (day == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) vm.pickDate(day);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LogViewModel>();
+    _follow(context.watch<ShellTabs>(), vm);
     final theme = Theme.of(context);
     return PageScaffold(
       title: 'Your day',

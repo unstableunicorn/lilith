@@ -1,6 +1,7 @@
 // Every shared component, with sample content, in both themes. The place
 // to look before building a screen and to check a change to a component.
 
+import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
@@ -71,6 +72,17 @@ class _Samples extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      const SectionHeading('Chart'),
+      TemperatureChart(
+        readings: [
+          for (var i = 0; i < 14; i++)
+            TemperatureReading(
+              date: DateTime(2026, 6, 1 + i),
+              celsius: 36.2 + (i > 8 ? 0.4 : 0) + (i % 3) / 20,
+            ),
+        ],
+        periodStarts: {DateTime(2026, 6, 3)},
       ),
       const SectionHeading('Buttons'),
       Wrap(

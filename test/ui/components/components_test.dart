@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
@@ -6,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../harness.dart';
 
 void main() {
+  temperatureChartTests();
   for (final brightness in Brightness.values) {
     group('in the ${brightness.name} theme', () {
       Future<void> pump(WidgetTester tester, Widget page) async {
@@ -105,4 +107,53 @@ void main() {
       });
     });
   }
+}
+
+void temperatureChartTests() {
+  testWidgets('the chart describes itself in words and reads accessibly', (
+    tester,
+  ) async {
+    final readings = [
+      for (var i = 0; i < 10; i++)
+        TemperatureReading(
+          date: DateTime(2026, 6, 1 + i),
+          celsius: 36.0 + i / 10,
+        ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: lilithTheme(Brightness.light),
+        home: Scaffold(
+          body: TemperatureChart(
+            readings: readings,
+            periodStarts: {DateTime(2026, 6, 3)},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel(RegExp(r'10 readings.*36\.0.*36\.9')),
+      findsOneWidget,
+    );
+    await expectAccessible(tester);
+  });
+
+  testWidgets('with one reading the chart still draws', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: lilithTheme(Brightness.light),
+        home: Scaffold(
+          body: TemperatureChart(
+            readings: [
+              TemperatureReading(date: DateTime(2026, 6, 1), celsius: 36.4),
+            ],
+            periodStarts: const {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(TemperatureChart), findsOneWidget);
+  });
 }
