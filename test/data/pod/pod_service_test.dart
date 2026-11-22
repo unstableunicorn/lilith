@@ -13,9 +13,9 @@ void main() {
   });
 
   test('a written document reads back and a rewrite replaces it', () async {
-    await pod.write('a.ttl', 'one');
+    await pod.write('a.ttl', 'one', encrypted: true);
     expect(await pod.read('a.ttl'), 'one');
-    await pod.write('a.ttl', 'two');
+    await pod.write('a.ttl', 'two', encrypted: true);
     expect(await pod.read('a.ttl'), 'two');
     expect(await pod.read('b.ttl'), isNull);
   });

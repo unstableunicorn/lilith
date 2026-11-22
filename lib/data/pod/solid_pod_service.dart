@@ -25,9 +25,18 @@ class SolidPodService implements PodService {
   }
 
   @override
-  Future<void> write(String path, String content) async {
+  Future<void> write(
+    String path,
+    String content, {
+    required bool encrypted,
+  }) async {
     try {
-      await solid.writePod(path, content, encrypted: true, overwrite: true);
+      await solid.writePod(
+        path,
+        content,
+        encrypted: encrypted,
+        overwrite: true,
+      );
     } catch (e) {
       throw toPodException(e);
     }
