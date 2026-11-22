@@ -8,6 +8,7 @@ import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
+import 'package:lilith/ui/relief/relief_screen.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
@@ -64,6 +65,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected(tester), ShellTab.log.index);
     expect(find.byKey(LogKeys.save), findsOneWidget);
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.relief)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ReliefKeys.seeDoctor), findsOneWidget);
     await tester.tap(find.byKey(ShellKeys.tab(ShellTab.pod)));
     await tester.pumpAndSettle();
     expect(find.byKey(PodKeys.logout), findsOneWidget);

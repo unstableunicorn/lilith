@@ -5,6 +5,7 @@ import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
+import 'package:lilith/ui/relief/relief_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +42,7 @@ class _ShellView extends StatelessWidget {
           HomeScreen(now: now),
           LogScreen(now: now),
           const HistoryScreen(),
+          ReliefScreen(now: now),
           const PodScreen(),
         ],
       ),
