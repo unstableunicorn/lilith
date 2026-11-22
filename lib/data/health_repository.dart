@@ -6,6 +6,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_data.dart';
 
 /// What last went wrong, for the UI to phrase.
@@ -21,15 +22,20 @@ enum RepositoryError {
 }
 
 class HealthRepository extends ChangeNotifier {
-  HealthRepository(this._pod, {HealthDocumentCodec? codec})
-    : _codec = codec ?? const HealthDocumentCodec();
+  HealthRepository(
+    this._pod, {
+    required this.protection,
+    HealthDocumentCodec? codec,
+  }) : _codec = codec ?? const HealthDocumentCodec();
 
-  /// The document in the app's folder on the pod. The extension is `.ttl`
-  /// because solidpod only encrypts Turtle files; the content is JSON.
-  static const String documentPath = 'cycle_data.ttl';
+  /// How the document is stored; it decides the document's path and whether
+  /// writes are encrypted.
+  final DataProtection protection;
 
   final PodService _pod;
   final HealthDocumentCodec _codec;
+
+  String get documentPath => protection.documentPath;
 
   HealthData _data = HealthData.empty;
   bool _loaded = false;
@@ -87,7 +93,11 @@ class HealthRepository extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      await _pod.write(documentPath, _codec.encode(next));
+      await _pod.write(
+        documentPath,
+        _codec.encode(next),
+        encrypted: protection == DataProtection.encrypted,
+      );
     } on PodNotLoggedInException {
       _error = RepositoryError.notLoggedIn;
     } on PodException {

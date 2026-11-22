@@ -17,6 +17,9 @@ class FakePodService implements PodService {
   int reads = 0;
   int writes = 0;
 
+  /// The encrypted flag of each write, in order.
+  final List<bool> encryptedWrites = [];
+
   @override
   Future<String?> read(String path) async {
     reads++;
@@ -25,8 +28,13 @@ class FakePodService implements PodService {
   }
 
   @override
-  Future<void> write(String path, String content) async {
+  Future<void> write(
+    String path,
+    String content, {
+    required bool encrypted,
+  }) async {
     writes++;
+    encryptedWrites.add(encrypted);
     if (failWrites case final e?) throw e;
     documents[path] = content;
   }

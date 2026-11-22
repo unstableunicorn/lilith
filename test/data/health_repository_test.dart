@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -19,7 +20,7 @@ void main() {
 
   setUp(() {
     pod = FakePodService();
-    repo = HealthRepository(pod);
+    repo = HealthRepository(pod, protection: DataProtection.encrypted);
     notifications = 0;
     repo.addListener(() => notifications++);
   });
@@ -41,7 +42,7 @@ void main() {
     });
 
     test('reads the stored document', () async {
-      pod.documents[HealthRepository.documentPath] = codec.encode(stored);
+      pod.documents[repo.documentPath] = codec.encode(stored);
       await repo.load();
       expect(repo.data, stored);
       expect(repo.isLoaded, isTrue);
@@ -87,14 +88,12 @@ void main() {
           ),
           (
             name: 'a malformed document',
-            arrange: () =>
-                pod.documents[HealthRepository.documentPath] = 'not json',
+            arrange: () => pod.documents[repo.documentPath] = 'not json',
             want: RepositoryError.malformed,
           ),
           (
             name: 'a document from a newer app',
-            arrange: () =>
-                pod.documents[HealthRepository.documentPath] = '{"version":99}',
+            arrange: () => pod.documents[repo.documentPath] = '{"version":99}',
             want: RepositoryError.newerVersion,
           ),
         ];
@@ -131,10 +130,7 @@ void main() {
       await repo.apply((d) => d.withReading(reading));
       expect(repo.data.readings, [reading]);
       expect(pod.writes, 1);
-      expect(
-        codec.decode(pod.documents[HealthRepository.documentPath]!),
-        repo.data,
-      );
+      expect(codec.decode(pod.documents[repo.documentPath]!), repo.data);
       expect(notifications, greaterThanOrEqualTo(1));
     });
 
@@ -150,7 +146,7 @@ void main() {
       await repo.apply((d) => d.withReading(reading));
       expect(repo.data.readings, [reading]);
       expect(repo.error, RepositoryError.saveFailed);
-      expect(pod.documents[HealthRepository.documentPath], isNull);
+      expect(pod.documents[repo.documentPath], isNull);
     });
 
     test('a lost session on write reports notLoggedIn', () async {
@@ -167,10 +163,7 @@ void main() {
       pod.failWrites = null;
       await repo.apply((d) => d.withPeriod(PeriodEvent(startDate: may1)));
       expect(repo.error, isNull);
-      expect(
-        codec.decode(pod.documents[HealthRepository.documentPath]!),
-        repo.data,
-      );
+      expect(codec.decode(pod.documents[repo.documentPath]!), repo.data);
     });
 
     test('refuses to write before a load has succeeded', () async {
@@ -178,6 +171,28 @@ void main() {
       expect(pod.writes, 0);
       expect(repo.data, HealthData.empty);
       expect(repo.error, RepositoryError.notLoaded);
+    });
+  });
+
+  group('data protection', () {
+    test('encrypted keeps the .ttl document and writes encrypted', () async {
+      await repo.load();
+      await repo.apply(
+        (d) => d.withReading(TemperatureReading(date: may1, celsius: 36.4)),
+      );
+      expect(repo.documentPath, DataProtection.encrypted.documentPath);
+      expect(pod.encryptedWrites, [true]);
+    });
+
+    test('plain keeps the .json document and writes plain', () async {
+      final plain = HealthRepository(pod, protection: DataProtection.plain);
+      await plain.load();
+      await plain.apply(
+        (d) => d.withReading(TemperatureReading(date: may1, celsius: 36.4)),
+      );
+      expect(plain.documentPath, DataProtection.plain.documentPath);
+      expect(pod.documents.keys, [DataProtection.plain.documentPath]);
+      expect(pod.encryptedWrites, [false]);
     });
   });
 

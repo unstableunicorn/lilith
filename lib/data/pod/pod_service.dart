@@ -2,17 +2,17 @@
 
 import 'package:lilith/domain/pod_provider.dart';
 
-/// Reads and writes documents in the app's folder on the user's pod.
-/// Paths are relative to that folder. Content is encrypted at rest by the
-/// implementation; callers see plain text.
+/// Reads and writes documents in the app's data folder on the user's pod.
+/// Paths are relative to that folder; callers always see plain text.
 abstract interface class PodService {
   PodProvider get provider;
 
   /// The document's content, or null when it does not exist.
   Future<String?> read(String path);
 
-  /// Creates or replaces the document.
-  Future<void> write(String path, String content);
+  /// Creates or replaces the document, encrypted on the device first when
+  /// [encrypted].
+  Future<void> write(String path, String content, {required bool encrypted});
 }
 
 /// Something went wrong talking to the pod.
@@ -46,4 +46,9 @@ class PodLoginCancelledException extends PodException {
 /// The identity provider did not log the user in.
 class PodLoginFailedException extends PodException {
   const PodLoginFailedException(super.message);
+}
+
+/// The security key does not match the pod's.
+class PodWrongKeyException extends PodException {
+  const PodWrongKeyException() : super('wrong security key');
 }
