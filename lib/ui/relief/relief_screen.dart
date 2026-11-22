@@ -9,6 +9,7 @@ import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/shop_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/relief/relief_view_model.dart';
+import 'package:lilith/ui/shopping/shopping_screen.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,7 @@ abstract final class ReliefKeys {
   static const Key error = Key('relief.error');
   static const Key dismissError = Key('relief.dismissError');
   static const Key seeDoctor = Key('relief.seeDoctor');
+  static const Key shopping = Key('relief.shopping');
   static Key symptom(Symptom s) => Key('relief.symptom.${s.name}');
   static Key remedy(String title) => Key('relief.remedy.$title');
   static Key helped(String title) => Key('relief.helped.$title');
@@ -51,6 +53,14 @@ class _ReliefView extends StatelessWidget {
     final openUrl = context.read<UrlOpener>();
     return PageScaffold(
       title: 'Relief',
+      actions: [
+        TextButton.icon(
+          key: ReliefKeys.shopping,
+          onPressed: () => _openShopping(context),
+          icon: const Icon(Icons.shopping_basket_rounded),
+          label: Text(vm.toBuy == 0 ? 'List' : 'List (${vm.toBuy})'),
+        ),
+      ],
       children: [
         if (vm.error case final error?)
           NoticeBanner(
@@ -97,6 +107,19 @@ class _ReliefView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// The list is a page of its own, so it gets the repository by hand.
+  void _openShopping(BuildContext context) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: const ShoppingScreen(),
+        ),
+      ),
     );
   }
 

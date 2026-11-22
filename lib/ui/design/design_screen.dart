@@ -141,6 +141,8 @@ class _Samples extends StatelessWidget {
         decoration: InputDecoration(labelText: 'Label', hintText: 'Hint'),
       ),
       const ProblemText('What is wrong with the entry.'),
+      const StrikeableText('Something still to do', struck: false),
+      const StrikeableText('Something done', struck: true),
       const SectionHeading('Notices'),
       NoticeBanner(
         message: 'Something the user must see.',
