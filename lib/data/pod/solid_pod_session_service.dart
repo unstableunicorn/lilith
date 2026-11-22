@@ -9,20 +9,31 @@ import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:solidpod/solidpod.dart' as solid;
 
+/// solidpod configured for this app. Every call into solidpod awaits it
+/// first, so the app folder name is set before any path is built.
+final Future<void> solidPodReady = solid.setAppDirName(SolidClient.appDirName);
+
 class SolidPodSessionService implements PodSessionService {
   SolidPodSessionService(this._settings);
 
   final SettingsStore _settings;
 
+  List<String> get _redirectUris =>
+      redirectUrisFor(isWeb: kIsWeb, base: Uri.base);
+
   @override
-  Future<void> prepare(PodProvider provider) => solid.prewarmSolidAuthenticate(
-    provider.serverUrl.toString(),
-    clientId: SolidClient.clientId,
-    redirectUris: _redirectUris,
-  );
+  Future<void> prepare(PodProvider provider) async {
+    await solidPodReady;
+    await solid.prewarmSolidAuthenticate(
+      provider.serverUrl.toString(),
+      clientId: SolidClient.clientId,
+      redirectUris: _redirectUris,
+    );
+  }
 
   @override
   Future<PodSession?> restore() async {
+    await solidPodReady;
     final result = await solid.tryRestoreSession();
     if (result == null) return null;
     final webId = result[1] as String;
@@ -37,6 +48,8 @@ class SolidPodSessionService implements PodSessionService {
 
   @override
   Future<PodSession> login(PodProvider provider, BuildContext context) async {
+    await solidPodReady;
+    if (!context.mounted) throw const PodLoginCancelledException();
     // solidpod swallows its own errors and answers null for any failure,
     // the user closing the browser included.
     final result = await solid.solidAuthenticate(
@@ -51,11 +64,9 @@ class SolidPodSessionService implements PodSessionService {
     return PodSession(webId: result[1] as String, provider: provider);
   }
 
-  List<String> get _redirectUris =>
-      redirectUrisFor(isWeb: kIsWeb, base: Uri.base);
-
   @override
   Future<void> logout() async {
+    await solidPodReady;
     await solid.logoutPod();
   }
 }

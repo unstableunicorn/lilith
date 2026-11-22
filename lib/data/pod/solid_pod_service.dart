@@ -4,6 +4,7 @@
 import 'dart:io';
 
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/data/pod/solid_pod_session_service.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:solidpod/solidpod.dart' as solid;
 
@@ -15,6 +16,7 @@ class SolidPodService implements PodService {
 
   @override
   Future<String?> read(String path) async {
+    await solidPodReady;
     try {
       return await solid.readPod(path);
     } on solid.ResourceNotExistException {
@@ -30,6 +32,7 @@ class SolidPodService implements PodService {
     String content, {
     required bool encrypted,
   }) async {
+    await solidPodReady;
     try {
       await solid.writePod(
         path,

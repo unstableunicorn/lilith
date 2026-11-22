@@ -3,6 +3,7 @@
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_setup_service.dart';
 import 'package:lilith/data/pod/solid_pod_service.dart';
+import 'package:lilith/data/pod/solid_pod_session_service.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:solidpod/solidpod.dart' as solid;
 
@@ -11,6 +12,7 @@ class SolidPodSetupService implements PodSetupService {
 
   @override
   Future<PodInspection> inspect() async {
+    await solidPodReady;
     try {
       final dataDir = await solid.getDataDirPath();
       final plainUrl = await solid.getFileUrl(
@@ -35,6 +37,7 @@ class SolidPodSetupService implements PodSetupService {
 
   @override
   Future<void> setUpEncryption(String securityKey) async {
+    await solidPodReady;
     try {
       await solid.initPod(securityKey);
     } catch (e) {
@@ -44,6 +47,7 @@ class SolidPodSetupService implements PodSetupService {
 
   @override
   Future<void> setUpPlain() async {
+    await solidPodReady;
     try {
       for (final dir in await solid.generateDefaultFolders()) {
         final url = await solid.getDirUrl(dir);
@@ -64,6 +68,7 @@ class SolidPodSetupService implements PodSetupService {
 
   @override
   Future<void> unlock(String securityKey) async {
+    await solidPodReady;
     try {
       await solid.KeyManager.setSecurityKey(securityKey);
     } on solid.SecurityKeyVerificationException {
@@ -74,5 +79,8 @@ class SolidPodSetupService implements PodSetupService {
   }
 
   @override
-  Future<void> forgetKey() => solid.KeyManager.forgetSecurityKey();
+  Future<void> forgetKey() async {
+    await solidPodReady;
+    await solid.KeyManager.forgetSecurityKey();
+  }
 }

@@ -153,6 +153,19 @@ void main() {
     });
   });
 
+  testWidgets('a failed set-up shows what the pod said', (tester) async {
+    await setup.inspect();
+    pod.failSetUp = const PodAccessException('403 on /lilith/.acl');
+    await pump(tester);
+    await tester.tap(find.byKey(SetupKeys.option(DataProtection.plain)));
+    await tester.pump();
+    await tester.tap(find.byKey(SetupKeys.confirm));
+    await tester.pumpAndSettle();
+    expect(find.byKey(SetupKeys.error), findsOneWidget);
+    expect(find.byKey(SetupKeys.errorDetail), findsOneWidget);
+    expect(find.textContaining('403 on /lilith/.acl'), findsOneWidget);
+  });
+
   testWidgets('an unreachable pod offers retry', (tester) async {
     pod.failInspect = const PodUnavailableException('x');
     await setup.inspect();
