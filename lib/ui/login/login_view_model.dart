@@ -61,6 +61,7 @@ class LoginViewModel extends ChangeNotifier {
     _isCustom = true;
     _selected = PodProvider.custom(_customServer);
     _error = null;
+    _errorDetail = null;
     _prepare();
     notifyListeners();
   }
@@ -71,6 +72,7 @@ class LoginViewModel extends ChangeNotifier {
     _error = _selected == null && text.trim().isNotEmpty
         ? LoginError.invalidServer
         : null;
+    _errorDetail = null;
     _prepare();
     notifyListeners();
   }
