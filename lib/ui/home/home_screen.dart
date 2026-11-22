@@ -4,7 +4,9 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
+import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
+import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -19,6 +21,9 @@ abstract final class HomeKeys {
   static const Key prediction = Key('home.prediction');
   static const Key stats = Key('home.stats');
   static const Key forecast = Key('home.forecast');
+  static const Key fact = Key('home.fact');
+  static const Key factSource = Key('home.factSource');
+  static const Key learn = Key('home.learn');
   static const Key daysUntil = Key('home.daysUntil');
   static const Key lastPeriod = Key('home.lastPeriod');
   static const Key logPeriod = Key('home.logPeriod');
@@ -76,6 +81,16 @@ class _HomeViewState extends State<_HomeView> {
     final vm = context.watch<HomeViewModel>();
     return PageScaffold(
       title: 'Lilith',
+      actions: [
+        IconButton(
+          key: HomeKeys.learn,
+          tooltip: 'Learn',
+          icon: const Icon(Icons.menu_book_rounded),
+          onPressed: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const LearnScreen())),
+        ),
+      ],
       children: [
         if (vm.error case final error?)
           NoticeBanner(
@@ -155,6 +170,7 @@ class _HomeViewState extends State<_HomeView> {
               ],
             ),
           ),
+          _FactCard(vm: vm),
           AppCard(
             icon: Icons.edit_note_rounded,
             title: 'Your day',
@@ -324,4 +340,38 @@ class _ForecastCard extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _FactCard extends StatelessWidget {
+  const _FactCard({required this.vm});
+
+  final HomeViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final fact = vm.fact;
+    final openUrl = context.read<UrlOpener>();
+    return AppCard(
+      key: HomeKeys.fact,
+      tone: CardTone.callout,
+      icon: Icons.auto_awesome_rounded,
+      title: "Today's health fact",
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(fact.text),
+          const SizedBox(height: Space.sm),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ActionChip(
+              key: HomeKeys.factSource,
+              avatar: const Icon(Icons.open_in_new_rounded),
+              label: Text(fact.source.name),
+              onPressed: () => openUrl(Uri.parse(fact.source.url)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

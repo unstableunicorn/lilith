@@ -2,6 +2,7 @@
 // and the two quick actions, a period start and a temperature.
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/content/period_facts.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
@@ -9,6 +10,7 @@ import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/learn/learn_view_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel(
@@ -44,6 +46,8 @@ class HomeViewModel extends ChangeNotifier {
     periods: _repo.data.periods,
     today: today,
   );
+
+  PeriodFact get fact => factOfTheDay(today);
 
   SymptomForecast get forecast => symptomPredictor.predict(
     logs: _repo.data.dailyLogs,

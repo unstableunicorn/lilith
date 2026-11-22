@@ -7,6 +7,8 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/learn/learn_screen.dart';
+import 'package:lilith/ui/learn/learn_view_model.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -22,6 +24,7 @@ void main() {
   late FakePodService pod;
   late HealthRepository health;
   late ShellTabs tabs;
+  late RecordingUrlOpener urls;
 
   setUp(() async {
     auth = FakePodSessionService();
@@ -29,6 +32,7 @@ void main() {
     pod = FakePodService();
     health = HealthRepository(pod, protection: DataProtection.encrypted);
     tabs = ShellTabs();
+    urls = RecordingUrlOpener();
   });
 
   // The wait indicator animates forever, so a test that expects it cannot settle.
@@ -46,6 +50,7 @@ void main() {
         session: session,
         health: health,
         tabs: tabs,
+        openUrl: urls.call,
         child: HomeScreen(now: () => today),
       ),
     );
@@ -66,6 +71,17 @@ void main() {
 
   group('once loaded', () {
     setUp(() => health.load());
+
+    testWidgets('shows the fact of the day and opens Learn', (tester) async {
+      await pump(tester);
+      expect(find.byKey(HomeKeys.fact), findsOneWidget);
+      expect(find.text(factOfTheDay(today).text), findsOneWidget);
+      await tester.tap(find.byKey(HomeKeys.factSource));
+      expect(urls.opened, [Uri.parse(factOfTheDay(today).source.url)]);
+      await tester.tap(find.byKey(HomeKeys.learn));
+      await tester.pumpAndSettle();
+      expect(find.byKey(LearnKeys.question), findsOneWidget);
+    });
 
     testWidgets('a forecast card appears once past cycles allow one', (
       tester,
