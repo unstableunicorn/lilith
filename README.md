@@ -18,6 +18,9 @@ it with two. Features
 are being ported one at a time, each with tests. Nothing here is medical
 advice or a contraceptive tool.
 
+The web app is at [lilith.unstableunicorn.dev](https://lilith.unstableunicorn.dev),
+deployed from `main`.
+
 ## Run it
 
 ```bash

@@ -1,0 +1,44 @@
+# Deploy the web app to lilith.unstableunicorn.dev on every push to main.
+# The build is scripts/ci.sh --only web; wrangler (pinned in mise.toml) uploads it.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  MISE_YES: "1"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://lilith.unstableunicorn.dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tools
+        run: |
+          scripts/install-mise.sh /usr/local/bin
+          mise trust
+          mise install flutter node npm:wrangler
+      - name: Build
+        run: PATH="$HOME/.local/share/mise/shims:$PATH" bash scripts/ci.sh --only web
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: PATH="$HOME/.local/share/mise/shims:$PATH" wrangler deploy
