@@ -26,10 +26,13 @@ abstract final class ReceivedKeys {
 }
 
 class ReceivedScreen extends StatelessWidget {
-  const ReceivedScreen({this.now = DateTime.now, super.key});
+  const ReceivedScreen({this.now = DateTime.now, this.prefill, super.key});
 
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
+
+  /// An invite to start the form from.
+  final ShareInvite? prefill;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
@@ -37,6 +40,7 @@ class ReceivedScreen extends StatelessWidget {
       context.read<ReceivedShareRepository>(),
       ownWebId: context.read<SessionRepository>().session?.webId ?? '',
       now: now,
+      prefill: prefill,
     ),
     child: _ReceivedView(now: now),
   );

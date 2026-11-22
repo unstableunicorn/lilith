@@ -132,4 +132,16 @@ void main() {
       'Shared with 3 people',
     );
   });
+
+  test('the invite link carries the sharer and the code', () async {
+    vm.setLabel('Alex');
+    vm.setWebId(wife);
+    await vm.share();
+    final link = vm.inviteLink(vm.shares.single);
+    expect(link.origin, 'https://lilith.unstableunicorn.dev');
+    expect(
+      ShareInvite.fromUri(link),
+      ShareInvite(sharerWebId: me, code: vm.shares.single.code),
+    );
+  });
 }

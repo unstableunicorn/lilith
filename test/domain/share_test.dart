@@ -10,6 +10,7 @@ import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
   receivedShareTests();
+  shareInviteTests();
   const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   final may1 = DateTime(2026, 5, 1);
 
@@ -199,6 +200,38 @@ void receivedShareTests() {
       expect(d, isNot(HealthData.empty));
       expect(d.hasData, isFalse);
       expect(sharedView(d).received, isEmpty);
+    });
+  });
+}
+
+void shareInviteTests() {
+  const owner =
+      'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
+  final app = Uri.parse('https://lilith.unstableunicorn.dev/');
+
+  group('ShareInvite', () {
+    test('round-trips through a link, with and without a code', () {
+      const full = ShareInvite(sharerWebId: owner, code: 'ABCD-EFGH-JKMN-PQRS');
+      final link = full.toUri(app);
+      expect(link.host, 'lilith.unstableunicorn.dev');
+      expect(link.queryParameters['share'], owner);
+      expect(link.queryParameters['code'], 'ABCD-EFGH-JKMN-PQRS');
+      expect(ShareInvite.fromUri(link), full);
+      const plain = ShareInvite(sharerWebId: owner);
+      expect(plain.toUri(app).queryParameters.containsKey('code'), isFalse);
+      expect(ShareInvite.fromUri(plain.toUri(app)), plain);
+    });
+
+    test('a link without a sharer is no invite', () {
+      expect(ShareInvite.fromUri(app), isNull);
+      expect(ShareInvite.fromUri(Uri.parse('$app?code=X')), isNull);
+      expect(ShareInvite.fromUri(Uri.parse('$app?share=')), isNull);
+      expect(
+        ShareInvite.fromUri(
+          app.replace(queryParameters: {'share': owner, 'code': ''}),
+        ),
+        const ShareInvite(sharerWebId: owner),
+      );
     });
   });
 }

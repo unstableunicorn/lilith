@@ -105,4 +105,19 @@ void main() {
       expect(describeReceivedError(e), isNotEmpty);
     }
   });
+
+  test('starts from an invite when given one', () {
+    final filled = ReceivedViewModel(
+      repo,
+      ownWebId: me,
+      now: () => may1,
+      prefill: ShareInvite(sharerWebId: owner, code: key.code),
+    );
+    expect(filled.webId, owner);
+    expect(filled.code, key.code);
+    expect(filled.webIdProblem, isNull);
+    expect(filled.canAdd, isFalse);
+    filled.setLabel('Elric');
+    expect(filled.canAdd, isTrue);
+  });
 }

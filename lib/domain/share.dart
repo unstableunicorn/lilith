@@ -149,3 +149,43 @@ class ReceivedShare {
   @override
   int get hashCode => Object.hash(sharerWebId, label, addedOn, code);
 }
+
+/// What a recipient needs to add a share: the sharer's WebID and, for an
+/// encrypted copy, the code. Travels as a link, shown as a QR code.
+class ShareInvite {
+  const ShareInvite({required this.sharerWebId, this.code});
+
+  /// The invite in [uri]'s query, or null when there is none.
+  static ShareInvite? fromUri(Uri uri) {
+    final sharer = uri.queryParameters[sharerParam]?.trim();
+    if (sharer == null || sharer.isEmpty) return null;
+    final code = uri.queryParameters[codeParam]?.trim();
+    return ShareInvite(
+      sharerWebId: sharer,
+      code: code == null || code.isEmpty ? null : code,
+    );
+  }
+
+  static const String sharerParam = 'share';
+  static const String codeParam = 'code';
+
+  final String sharerWebId;
+  final String? code;
+
+  /// The link to the app at [base] that carries this invite.
+  Uri toUri(Uri base) => base.replace(
+    queryParameters: {
+      sharerParam: sharerWebId,
+      if (code != null) codeParam: code,
+    },
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is ShareInvite &&
+      other.sharerWebId == sharerWebId &&
+      other.code == code;
+
+  @override
+  int get hashCode => Object.hash(sharerWebId, code);
+}

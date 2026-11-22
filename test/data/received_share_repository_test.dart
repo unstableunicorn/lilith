@@ -13,9 +13,11 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/share.dart';
 
 import '../fakes/fake_pod_service.dart';
+import '../fakes/fake_settings_store.dart';
 import '../fakes/fake_share_reader.dart';
 
 void main() {
+  inviteTests();
   const me = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   const owner =
       'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
@@ -246,5 +248,80 @@ void main() {
     expect(ReceivedShareRepository.isEnvelope('a..b.c.d'), isTrue);
     expect(ReceivedShareRepository.isEnvelope(' a..b.c.d\n'), isTrue);
     expect(ReceivedShareRepository.isEnvelope('a.b.c'), isFalse);
+  });
+}
+
+void inviteTests() {
+  const me = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
+  const owner =
+      'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
+  final ownerRoot = Uri.parse(
+    'https://solid.unstableunicorn.dev/unstableunicorn/',
+  );
+  const codec = HealthDocumentCodec();
+  final may1 = DateTime(2026, 5, 1);
+  const invite = ShareInvite(sharerWebId: owner);
+
+  late FakeSettingsStore settings;
+  late FakeShareReader reader;
+  late ReceivedShareRepository repo;
+
+  setUp(() async {
+    final health = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await health.load();
+    settings = FakeSettingsStore()..invite = invite;
+    reader = FakeShareReader()..roots[owner] = ownerRoot;
+    reader.documents[SharePlan.forRecipient(me).documentUrl(ownerRoot)] = codec
+        .encode(HealthData.empty);
+    repo = ReceivedShareRepository(
+      health,
+      reader,
+      ownWebId: me,
+      settings: settings,
+    );
+  });
+
+  test('has no invite until loaded, then the stored one', () async {
+    expect(repo.pendingInvite, isNull);
+    await repo.loadInvite();
+    expect(repo.pendingInvite, invite);
+  });
+
+  test('clearing forgets it here and in settings', () async {
+    await repo.loadInvite();
+    await repo.clearInvite();
+    expect(repo.pendingInvite, isNull);
+    expect(settings.invite, isNull);
+  });
+
+  test(
+    'adding the invited sharer clears the invite; another does not',
+    () async {
+      await repo.loadInvite();
+      await repo.add(
+        sharerWebId: '${owner}other',
+        label: 'O',
+        code: null,
+        today: may1,
+      );
+      expect(repo.pendingInvite, invite);
+      await repo.add(sharerWebId: owner, label: 'E', code: null, today: may1);
+      expect(repo.pendingInvite, isNull);
+      expect(settings.invite, isNull);
+    },
+  );
+
+  test('without settings there is never an invite', () async {
+    final bare = ReceivedShareRepository(
+      HealthRepository(FakePodService(), protection: DataProtection.plain),
+      reader,
+      ownWebId: me,
+    );
+    await bare.loadInvite();
+    expect(bare.pendingInvite, isNull);
+    await bare.clearInvite();
   });
 }
