@@ -72,6 +72,26 @@ void main() {
       expect(auth.logins, [PodProvider.unstableUnicorn]);
     });
 
+    testWidgets('remembers the provider before the browser leaves', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const SizedBox());
+      final context = tester.element(find.byType(SizedBox));
+      auth.redirects = true;
+      final done = await repo.login(PodProvider.unstableUnicorn, context);
+      expect(done, isFalse);
+      expect(settings.provider, PodProvider.unstableUnicorn);
+      expect(repo.session, isNull);
+      expect(repo.isLoggingIn, isTrue, reason: 'the page is on its way out');
+    });
+
+    testWidgets('a completed login is done', (tester) async {
+      await tester.pumpWidget(const SizedBox());
+      final context = tester.element(find.byType(SizedBox));
+      expect(await repo.login(PodProvider.unstableUnicorn, context), isTrue);
+      expect(repo.isLoggingIn, isFalse);
+    });
+
     testWidgets('a failed login leaves no session and rethrows', (
       tester,
     ) async {
