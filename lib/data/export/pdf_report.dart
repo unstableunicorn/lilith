@@ -41,7 +41,9 @@ class ReportChart {
   final List<int> xTicks;
   final List<double> yTicks;
 
-  String xLabel(num x) => isoDay(addDays(firstDay, x.toInt()));
+  /// The date at [x], or nothing past the last reading.
+  String xLabel(num x) =>
+      x > points.last.$1 ? '' : isoDay(addDays(firstDay, x.toInt()));
 }
 
 /// Everything the report says, in order.
@@ -127,7 +129,7 @@ List<(String, String)> _summary(
       ),
     ('Days in this export', '${rows.length}'),
     (
-      'Temperature readings in this export',
+      'Readings in this export',
       '${rows.where((r) => r.reading != null).length}',
     ),
   ];
@@ -182,7 +184,8 @@ ReportChart? _chart(List<ExportRow> rows) {
   ];
   final temps = points.map((p) => p.$2);
   final low = (temps.reduce((a, b) => a < b ? a : b) * 2).floor() / 2;
-  final high = (temps.reduce((a, b) => a > b ? a : b) * 2).ceil() / 2;
+  var high = (temps.reduce((a, b) => a > b ? a : b) * 2).ceil() / 2;
+  if (high == low) high += 0.5;
   final span = points.last.$1;
   final step = [
     1,
@@ -244,6 +247,7 @@ class PdfReport {
             style: const pw.TextStyle(fontSize: 9),
           ),
         ),
+        maxPages: 200,
         build: (context) => [
           pw.Header(level: 0, text: content.title),
           pw.Text(
@@ -251,30 +255,37 @@ class PdfReport {
             'Skin temperature, period starts and symptoms logged by the '
             'patient; the prediction is the app\'s, not a diagnosis.',
           ),
-          _section('Summary', _pairs(content.summary)),
-          if (content.profile.isNotEmpty)
-            _section('Health profile', _pairs(content.profile)),
-          if (content.cycles.isNotEmpty)
-            _section(
-              'Cycles',
-              _table(
-                ['Started', 'Length (days)'],
-                [
-                  for (final c in content.cycles)
-                    [isoDay(c.start), c.length?.toString() ?? 'current'],
-                ],
-              ),
+          pw.Header(level: 1, text: 'Summary'),
+          _pairs(content.summary),
+          if (content.profile.isNotEmpty) ...[
+            pw.Header(level: 1, text: 'Health profile'),
+            _pairs(content.profile),
+          ],
+          if (content.cycles.isNotEmpty) ...[
+            pw.Header(level: 1, text: 'Cycles'),
+            _table(
+              ['Started', 'Length (days)'],
+              [
+                for (final c in content.cycles)
+                  [isoDay(c.start), c.length?.toString() ?? 'current'],
+              ],
             ),
+          ],
           if (content.chart case final chart?)
-            _section('Temperature (°C)', _chartWidget(chart)),
-          if (content.rows.isNotEmpty)
-            _section(
-              'Logged days',
-              _table(
-                ['Date', '°C', 'Period', 'Flow', 'Pain', 'Symptoms'],
-                [for (final r in content.rows) _dayCells(r)],
-              ),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Header(level: 1, text: 'Temperature (°C)'),
+                _chartWidget(chart),
+              ],
             ),
+          if (content.rows.isNotEmpty) ...[
+            pw.Header(level: 1, text: 'Logged days'),
+            _table(
+              ['Date', '°C', 'Period', 'Flow', 'Pain', 'Symptoms'],
+              [for (final r in content.rows) _dayCells(r)],
+            ),
+          ],
         ],
       ),
     );
@@ -284,14 +295,6 @@ class PdfReport {
       bytes: Uint8List.fromList(await doc.save()),
     );
   }
-
-  pw.Widget _section(String title, pw.Widget body) => pw.Column(
-    crossAxisAlignment: pw.CrossAxisAlignment.start,
-    children: [
-      pw.Header(level: 1, text: title),
-      body,
-    ],
-  );
 
   pw.Widget _pairs(List<(String, String)> pairs) => pw.Table(
     columnWidths: const {0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(3)},

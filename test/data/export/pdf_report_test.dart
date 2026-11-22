@@ -67,7 +67,7 @@ void main() {
       expect(summary['Last period started'], '2026-05-24');
       expect(summary['Predicted next period'], contains('2026-06-'));
       expect(summary['Days in this export'], '20');
-      expect(summary['Temperature readings in this export'], '17');
+      expect(summary['Readings in this export'], '17');
     });
 
     test(
@@ -120,6 +120,20 @@ void main() {
       expect(chart.xTicks.last, greaterThanOrEqualTo(16));
       expect(chart.xTicks.length, lessThanOrEqualTo(9));
       expect(chart.xLabel(0), '2026-05-24');
+      expect(chart.xLabel(16), '2026-06-09');
+      expect(chart.xLabel(17), '');
+    });
+
+    test('identical readings still get a two-tick y axis', () {
+      final c = reportContent(
+        HealthData.empty.withReadings([
+          TemperatureReading(date: DateTime(2026, 6, 1), celsius: 36.5),
+          TemperatureReading(date: DateTime(2026, 6, 2), celsius: 36.5),
+        ]),
+        range: ExportRange.all,
+        today: today,
+      );
+      expect(c.chart!.yTicks, [36.5, 37.0]);
     });
 
     test('a single reading draws no chart', () {
@@ -169,6 +183,28 @@ void main() {
         reportContent(HealthData.empty, range: ExportRange.all, today: today),
       );
       expect(latin1.decode(file.bytes), startsWith('%PDF-'));
+    });
+
+    test('many logged days run over several pages', () async {
+      var data = HealthData.empty;
+      for (var i = 0; i < 200; i++) {
+        final day = DateTime(2025, 11, 1 + i);
+        data = data
+            .withReading(TemperatureReading(date: day, celsius: 36.5))
+            .withDailyLog(
+              DailyLog(
+                date: day,
+                flow: FlowIntensity.light,
+                symptoms: {Symptom.cramps, Symptom.headache},
+                painLevel: 3,
+              ),
+            );
+      }
+      final file = await const PdfReport(compress: false)
+          .build(reportContent(data, range: ExportRange.all, today: today));
+      final pages = RegExp(r'/Type/Page\b')
+          .allMatches(latin1.decode(file.bytes));
+      expect(pages.length, greaterThan(2));
     });
 
     test('the bundled font renders too', () async {
