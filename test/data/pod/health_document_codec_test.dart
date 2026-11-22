@@ -50,6 +50,7 @@ void main() {
         'remedyFeedback',
         'shopping',
         'profile',
+        'shares',
       ]),
     );
   });
@@ -136,7 +137,13 @@ void main() {
       expect(got['dailyLogs'], isEmpty);
       expect(got['remedyFeedback'], isEmpty);
       expect(got['shopping'], isEmpty);
+      expect(got['shares'], isEmpty);
       expect(got['profile'], isNull);
+    });
+
+    test('steps version 3 up by adding empty shares and nothing else', () {
+      final got = migrate({'version': 3, 'shopping': <Object>[]});
+      expect(got, {'version': 4, 'shopping': <Object>[], 'shares': <Object>[]});
     });
 
     test('leaves the current version alone', () {

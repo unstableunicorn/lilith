@@ -7,6 +7,7 @@ import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
@@ -31,6 +32,7 @@ class UnsupportedDocumentVersionException implements Exception {
 /// Brings [doc] up to [HealthDocumentCodec.currentVersion], one step at a time.
 ///
 /// A document without a version is version 1. Version 2 was never written.
+/// Version 4 added the shares.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -40,6 +42,7 @@ Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   while (version < HealthDocumentCodec.currentVersion) {
     current = switch (version) {
       1 => _v1ToV3(current),
+      3 => _v3ToV4(current),
       _ => throw UnsupportedDocumentVersionException(version),
     };
     version = current['version'] as int;
@@ -55,11 +58,17 @@ Map<String, dynamic> _v1ToV3(Map<String, dynamic> doc) => {
   'shopping': <Object>[],
 };
 
+Map<String, dynamic> _v3ToV4(Map<String, dynamic> doc) => {
+  ...doc,
+  'version': 4,
+  'shares': <Object>[],
+};
+
 /// Encodes and decodes [HealthData] as the pod document.
 class HealthDocumentCodec {
   const HealthDocumentCodec();
 
-  static const int currentVersion = 3;
+  static const int currentVersion = 4;
 
   String encode(HealthData data) => jsonEncode({
     'version': currentVersion,
@@ -69,6 +78,7 @@ class HealthDocumentCodec {
     'remedyFeedback': [for (final f in data.remedyFeedback) f.toJson()],
     'shopping': [for (final s in data.shopping) s.toJson()],
     'profile': data.profile.toJson(),
+    'shares': [for (final s in data.shares) s.toJson()],
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -87,6 +97,7 @@ class HealthDocumentCodec {
           RemedyFeedback.fromJson,
         ),
         shopping: _section(doc, 'shopping', ShoppingItem.fromJson),
+        shares: _section(doc, 'shares', Share.fromJson),
         profile: profile is Map<String, dynamic>
             ? HealthProfile.fromJson(profile)
             : null,
