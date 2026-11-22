@@ -30,6 +30,7 @@ class LoginViewModel extends ChangeNotifier {
   String _customServer = '';
   bool _busy = false;
   LoginError? _error;
+  String? _errorDetail;
 
   List<PodProvider> get builtIn => PodProvider.builtIn;
 
@@ -39,6 +40,9 @@ class LoginViewModel extends ChangeNotifier {
   String get customServer => _customServer;
   bool get isBusy => _busy;
   LoginError? get error => _error;
+
+  /// What the library said when the login failed, for a bug report.
+  String? get errorDetail => _errorDetail;
   bool get canLogin => _selected != null && !_busy;
 
   /// Where the selected provider lets the user manage their data.
@@ -48,6 +52,7 @@ class LoginViewModel extends ChangeNotifier {
     _isCustom = false;
     _selected = provider;
     _error = null;
+    _errorDetail = null;
     _prepare();
     notifyListeners();
   }
@@ -56,6 +61,7 @@ class LoginViewModel extends ChangeNotifier {
     _isCustom = true;
     _selected = PodProvider.custom(_customServer);
     _error = null;
+    _errorDetail = null;
     _prepare();
     notifyListeners();
   }
@@ -66,6 +72,7 @@ class LoginViewModel extends ChangeNotifier {
     _error = _selected == null && text.trim().isNotEmpty
         ? LoginError.invalidServer
         : null;
+    _errorDetail = null;
     _prepare();
     notifyListeners();
   }
@@ -81,17 +88,20 @@ class LoginViewModel extends ChangeNotifier {
     if (provider == null || _busy) return;
     _busy = true;
     _error = null;
+    _errorDetail = null;
     notifyListeners();
     try {
       _busy = !await _session.login(provider, context);
     } on PodLoginCancelledException {
       _error = LoginError.cancelled;
       _busy = false;
-    } on PodUnavailableException {
+    } on PodUnavailableException catch (e) {
       _error = LoginError.unreachable;
+      _errorDetail = e.message;
       _busy = false;
-    } on PodException {
+    } on PodException catch (e) {
       _error = LoginError.failed;
+      _errorDetail = e.message;
       _busy = false;
     }
     notifyListeners();

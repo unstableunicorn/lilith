@@ -17,6 +17,7 @@ abstract final class LoginKeys {
   static const Key login = Key('login.login');
   static const Key busy = Key('login.busy');
   static const Key error = Key('login.error');
+  static const Key errorDetail = Key('login.errorDetail');
   static const Key manage = Key('login.manage');
 }
 
@@ -84,6 +85,12 @@ class _LoginView extends StatelessWidget {
         const SizedBox(height: Space.lg),
         if (vm.error case final error?)
           ProblemText(key: LoginKeys.error, _describe(error)),
+        if (vm.errorDetail case final detail?)
+          Text(
+            key: LoginKeys.errorDetail,
+            detail,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         if (vm.isBusy)
           const BusyIndicator(key: LoginKeys.busy, label: 'Logging in'),
         FilledButton(
