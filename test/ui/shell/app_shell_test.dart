@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/history/history_screen.dart';
@@ -18,6 +19,7 @@ import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
+import '../../fakes/fake_share_service.dart';
 import '../../harness.dart';
 
 void main() {
@@ -48,6 +50,11 @@ void main() {
         session: session,
         health: health,
         setup: SetupRepository(FakePodSetupService()),
+        shares: ShareRepository(
+          health,
+          FakeShareService(),
+          protection: DataProtection.encrypted,
+        ),
         child: AppShell(now: () => today),
       ),
     );
