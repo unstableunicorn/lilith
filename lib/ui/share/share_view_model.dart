@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/pod/solid_client.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -24,6 +25,7 @@ class ShareViewModel extends ChangeNotifier {
   String _label = '';
   String _webId = '';
   ShareDuration _duration = ShareDuration.recommended;
+  DateTime? _customEnd;
   ShareContent _content = ShareContent.cycleData;
   ExportRange _range = ExportRange.sixMonths;
   Share? _created;
@@ -37,6 +39,15 @@ class ShareViewModel extends ChangeNotifier {
   String get label => _label;
   String get webId => _webId;
   ShareDuration get duration => _duration;
+
+  /// The chosen last day, when the duration is custom.
+  DateTime? get customEnd => _customEnd;
+
+  /// The first day a custom end may be.
+  DateTime get earliestEnd => ShareDuration.earliestEnd(now());
+
+  /// True when a custom duration still lacks its day.
+  bool get needsCustomEnd => _duration.isCustom && _customEnd == null;
   ShareContent get content => _content;
 
   /// How far back a report reaches; only asked for a report.
@@ -63,11 +74,19 @@ class ShareViewModel extends ChangeNotifier {
   }
 
   bool get canShare =>
-      _label.trim().isNotEmpty && webIdProblem == null && !isBusy;
+      _label.trim().isNotEmpty &&
+      webIdProblem == null &&
+      !needsCustomEnd &&
+      !isBusy;
 
   void setLabel(String text) => _edit(() => _label = text);
   void setWebId(String text) => _edit(() => _webId = text);
   void setDuration(ShareDuration d) => _edit(() => _duration = d);
+
+  /// Keeps a day no earlier than tomorrow; an earlier one is ignored.
+  void setCustomEnd(DateTime day) => _edit(() {
+    if (!dateOnly(day).isBefore(earliestEnd)) _customEnd = dateOnly(day);
+  });
   void setContent(ShareContent c) => _edit(() => _content = c);
   void setRange(ExportRange r) => _edit(() => _range = r);
 
@@ -78,6 +97,7 @@ class ShareViewModel extends ChangeNotifier {
       label: _label,
       duration: _duration,
       today: now(),
+      customEnd: _customEnd,
       content: _content,
       range: _range,
     );
@@ -87,6 +107,7 @@ class ShareViewModel extends ChangeNotifier {
     _label = '';
     _webId = '';
     _duration = ShareDuration.recommended;
+    _customEnd = null;
     _content = ShareContent.cycleData;
     _range = ExportRange.sixMonths;
     notifyListeners();

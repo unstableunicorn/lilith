@@ -87,6 +87,26 @@ void main() {
     test('recommends 30 days', () {
       expect(ShareDuration.recommended, ShareDuration.thirtyDays);
     });
+
+    test('a custom duration ends on the given day, else has no end', () {
+      expect(ShareDuration.custom.isCustom, isTrue);
+      expect(ShareDuration.custom.endFrom(may1), isNull);
+      expect(
+        ShareDuration.custom.endFrom(
+          may1,
+          customEnd: DateTime(2026, 6, 15, 13),
+        ),
+        DateTime(2026, 6, 15),
+      );
+      expect(
+        ShareDuration.earliestEnd(DateTime(2026, 5, 1, 23)),
+        DateTime(2026, 5, 2),
+      );
+      expect(
+        ShareDuration.thirtyDays.endFrom(may1, customEnd: DateTime(2030)),
+        DateTime(2026, 5, 31),
+      );
+    });
   });
 
   group('Share', () {
