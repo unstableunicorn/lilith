@@ -4,6 +4,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:flutter/foundation.dart';
+import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/login/login_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -19,15 +21,20 @@ abstract final class LoginKeys {
   static const Key error = Key('login.error');
   static const Key errorDetail = Key('login.errorDetail');
   static const Key manage = Key('login.manage');
+  static const Key androidApp = Key('login.androidApp');
 }
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({this.offerAndroidApp = kIsWeb, super.key});
+
+  /// Whether to point at the Android download: on the web, where the
+  /// visitor may be on a phone, not inside the Android app itself.
+  final bool offerAndroidApp;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
     create: (context) => LoginViewModel(context.read<SessionRepository>()),
-    child: const _LoginView(),
+    child: _LoginView(offerAndroidApp: offerAndroidApp),
   );
 }
 
@@ -35,7 +42,9 @@ class LoginScreen extends StatelessWidget {
 const Object _other = 'other';
 
 class _LoginView extends StatelessWidget {
-  const _LoginView();
+  const _LoginView({required this.offerAndroidApp});
+
+  final bool offerAndroidApp;
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +113,15 @@ class _LoginView extends StatelessWidget {
             onPressed: () => openUrl(url),
             child: const Text('Manage your pod and data'),
           ),
+        if (offerAndroidApp) ...[
+          const SizedBox(height: Space.lg),
+          TextButton.icon(
+            key: LoginKeys.androidApp,
+            onPressed: () => openUrl(AppLinks.androidApk),
+            icon: const Icon(Icons.android_rounded),
+            label: const Text('Get the Android app'),
+          ),
+        ],
       ],
     );
   }
