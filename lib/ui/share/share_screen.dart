@@ -7,6 +7,7 @@ import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/share/share_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
@@ -25,6 +26,8 @@ abstract final class ShareKeys {
   static const Key webIdProblem = Key('share.webIdProblem');
   static const Key submit = Key('share.submit');
   static Key duration(ShareDuration d) => Key('share.duration.${d.name}');
+  static const Key customEnd = Key('share.customEnd');
+  static const Key customEndMissing = Key('share.customEndMissing');
   static Key content(ShareContent c) => Key('share.content.${c.name}');
   static Key range(ExportRange r) => Key('share.range.${r.name}');
   static const Key createdLink = Key('share.createdLink');
@@ -191,6 +194,23 @@ class _ShareViewState extends State<_ShareView> {
               ),
           ],
         ),
+        if (vm.duration.isCustom) ...[
+          const SizedBox(height: Space.sm),
+          TextButton.icon(
+            key: ShareKeys.customEnd,
+            onPressed: () => _pickEnd(context, vm),
+            icon: const Icon(Icons.event_rounded),
+            label: Text(switch (vm.customEnd) {
+              final d? => 'Until ${formatDay(d)}',
+              null => 'Pick the last day',
+            }),
+          ),
+          if (vm.needsCustomEnd)
+            const ProblemText(
+              key: ShareKeys.customEndMissing,
+              'Pick the last day the share should be readable.',
+            ),
+        ],
         const SizedBox(height: Space.xl),
         FilledButton.icon(
           key: ShareKeys.submit,
@@ -200,6 +220,18 @@ class _ShareViewState extends State<_ShareView> {
         ),
       ],
     );
+  }
+
+  Future<void> _pickEnd(BuildContext context, ShareViewModel vm) async {
+    final first = vm.earliestEnd;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: vm.customEnd ?? first,
+      firstDate: first,
+      lastDate: DateTime(first.year + 2, first.month, first.day),
+      helpText: 'Last day the share is readable',
+    );
+    if (picked != null) vm.setCustomEnd(picked);
   }
 
   String _describe(ShareError error) => switch (error) {

@@ -188,4 +188,22 @@ void main() {
       'A PDF report and CSV, everything',
     );
   });
+
+  test('a custom end needs a day no earlier than tomorrow', () async {
+    vm.setLabel('Alex');
+    vm.setWebId(wife);
+    vm.setDuration(ShareDuration.custom);
+    expect(vm.needsCustomEnd, isTrue);
+    expect(vm.canShare, isFalse);
+    expect(vm.earliestEnd, DateTime(2026, 5, 2));
+    vm.setCustomEnd(DateTime(2026, 5, 1));
+    expect(vm.customEnd, isNull);
+    vm.setCustomEnd(DateTime(2026, 6, 15, 9));
+    expect(vm.customEnd, DateTime(2026, 6, 15));
+    expect(vm.canShare, isTrue);
+    await vm.share();
+    expect(vm.created!.expiresOn, DateTime(2026, 6, 15));
+    expect(vm.customEnd, isNull);
+    expect(vm.duration, ShareDuration.recommended);
+  });
 }

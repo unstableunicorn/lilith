@@ -247,4 +247,32 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
   });
+
+  group('a custom end date', () {
+    setUp(() => setUpWith(DataProtection.plain));
+
+    testWidgets("must be picked before sharing, then is the share's end", (
+      tester,
+    ) async {
+      await pump(tester);
+      await fillIn(tester);
+      await tester.tap(find.byKey(ShareKeys.duration(ShareDuration.custom)));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.customEndMissing), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(find.byKey(ShareKeys.submit)).onPressed,
+        isNull,
+      );
+      await expectAccessible(tester);
+      await tester.tap(find.byKey(ShareKeys.customEnd));
+      await tester.pumpAndSettle();
+      expect(find.text('Last day the share is readable'), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.customEndMissing), findsNothing);
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      expect(shares.shares.single.expiresOn, DateTime(2026, 5, 2));
+    });
+  });
 }

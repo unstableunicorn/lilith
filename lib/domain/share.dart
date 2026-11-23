@@ -29,7 +29,10 @@ HealthData sharedView(HealthData data) => HealthData(
 enum ShareDuration {
   thirtyDays('30 days', 30),
   ninetyDays('90 days', 90),
-  untilRevoked('Until I end it', null);
+  untilRevoked('Until I end it', null),
+
+  /// A day of the user's choosing, given alongside the duration.
+  custom('Choose a date', null);
 
   ShareDuration(this.label, this.days);
   final String label;
@@ -37,9 +40,17 @@ enum ShareDuration {
 
   static const ShareDuration recommended = ShareDuration.thirtyDays;
 
-  /// The last day the share is readable, or null for no end.
-  DateTime? endFrom(DateTime today) =>
-      days == null ? null : addDays(dateOnly(today), days!);
+  bool get isCustom => this == ShareDuration.custom;
+
+  /// The last day the share is readable, or null for no end. A custom
+  /// duration takes its day from [customEnd].
+  DateTime? endFrom(DateTime today, {DateTime? customEnd}) {
+    if (isCustom) return customEnd == null ? null : dateOnly(customEnd);
+    return days == null ? null : addDays(dateOnly(today), days!);
+  }
+
+  /// The first day a custom end may be: tomorrow.
+  static DateTime earliestEnd(DateTime today) => addDays(dateOnly(today), 1);
 }
 
 /// What a share's folder holds.

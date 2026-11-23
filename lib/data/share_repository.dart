@@ -75,6 +75,7 @@ class ShareRepository extends ChangeNotifier {
     required String label,
     required ShareDuration duration,
     required DateTime today,
+    DateTime? customEnd,
     ShareContent content = ShareContent.cycleData,
     ExportRange? range,
   }) => _run(() async {
@@ -82,7 +83,7 @@ class ShareRepository extends ChangeNotifier {
       recipientWebId: recipientWebId.trim(),
       label: label.trim(),
       createdOn: today,
-      expiresOn: duration.endFrom(today),
+      expiresOn: duration.endFrom(today, customEnd: customEnd),
       code:
           protection == DataProtection.encrypted &&
               content == ShareContent.cycleData
