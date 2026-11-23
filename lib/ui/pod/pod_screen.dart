@@ -56,6 +56,7 @@ class PodScreen extends StatelessWidget {
     }
     return PageScaffold(
       title: 'Your pod',
+      actions: const [AppMenu()],
       children: [
         AppCard(
           icon: Icons.person_rounded,

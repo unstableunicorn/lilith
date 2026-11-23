@@ -2,6 +2,7 @@
 // restyle a piece. A look a piece lacks is a change to the piece.
 
 export 'app_card.dart';
+export 'app_menu.dart';
 export 'busy_indicator.dart';
 export 'label_badge.dart';
 export 'notice_banner.dart';

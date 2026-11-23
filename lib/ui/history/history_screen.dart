@@ -43,6 +43,7 @@ class _HistoryView extends StatelessWidget {
     String date(DateTime d) => formatShortDate(d, today: today);
     return PageScaffold(
       title: 'History',
+      actions: const [AppMenu()],
       children: [
         if (vm.error case final error?)
           NoticeBanner(

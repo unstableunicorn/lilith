@@ -6,6 +6,7 @@ import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
@@ -25,6 +26,7 @@ import '../../fakes/fake_share_service.dart';
 import '../../harness.dart';
 
 void main() {
+  appMenuTests();
   final today = DateTime(2026, 6, 10);
   late SessionRepository session;
   late HealthRepository health;
@@ -108,5 +110,68 @@ void main() {
     await tester.tap(find.byKey(HomeKeys.logDay));
     await tester.pumpAndSettle();
     expect(selected(tester), ShellTab.log.index);
+  });
+}
+
+void appMenuTests() {
+  final today = DateTime(2026, 6, 10);
+  late SessionRepository session;
+  late HealthRepository health;
+
+  setUp(() async {
+    session = SessionRepository(FakePodSessionService(), FakeSettingsStore());
+    health = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.encrypted,
+    );
+    await health.load();
+  });
+
+  testWidgets('every tab has the menu, and Log out ends the session', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        health: health,
+        setup: SetupRepository(FakePodSetupService()),
+        shares: ShareRepository(
+          health,
+          FakeShareService(),
+          protection: DataProtection.encrypted,
+        ),
+        received: ReceivedShareRepository(
+          health,
+          FakeShareReader(),
+          ownWebId: 'https://pod.example.org/me/profile/card#me',
+        ),
+        child: AppShell(now: () => today),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final tab in ShellTab.values) {
+      await tester.tap(find.byKey(ShellKeys.tab(tab)));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(AppMenuKeys.button),
+        findsOneWidget,
+        reason: 'the ${tab.name} tab has no menu',
+      );
+    }
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.logout)), findsOneWidget);
+    await expectAccessible(tester);
+    await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.logout)));
+    await tester.pumpAndSettle();
+    expect(session.session, isNull);
   });
 }
