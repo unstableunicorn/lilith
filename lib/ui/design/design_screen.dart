@@ -109,6 +109,7 @@ class _Samples extends StatelessWidget {
         label: 'An example invite',
       ),
       const SectionHeading('Buttons'),
+      const Row(children: [AppMenu()]),
       Wrap(
         spacing: Space.sm,
         runSpacing: Space.sm,

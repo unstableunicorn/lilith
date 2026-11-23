@@ -69,6 +69,7 @@ class _LogViewState extends State<_LogView> {
     final theme = Theme.of(context);
     return PageScaffold(
       title: 'Your day',
+      actions: const [AppMenu()],
       children: [
         if (vm.error case final error?)
           NoticeBanner(

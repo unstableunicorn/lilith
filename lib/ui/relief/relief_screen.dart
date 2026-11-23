@@ -60,6 +60,7 @@ class _ReliefView extends StatelessWidget {
           icon: const Icon(Icons.shopping_basket_rounded),
           label: Text(vm.toBuy == 0 ? 'List' : 'List (${vm.toBuy})'),
         ),
+        const AppMenu(),
       ],
       children: [
         if (vm.error case final error?)

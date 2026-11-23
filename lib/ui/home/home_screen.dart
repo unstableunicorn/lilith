@@ -96,6 +96,7 @@ class _HomeViewState extends State<_HomeView> {
             context,
           ).push(MaterialPageRoute<void>(builder: (_) => const LearnScreen())),
         ),
+        const AppMenu(),
       ],
       children: [
         if (vm.error case final error?)
