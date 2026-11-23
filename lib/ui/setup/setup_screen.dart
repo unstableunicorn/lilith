@@ -167,9 +167,9 @@ class _SetupView extends StatelessWidget {
           'There is no recovery: lose the key and the data is unreadable. '
           'Sharing works only with apps that use the same scheme.',
     DataProtection.plain =>
-      'Stored readable, protected only by your pod\'s access control. One '
+      "Stored readable, protected only by your pod's access control. One "
           'password, nothing to lose, readable in any Solid app and in your '
-          'pod\'s own data browser. Anyone with access to the pod, including '
+          "pod's own data browser. Anyone with access to the pod, including "
           'its provider, can read your health data.',
   };
 

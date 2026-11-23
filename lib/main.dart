@@ -2,9 +2,9 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/export/share_file.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
@@ -12,11 +12,11 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/pod/share_reader.dart';
 import 'package:lilith/data/pod/share_service.dart';
-import 'package:lilith/data/pod/solid_share_reader.dart';
-import 'package:lilith/data/pod/solid_share_service.dart';
 import 'package:lilith/data/pod/solid_pod_service.dart';
 import 'package:lilith/data/pod/solid_pod_session_service.dart';
 import 'package:lilith/data/pod/solid_pod_setup_service.dart';
+import 'package:lilith/data/pod/solid_share_reader.dart';
+import 'package:lilith/data/pod/solid_share_service.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/settings_store.dart';
@@ -27,9 +27,9 @@ import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
-import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
+import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -202,7 +202,7 @@ class _RootState extends State<_Root> {
           context.read<ShareReader>(),
           ownWebId: current.webId,
           settings: context.read<SettingsStore>(),
-        )..loadInvite(),
+        )..loadInviteLater(),
         child: const AppShell(),
       ),
     ),

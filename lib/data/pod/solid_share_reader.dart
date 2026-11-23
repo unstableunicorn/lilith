@@ -24,10 +24,10 @@ class SolidShareReader implements ShareReader {
       );
       storage = switch (triples[webId]?[_storage]) {
         final String s => s,
-        final List l when l.isNotEmpty => l.first as String,
+        final List<Object?> l when l.isNotEmpty => l.first?.toString(),
         _ => null,
       };
-    } catch (_) {
+    } on Object catch (_) {
       // A card that cannot be read or parsed: fall back to the WebID's shape.
     }
     return podRootFor(webId, storage: storage);

@@ -18,6 +18,7 @@ fi
 
 pattern='Color\(0x|Colors\.|TextStyle\(|BorderRadius\.|fontSize:|withValues\(|withOpacity\('
 pattern="$pattern"'|EdgeInsets\.[a-zA-Z]+\([^)]*[0-9]|SizedBox\((height|width): [0-9]'
+pattern="$pattern"'|(runSpacing|spacing): [0-9]'
 
 found=0
 for f in "${files[@]}"; do

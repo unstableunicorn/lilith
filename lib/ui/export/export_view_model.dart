@@ -71,7 +71,7 @@ class ExportViewModel extends ChangeNotifier {
     try {
       await _share(await _build(format));
       _lastShared = format;
-    } catch (_) {
+    } on Object catch (_) {
       _error = ExportError.shareFailed;
     } finally {
       _busyWith = null;

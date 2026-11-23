@@ -46,7 +46,7 @@ void main() {
         DailyLog(
           date: day,
           flow: FlowIntensity.medium,
-          symptoms: {Symptom.cramps},
+          symptoms: const {Symptom.cramps},
           painLevel: 4,
         ),
       ]);

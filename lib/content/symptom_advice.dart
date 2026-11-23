@@ -10,7 +10,7 @@ enum EvidenceTier {
   community('Community favourite'),
   both('Backed and loved');
 
-  const EvidenceTier(this.label);
+  EvidenceTier(this.label);
 
   final String label;
 }
@@ -172,7 +172,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.clinical,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -212,7 +212,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://my.clevelandclinic.org/health/symptoms/21740-bloated-stomach',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -292,7 +292,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.clinical,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -312,7 +312,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.clinical,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -336,7 +336,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://www.medicalnewstoday.com/articles/period-fatigue',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -353,7 +353,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         shopItem: 'Calcium-rich foods',
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -384,7 +384,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://www.nhs.uk/conditions/pre-menstrual-syndrome/',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -401,7 +401,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.both,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -421,7 +421,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.clinical,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -445,7 +445,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://www.nhs.uk/conditions/pre-menstrual-syndrome/',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -462,7 +462,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         shopItem: 'Calcium-rich foods',
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -775,7 +775,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
         tier: EvidenceTier.clinical,
         sources: [
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
           Source(
@@ -847,7 +847,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://www.medicalnewstoday.com/articles/nausea-during-period',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -924,7 +924,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://www.sleepfoundation.org/insomnia/pms-and-insomnia',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],
@@ -990,7 +990,7 @@ const Map<Symptom, SymptomAdvice> symptomAdvice = {
             'https://health.clevelandclinic.org/period-cravings',
           ),
           Source(
-            'Office on Women\'s Health',
+            "Office on Women's Health",
             'https://womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
           ),
         ],

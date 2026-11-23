@@ -23,8 +23,8 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// Plausible skin temperatures, in °C; anything else is a typo.
-  static const double minCelsius = 34.0;
-  static const double maxCelsius = 42.0;
+  static const double minCelsius = 34;
+  static const double maxCelsius = 42;
 
   final HealthRepository _repo;
 
@@ -61,7 +61,8 @@ class HomeViewModel extends ChangeNotifier {
     final f = forecast;
     final pain = f.typicalPain;
     return 'From ${f.loggedDays} logged days at this point of past cycles.'
-        '${pain == null ? '' : ' Pain around ${pain.round()}/10 has been typical.'}';
+        '${pain == null ? '' : ' Pain around ${pain.round()}/10 '
+                  'has been typical.'}';
   }
 
   int? get daysUntilNextPeriod => prediction.daysUntilNextPeriod(today);

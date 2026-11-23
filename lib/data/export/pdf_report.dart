@@ -58,7 +58,7 @@ class ReportContent {
     required this.rows,
   });
 
-  final String title = 'Lilith cycle report';
+  String get title => 'Lilith cycle report';
 
   /// The day it was made, ISO.
   final String generated;
@@ -253,7 +253,7 @@ class PdfReport {
           pw.Text(
             'Generated ${content.generated}. Covers: ${content.rangeLabel}. '
             'Skin temperature, period starts and symptoms logged by the '
-            'patient; the prediction is the app\'s, not a diagnosis.',
+            "patient; the prediction is the app's, not a diagnosis.",
           ),
           pw.Header(level: 1, text: 'Summary'),
           _pairs(content.summary),
@@ -325,16 +325,17 @@ class PdfReport {
     final log = r.log;
     return [
       isoDay(r.date),
-      r.reading == null ? '' : formatCelsius(r.reading!.celsius),
-      r.periodStart ? 'start' : '',
-      log == null || !log.flow.isBleeding ? '' : log.flow.name,
+      if (r.reading == null) '' else formatCelsius(r.reading!.celsius),
+      if (r.periodStart) 'start' else '',
+      if (log == null || !log.flow.isBleeding) '' else log.flow.name,
       log?.painLevel?.toString() ?? '',
-      log == null
-          ? ''
-          : Symptom.values
-                .where(log.symptoms.contains)
-                .map((s) => s.label)
-                .join(', '),
+      if (log == null)
+        ''
+      else
+        Symptom.values
+            .where(log.symptoms.contains)
+            .map((s) => s.label)
+            .join(', '),
     ];
   }
 

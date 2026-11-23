@@ -4,9 +4,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
-import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
@@ -252,6 +252,6 @@ class PodScreen extends StatelessWidget {
     DataProtection.encrypted =>
       'Your data is encrypted with your security key. Only you can read it.',
     DataProtection.plain =>
-      'Your data is stored readable, protected by your pod\'s access rules.',
+      "Your data is stored readable, protected by your pod's access rules.",
   };
 }

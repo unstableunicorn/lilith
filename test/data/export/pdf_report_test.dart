@@ -32,7 +32,7 @@ void main() {
       DailyLog(
         date: DateTime(2026, 5, 24),
         flow: FlowIntensity.heavy,
-        symptoms: {Symptom.cramps},
+        symptoms: const {Symptom.cramps},
         painLevel: 7,
       ),
     );
@@ -91,7 +91,7 @@ void main() {
       final c = reportContent(
         HealthData.empty.withProfile(
           HealthProfile(
-            conditions: {ReproductiveCondition.pcos},
+            conditions: const {ReproductiveCondition.pcos},
             notes: 'Iron tablets',
           ),
         ),
@@ -163,7 +163,9 @@ void main() {
     test('renders a PDF that carries the report text', () async {
       final content = reportContent(
         threeCycles().withProfile(
-          HealthProfile(conditions: {ReproductiveCondition.endometriosis}),
+          HealthProfile(
+            conditions: const {ReproductiveCondition.endometriosis},
+          ),
         ),
         range: ExportRange.all,
         today: today,
@@ -195,7 +197,7 @@ void main() {
               DailyLog(
                 date: day,
                 flow: FlowIntensity.light,
-                symptoms: {Symptom.cramps, Symptom.headache},
+                symptoms: const {Symptom.cramps, Symptom.headache},
                 painLevel: 3,
               ),
             );

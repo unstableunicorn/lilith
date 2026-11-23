@@ -10,7 +10,7 @@ enum ShellTab {
   relief('Relief', Icons.healing_rounded),
   pod('Pod', Icons.cloud_rounded);
 
-  const ShellTab(this.label, this.icon);
+  ShellTab(this.label, this.icon);
 
   final String label;
   final IconData icon;

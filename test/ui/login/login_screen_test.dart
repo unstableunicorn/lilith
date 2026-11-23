@@ -1,10 +1,10 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/login/login_screen.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_settings_store.dart';
@@ -46,7 +46,8 @@ void main() {
   });
 
   testWidgets(
-    'another provider shows the server field and disables login until it is valid',
+    'another provider shows the server field and disables login until it '
+    'is valid',
     (tester) async {
       await pump(tester);
       await tester.tap(find.byKey(LoginKeys.other));
@@ -114,7 +115,7 @@ void main() {
     expect(find.byKey(LoginKeys.errorDetail), findsNothing);
   });
 
-  testWidgets('manage-your-data opens the chosen provider\'s site', (
+  testWidgets("manage-your-data opens the chosen provider's site", (
     tester,
   ) async {
     await pump(tester);

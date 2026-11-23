@@ -88,7 +88,7 @@ void main() {
       });
     }
 
-    test('replaces the same day\'s reading', () async {
+    test("replaces the same day's reading", () async {
       await vm.logTemperature(36.4);
       await vm.logTemperature(36.6);
       expect(repo.data.readings.single.celsius, 36.6);
@@ -114,7 +114,7 @@ void main() {
     expect(vm.daysUntilNextPeriod, 14);
   });
 
-  test('the repository\'s loading flag and error pass through', () async {
+  test("the repository's loading flag and error pass through", () async {
     pod.failWrites = const PodAccessException('403');
     await vm.logPeriodStart();
     expect(vm.error, RepositoryError.saveFailed);
@@ -165,7 +165,7 @@ void forecastTests() {
           next = next.withDailyLog(
             DailyLog(
               date: start.add(Duration(days: i)),
-              symptoms: {Symptom.cramps},
+              symptoms: const {Symptom.cramps},
               painLevel: 6,
             ),
           );

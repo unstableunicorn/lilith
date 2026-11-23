@@ -22,7 +22,7 @@ void main() {
 
   test('a profile alone is not cycle data', () {
     final d = HealthData.empty.withProfile(
-      HealthProfile(conditions: {ReproductiveCondition.pcos}),
+      HealthProfile(conditions: const {ReproductiveCondition.pcos}),
     );
     expect(d.hasData, isFalse);
     expect(d.profile.conditions, {ReproductiveCondition.pcos});
@@ -30,7 +30,7 @@ void main() {
 
   test('collections cannot be changed from outside', () {
     final d = HealthData.empty.withReading(reading(may1, 36.4));
-    expect(() => d.readings.clear(), throwsUnsupportedError);
+    expect(d.readings.clear, throwsUnsupportedError);
     expect(
       () => d.shopping.add(const ShoppingItem(name: 'x')),
       throwsUnsupportedError,

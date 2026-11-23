@@ -3,7 +3,7 @@ import 'package:lilith/domain/pod_provider.dart';
 
 void main() {
   group('PodProvider', () {
-    test('the built-in list holds the original app\'s host', () {
+    test("the built-in list holds the original app's host", () {
       expect(PodProvider.builtIn, contains(PodProvider.solidCommunityAu));
       expect(
         PodProvider.solidCommunityAu.serverUrl,
@@ -12,7 +12,7 @@ void main() {
       expect(PodProvider.solidCommunityAu.manageUrl, isNotNull);
     });
 
-    test('the built-in list holds the owner\'s cluster pod, login only', () {
+    test("the built-in list holds the owner's cluster pod, login only", () {
       expect(PodProvider.builtIn, contains(PodProvider.unstableUnicorn));
       expect(
         PodProvider.unstableUnicorn.serverUrl,

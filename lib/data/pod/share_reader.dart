@@ -5,7 +5,7 @@ abstract interface class ShareReader {
   /// or the WebID's own folder when the card does not say.
   Future<Uri> podRootOf(String webId);
 
-  /// The document at [url] as text. Throws [PodAccessException] when it is
+  /// The document at [url] as text. Throws a PodAccessException when it is
   /// missing or refused: the share has ended or was never made for this user.
   Future<String> readDocument(Uri url);
 }

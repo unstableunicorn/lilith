@@ -18,7 +18,8 @@ const _months = [
 
 /// "Wed 10 Jun 2026".
 String formatDay(DateTime day) =>
-    '${_weekdays[day.weekday - 1]} ${day.day} ${_months[day.month - 1]} ${day.year}';
+    '${_weekdays[day.weekday - 1]} ${day.day} '
+    '${_months[day.month - 1]} ${day.year}';
 
 /// "10 Jun", with the year added only when it is not [today]'s.
 String formatShortDate(DateTime day, {required DateTime today}) =>

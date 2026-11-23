@@ -1,5 +1,7 @@
 // How a user's document is protected on their pod, and what set-up it needs.
 
+import 'package:meta/meta.dart';
+
 /// Encrypted on the device with the user's security key, or plain behind the
 /// pod's access control. Each mode keeps its own document, so the mode in use
 /// can be read off the pod.
@@ -7,7 +9,7 @@ enum DataProtection {
   encrypted('cycle_data.ttl'),
   plain('cycle_data.json');
 
-  const DataProtection(this.documentPath);
+  DataProtection(this.documentPath);
 
   /// The document in the app's data folder. solidpod encrypts only `.ttl`.
   final String documentPath;
@@ -33,6 +35,7 @@ class PodInspection {
 }
 
 /// Where set-up stands, as the app shows it.
+@immutable
 sealed class SetupState {
   const SetupState();
 
@@ -63,6 +66,7 @@ class SetupEnterKey extends SetupState {
   const SetupEnterKey();
 }
 
+@immutable
 class SetupReady extends SetupState {
   const SetupReady(this.protection);
   final DataProtection protection;

@@ -2,15 +2,15 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
-import 'package:lilith/domain/share.dart';
-import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_summary.dart';
+import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
@@ -169,7 +169,8 @@ class _HomeViewState extends State<_HomeView> {
                   const ProblemText(
                     key: HomeKeys.temperatureProblem,
                     'Enter a body temperature between '
-                    '${HomeViewModel.minCelsius} and ${HomeViewModel.maxCelsius} °C.',
+                    '${HomeViewModel.minCelsius} and '
+                    '${HomeViewModel.maxCelsius} °C.',
                   ),
                 if (vm.todaysReading case final reading?)
                   Padding(
@@ -211,7 +212,9 @@ class _HomeViewState extends State<_HomeView> {
     RepositoryError.loadFailed =>
       'Your data could not be loaded from your pod.',
     RepositoryError.malformed => 'The data on your pod could not be read.',
-    RepositoryError.newerVersion => 'The data on your pod comes from a newer version of Lilith. Update the app.',
+    RepositoryError.newerVersion =>
+      'The data on your pod comes from a newer version of Lilith. '
+          'Update the app.',
     RepositoryError.saveFailed =>
       'Your change is kept here but could not be saved to your pod.',
     RepositoryError.notLoaded => 'Your data has not loaded yet.',

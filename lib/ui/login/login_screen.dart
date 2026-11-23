@@ -1,14 +1,14 @@
 // Choose a pod provider and log in.
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/components/components.dart';
-import 'package:flutter/foundation.dart';
 import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/login/login_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// Keys the tests find the screen's parts by.

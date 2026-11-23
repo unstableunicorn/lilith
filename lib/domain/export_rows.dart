@@ -6,6 +6,7 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:meta/meta.dart';
 
 /// How far back an export reaches from today.
 enum ExportRange {
@@ -14,7 +15,7 @@ enum ExportRange {
   year(12, 'Last 12 months'),
   all(null, 'Everything');
 
-  const ExportRange(this.months, this.label);
+  ExportRange(this.months, this.label);
 
   final int? months;
   final String label;
@@ -29,6 +30,7 @@ enum ExportRange {
 }
 
 /// Everything logged for one day. At least one field is set.
+@immutable
 class ExportRow {
   ExportRow({
     required DateTime date,

@@ -20,6 +20,8 @@ sealed class PodException implements Exception {
   const PodException(this.message);
   final String message;
   @override
+  // The type is the failure's name in a log; never shown to a user.
+  // ignore: no_runtimetype_tostring
   String toString() => '$runtimeType: $message';
 }
 

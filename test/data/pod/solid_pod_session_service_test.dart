@@ -23,7 +23,7 @@ void main() {
     });
 
     test(
-      'falls back to the WebID\'s host, matching a built-in when it is one',
+      "falls back to the WebID's host, matching a built-in when it is one",
       () {
         expect(
           providerForRestoredSession(

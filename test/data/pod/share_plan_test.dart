@@ -14,7 +14,7 @@ void main() {
     expect(plan.documentPath, 'shares/${shareId(wife)}/cycle_data.json');
   });
 
-  test('the recipient fetches the copy under the sharer\'s pod root', () {
+  test("the recipient fetches the copy under the sharer's pod root", () {
     expect(
       plan.documentUrl(Uri.parse('https://solid.unstableunicorn.dev/owner/')),
       Uri.parse(

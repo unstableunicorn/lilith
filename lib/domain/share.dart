@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:meta/meta.dart';
 
 /// The folder name of the share for [recipientWebId]: the first 16 hex digits
 /// of the SHA-256 of the WebID. Both sides can compute it, nobody else can
@@ -30,7 +31,7 @@ enum ShareDuration {
   ninetyDays('90 days', 90),
   untilRevoked('Until I end it', null);
 
-  const ShareDuration(this.label, this.days);
+  ShareDuration(this.label, this.days);
   final String label;
   final int? days;
 
@@ -56,7 +57,7 @@ enum ShareContent {
     'For a doctor or anyone without the app: files they open from your pod.',
   );
 
-  const ShareContent(this.label, this.description);
+  ShareContent(this.label, this.description);
   final String label;
   final String description;
 
@@ -67,6 +68,7 @@ enum ShareContent {
 }
 
 /// One share, as the sharer keeps it in their pod document.
+@immutable
 class Share {
   Share({
     required this.recipientWebId,
@@ -161,6 +163,7 @@ class Share {
 /// A share someone else gave this user, as the recipient keeps it in their
 /// own pod document. The folder on the sharer's pod is named after the
 /// recipient, so the recipient's own WebID finds it.
+@immutable
 class ReceivedShare {
   ReceivedShare({
     required this.sharerWebId,
@@ -213,6 +216,7 @@ class ReceivedShare {
 
 /// What a recipient needs to add a share: the sharer's WebID and, for an
 /// encrypted copy, the code. Travels as a link, shown as a QR code.
+@immutable
 class ShareInvite {
   const ShareInvite({required this.sharerWebId, this.code});
 

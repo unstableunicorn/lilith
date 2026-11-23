@@ -2,6 +2,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:meta/meta.dart';
 
 /// How heavy the flow was, from no bleeding to heavy.
 enum FlowIntensity {
@@ -35,7 +36,7 @@ enum Symptom {
   insomnia('Insomnia'),
   cravings('Cravings');
 
-  const Symptom(this.label);
+  Symptom(this.label);
 
   final String label;
 
@@ -47,6 +48,7 @@ enum Symptom {
 const _symptoms = SetEquality<Symptom>();
 
 /// What the user logged for [date], at most one per day.
+@immutable
 class DailyLog {
   DailyLog({
     required DateTime date,

@@ -6,7 +6,7 @@ import 'package:lilith/data/pod/solid_client.dart';
 
 void main() {
   group('redirectUrisFor', () {
-    test('on the web, the redirect is on the page\'s own origin', () {
+    test("on the web, the redirect is on the page's own origin", () {
       expect(
         redirectUrisFor(
           isWeb: true,

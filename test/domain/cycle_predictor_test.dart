@@ -128,7 +128,7 @@ void main() {
       ...flat(start, 8, 36.30),
       ...flat(DateTime(2026, 6, 9), 8, 36.65),
       // Readings after today must not count.
-      ...flat(DateTime(2026, 6, 18), 5, 35.0),
+      ...flat(DateTime(2026, 6, 18), 5, 35),
     ];
     final result = predictor.predict(
       readings: readings,

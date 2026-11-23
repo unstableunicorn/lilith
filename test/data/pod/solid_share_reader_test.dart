@@ -5,7 +5,7 @@ void main() {
   const owner =
       'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
 
-  test('the card\'s storage wins, with a trailing slash', () {
+  test("the card's storage wins, with a trailing slash", () {
     expect(
       podRootFor(
         owner,

@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
-import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
-import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
+import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -49,7 +49,8 @@ void main() {
     );
   });
 
-  // The wait indicator animates forever, so a test that expects it cannot settle.
+  // The wait indicator animates forever, so a test that expects it cannot
+  // settle.
   Future<void> pump(WidgetTester tester, {bool settle = true}) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
@@ -111,7 +112,7 @@ void main() {
             next = next.withDailyLog(
               DailyLog(
                 date: start.add(Duration(days: i)),
-                symptoms: {Symptom.cramps, Symptom.fatigue},
+                symptoms: const {Symptom.cramps, Symptom.fatigue},
                 painLevel: 5,
               ),
             );
@@ -126,7 +127,7 @@ void main() {
       await expectAccessible(tester);
     });
 
-    testWidgets('summarises today\'s log and opens the log screen', (
+    testWidgets("summarises today's log and opens the log screen", (
       tester,
     ) async {
       await health.apply(
@@ -134,7 +135,7 @@ void main() {
           DailyLog(
             date: today,
             flow: FlowIntensity.medium,
-            symptoms: {Symptom.cramps, Symptom.fatigue},
+            symptoms: const {Symptom.cramps, Symptom.fatigue},
             painLevel: 4,
           ),
         ),

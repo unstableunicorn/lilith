@@ -123,7 +123,8 @@ class SymptomPredictor {
     );
   }
 
-  /// 1 + days since the latest start on or before [date]; null before all starts.
+  /// 1 + days since the latest start on or before [date]; null before all
+  /// starts.
   int? _cycleDayOf(DateTime date, List<DateTime> sortedStarts) {
     DateTime? start;
     for (final s in sortedStarts) {

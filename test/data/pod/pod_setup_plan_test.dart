@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/pod/pod_setup_plan.dart';
 
 void main() {
-  // The shape solidpod's generateDefaultFiles() returns for app folder "lilith".
+  // The shape solidpod's generateDefaultFiles() returns for the app folder
+  // "lilith".
   final defaults = <dynamic, dynamic>{
     'lilith/sharing': ['public-key.ttl', 'public-key.ttl.acl'],
     'lilith/logs': ['permissions-log.ttl', 'permissions-log.ttl.acl'],
