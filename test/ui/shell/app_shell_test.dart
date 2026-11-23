@@ -169,6 +169,10 @@ void appMenuTests() {
     await tester.tap(find.byKey(AppMenuKeys.button));
     await tester.pumpAndSettle();
     expect(find.byKey(AppMenuKeys.item(AppMenuAction.logout)), findsOneWidget);
+    expect(
+      find.byKey(AppMenuKeys.item(AppMenuAction.reminders)),
+      findsOneWidget,
+    );
     await expectAccessible(tester);
     await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.logout)));
     await tester.pumpAndSettle();

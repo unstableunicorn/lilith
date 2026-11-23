@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,11 +20,17 @@ abstract interface class SettingsStore {
   Future<void> writeInvite(ShareInvite invite);
 
   Future<void> clearInvite();
+
+  /// The daily reminder as set on this device; off until set.
+  Future<ReminderSetting> readReminder();
+
+  Future<void> writeReminder(ReminderSetting setting);
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
   static const String providerKey = 'pod_provider';
   static const String inviteKey = 'share_invite';
+  static const String reminderKey = 'daily_reminder';
 
   @override
   Future<PodProvider?> readProvider() async {
@@ -62,5 +69,23 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   Future<void> clearInvite() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(inviteKey);
+  }
+
+  @override
+  Future<ReminderSetting> readReminder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(reminderKey);
+    if (raw == null) return const ReminderSetting();
+    try {
+      return ReminderSetting.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } on Object {
+      return const ReminderSetting();
+    }
+  }
+
+  @override
+  Future<void> writeReminder(ReminderSetting setting) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(reminderKey, jsonEncode(setting.toJson()));
   }
 }

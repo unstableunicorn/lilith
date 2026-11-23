@@ -32,6 +32,9 @@ class LocalNotificationService implements NotificationService {
   }();
 
   @override
+  bool get isAvailable => true;
+
+  @override
   Future<bool> requestPermission() async {
     await _init();
     if (Platform.isAndroid) {
@@ -54,7 +57,19 @@ class LocalNotificationService implements NotificationService {
   /// The instant is kept exact by scheduling in UTC: the device's local time
   /// zone database is not needed to say "this many seconds from now".
   @override
-  Future<void> schedule(Reminder reminder) async {
+  Future<void> schedule(Reminder reminder) => _schedule(reminder, repeat: null);
+
+  /// Repeats at the same time of day. The time is held in UTC, so the
+  /// reminder drifts by an hour across a daylight-saving change until the
+  /// app next runs and schedules it again.
+  @override
+  Future<void> scheduleDaily(Reminder reminder) =>
+      _schedule(reminder, repeat: DateTimeComponents.time);
+
+  Future<void> _schedule(
+    Reminder reminder, {
+    required DateTimeComponents? repeat,
+  }) async {
     await _init();
     final now = DateTime.now();
     if (!reminder.at.isAfter(now)) return;
@@ -73,6 +88,7 @@ class LocalNotificationService implements NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: repeat,
     );
   }
 

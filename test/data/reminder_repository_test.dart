@@ -1,0 +1,77 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/reminder_repository.dart';
+import 'package:lilith/domain/reminder_setting.dart';
+
+import '../fakes/fake_notification_service.dart';
+import '../fakes/fake_settings_store.dart';
+
+void main() {
+  final now = DateTime(2026, 6, 10, 9);
+  late FakeSettingsStore settings;
+  late FakeNotificationService notifications;
+  late ReminderRepository repo;
+
+  setUp(() {
+    settings = FakeSettingsStore();
+    notifications = FakeNotificationService();
+    repo = ReminderRepository(settings, notifications, now: () => now);
+  });
+
+  test('starts off and unloaded; load reads the setting', () async {
+    expect(repo.setting.enabled, isFalse);
+    expect(repo.isLoaded, isFalse);
+    settings.reminder = const ReminderSetting(enabled: true, hour: 6);
+    await repo.load();
+    expect(repo.isLoaded, isTrue);
+    expect(repo.setting.hour, 6);
+    expect(notifications.daily[dailyReminderId]!.at, DateTime(2026, 6, 11, 6));
+  });
+
+  test('turning on asks once, saves and schedules daily', () async {
+    await repo.setEnabled(true);
+    expect(notifications.permissionRequests, 1);
+    expect(settings.reminder.enabled, isTrue);
+    expect(notifications.daily.keys, [dailyReminderId]);
+    expect(repo.isAllowed, isTrue);
+  });
+
+  test('a refused permission leaves it off and says so', () async {
+    notifications.permission = false;
+    await repo.setEnabled(true);
+    expect(repo.setting.enabled, isFalse);
+    expect(repo.isAllowed, isFalse);
+    expect(notifications.daily, isEmpty);
+    expect(settings.reminder.enabled, isFalse);
+  });
+
+  test('changing the time reschedules only when on', () async {
+    await repo.setTime(hour: 21, minute: 15);
+    expect(notifications.daily, isEmpty);
+    expect(settings.reminder.hour, 21);
+    await repo.setEnabled(true);
+    await repo.setTime(hour: 22, minute: 0);
+    expect(notifications.daily[dailyReminderId]!.at, DateTime(2026, 6, 10, 22));
+  });
+
+  test('turning off cancels', () async {
+    await repo.setEnabled(true);
+    await repo.setEnabled(false);
+    expect(notifications.cancelled, [dailyReminderId]);
+    expect(notifications.daily, isEmpty);
+    expect(settings.reminder.enabled, isFalse);
+  });
+
+  test('on a device without notifications nothing is scheduled', () async {
+    notifications.available = false;
+    expect(repo.isAvailable, isFalse);
+    await repo.setEnabled(true);
+    expect(notifications.daily, isEmpty);
+  });
+
+  test('notifies listeners', () async {
+    var n = 0;
+    repo.addListener(() => n++);
+    await repo.setEnabled(true);
+    expect(n, 1);
+  });
+}

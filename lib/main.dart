@@ -18,6 +18,7 @@ import 'package:lilith/data/pod/solid_pod_setup_service.dart';
 import 'package:lilith/data/pod/solid_share_reader.dart';
 import 'package:lilith/data/pod/solid_share_service.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/data/setup_repository.dart';
@@ -105,6 +106,11 @@ class LilithApp extends StatelessWidget {
       Provider<ShareReader>.value(value: shareReader),
       Provider<SettingsStore>.value(value: settings),
       Provider<NotificationService>.value(value: notifications),
+      ChangeNotifierProvider(
+        // Not lazy: a reminder lost to a reboot is set again at start.
+        lazy: false,
+        create: (_) => ReminderRepository(settings, notifications)..loadLater(),
+      ),
     ],
     child: MaterialApp(
       title: 'Lilith',
