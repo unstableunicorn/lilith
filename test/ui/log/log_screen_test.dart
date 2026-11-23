@@ -40,6 +40,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('explains that bleeding days join the periods', (tester) async {
+    await pump(tester);
+    expect(find.byKey(LogKeys.periodHint), findsOneWidget);
+  });
+
   testWidgets('meets the accessibility guidelines', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(LogKeys.flow(FlowIntensity.light)));

@@ -8,6 +8,7 @@ import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  loggedDayTests();
   periodSpanTests();
   withoutDailyLogTests();
   final may1 = DateTime(2026, 5, 1);
@@ -240,5 +241,29 @@ void periodSpanTests() {
     final d = HealthData.empty.withPeriod(period(1)).withPeriod(period(3));
     expect(d.periods, [period(1), period(3)]);
     expect(may1, period(1).startDate);
+  });
+}
+
+void loggedDayTests() {
+  DateTime june(int d) => DateTime(2026, 6, d);
+
+  test('logging a bleeding day starts a period; a dry day ends it', () {
+    var d = HealthData.empty.withLoggedDay(
+      DailyLog(date: june(1), flow: FlowIntensity.medium),
+    );
+    expect(d.periods, [PeriodEvent(startDate: june(1), endDate: june(1))]);
+    d = d.withLoggedDay(DailyLog(date: june(2), flow: FlowIntensity.light));
+    expect(d.periods.single.endDate, june(2));
+    d = d.withLoggedDay(DailyLog(date: june(2), painLevel: 3));
+    expect(d.periods.single.endDate, june(1));
+    expect(d.logFor(june(2))!.painLevel, 3);
+  });
+
+  test('clearing a day with an empty log removes the log and relinks', () {
+    final d = HealthData.empty
+        .withLoggedDay(DailyLog(date: june(1), flow: FlowIntensity.medium))
+        .withLoggedDay(DailyLog(date: june(1)));
+    expect(d.dailyLogs, isEmpty);
+    expect(d.periods, isEmpty);
   });
 }

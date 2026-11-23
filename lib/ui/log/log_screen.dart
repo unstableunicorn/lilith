@@ -20,6 +20,7 @@ abstract final class LogKeys {
   static const Key saved = Key('log.saved');
   static const Key error = Key('log.error');
   static const Key dismissError = Key('log.dismissError');
+  static const Key periodHint = Key('log.periodHint');
   static Key flow(FlowIntensity f) => Key('log.flow.${f.name}');
   static Key symptom(Symptom s) => Key('log.symptom.${s.name}');
 }
@@ -91,6 +92,17 @@ class _LogViewState extends State<_LogView> {
                 onSelected: (_) => vm.setFlow(f),
               ),
           ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: Space.sm),
+          child: Text(
+            key: LogKeys.periodHint,
+            'Days with light flow or more become part of your periods; '
+            'spotting on its own does not start one.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
         const SectionHeading('Pain'),
         Row(
