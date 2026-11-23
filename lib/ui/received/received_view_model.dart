@@ -83,6 +83,26 @@ class ReceivedViewModel extends ChangeNotifier {
 
   Future<void> remove(ReceivedShare share) => _repo.remove(share);
 
+  /// Fetches every share again, for a pull down on the list.
+  Future<void> refreshAll() => _repo.refreshAll();
+
+  /// Looks at the shares not fetched yet, when the list opens.
+  Future<void> refreshUnseen() => _repo.refreshUnseen();
+
+  /// "Up to date", "Ended", "Could not fetch", or "Checking…" while unknown.
+  String stateText(ReceivedShare share) => switch (_repo.viewOf(share)) {
+    SharedViewLoading() => 'Checking…',
+    SharedViewReady() => 'Up to date',
+    SharedViewFailed(error: ReceivedShareError.ended) => 'Ended',
+    SharedViewFailed() => 'Could not fetch',
+  };
+
+  /// True when the share can no longer be read, so the card can say so.
+  bool hasEnded(ReceivedShare share) => switch (_repo.viewOf(share)) {
+    SharedViewFailed(error: ReceivedShareError.ended) => true,
+    _ => false,
+  };
+
   void _edit(void Function() change) {
     change();
     _error = null;

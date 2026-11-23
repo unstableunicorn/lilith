@@ -25,6 +25,7 @@ import '../../fakes/fake_share_reader.dart';
 import '../../harness.dart';
 
 void main() {
+  refreshTests();
   const owner =
       'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
   final ownerRoot = Uri.parse(
@@ -219,5 +220,127 @@ void main() {
       expect(find.byKey(SharedPersonKeys.empty), findsOneWidget);
       await expectAccessible(tester);
     });
+  });
+}
+
+void refreshTests() {
+  const owner =
+      'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
+  final ownerRoot = Uri.parse(
+    'https://solid.unstableunicorn.dev/unstableunicorn/',
+  );
+  const codec = HealthDocumentCodec();
+  final today = DateTime(2026, 6, 10);
+  final theirs = HealthData.empty.withPeriod(
+    PeriodEvent(startDate: DateTime(2026, 5, 13)),
+  );
+
+  late FakePodSessionService auth;
+  late SessionRepository session;
+  late HealthRepository health;
+  late FakeShareReader reader;
+  late ReceivedShareRepository received;
+  late Uri copyUrl;
+
+  setUp(() async {
+    auth = FakePodSessionService();
+    session = SessionRepository(auth, FakeSettingsStore());
+    health = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await health.load();
+    reader = FakeShareReader()..roots[owner] = ownerRoot;
+    copyUrl = SharePlan.forRecipient(auth.webId).documentUrl(ownerRoot);
+    reader.documents[copyUrl] = codec.encode(theirs);
+    received = ReceivedShareRepository(health, reader, ownWebId: auth.webId);
+    await received.add(
+      sharerWebId: owner,
+      label: 'Elric',
+      code: null,
+      today: today,
+    );
+  });
+
+  Future<void> pumpList(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        health: health,
+        received: received,
+        child: ReceivedScreen(now: () => today),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pullDown(WidgetTester tester, Finder from) async {
+    // From the text at the top, clear of the fields lower down, and far
+    // enough: the indicator arms after a quarter of the (tall) test screen.
+    await tester.drag(from, const Offset(0, 900), touchSlopY: 0);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'the list says each share is up to date, and pulling down re-checks',
+    (tester) async {
+      await pumpList(tester);
+      final share = received.received.single;
+      expect(find.byKey(ReceivedKeys.state(share)), findsOneWidget);
+      expect(find.text('Up to date'), findsOneWidget);
+      reader.documents.clear();
+      final before = reader.reads;
+      await pullDown(tester, find.textContaining('Someone who shares'));
+      expect(reader.reads, greaterThan(before));
+      expect(find.textContaining('Ended'), findsOneWidget);
+      await expectAccessible(tester);
+    },
+  );
+
+  testWidgets('a fresh list checks the shares it has not seen', (tester) async {
+    received = ReceivedShareRepository(health, reader, ownWebId: auth.webId);
+    reader.documents.clear();
+    await pumpList(tester);
+    expect(find.textContaining('Ended'), findsOneWidget);
+  });
+
+  testWidgets('pulling down on the read-only view fetches again', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        health: health,
+        received: received,
+        child: SharedPersonScreen(
+          share: received.received.single,
+          now: () => today,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(SharedPersonKeys.prediction), findsOneWidget);
+    reader.documents.clear();
+    await pullDown(tester, find.textContaining('Read-only, from their pod'));
+    expect(find.byKey(SharedPersonKeys.failed), findsOneWidget);
+    expect(find.text('This share has ended'), findsOneWidget);
   });
 }

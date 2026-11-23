@@ -119,6 +119,20 @@ class ReceivedShareRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fetches every share again, one after another.
+  Future<void> refreshAll() async {
+    for (final share in received) {
+      await refresh(share);
+    }
+  }
+
+  /// Fetches the shares not looked at yet, so a list can show their state.
+  Future<void> refreshUnseen() async {
+    for (final share in received) {
+      if (!_views.containsKey(share.sharerWebId)) await refresh(share);
+    }
+  }
+
   Future<void> remove(ReceivedShare share) async {
     _views.remove(share.sharerWebId);
     await _health.apply((d) => d.withoutReceived(share.sharerWebId));

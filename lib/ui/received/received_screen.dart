@@ -21,6 +21,7 @@ abstract final class ReceivedKeys {
   static const Key error = Key('received.error');
   static const Key submit = Key('received.submit');
   static Key card(ReceivedShare s) => Key('received.card.${s.sharerWebId}');
+  static Key state(ReceivedShare s) => Key('received.state.${s.sharerWebId}');
   static Key open(ReceivedShare s) => Key('received.open.${s.sharerWebId}');
   static Key remove(ReceivedShare s) => Key('received.remove.${s.sharerWebId}');
 }
@@ -36,12 +37,17 @@ class ReceivedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (context) => ReceivedViewModel(
-      context.read<ReceivedShareRepository>(),
-      ownWebId: context.read<SessionRepository>().session?.webId ?? '',
-      now: now,
-      prefill: prefill,
-    ),
+    create: (context) {
+      final vm = ReceivedViewModel(
+        context.read<ReceivedShareRepository>(),
+        ownWebId: context.read<SessionRepository>().session?.webId ?? '',
+        now: now,
+        prefill: prefill,
+      );
+      // After this build: the first fetch notifies, which a build cannot take.
+      Future<void>.microtask(vm.refreshUnseen);
+      return vm;
+    },
     child: _ReceivedView(now: now),
   );
 }
@@ -77,6 +83,7 @@ class _ReceivedViewState extends State<_ReceivedView> {
     if (vm.code != _code.text) _code.text = vm.code;
     return PageScaffold(
       title: 'Shared with you',
+      onRefresh: vm.refreshAll,
       children: [
         const Text(
           'Someone who shares their cycle data with you gives you their '
@@ -105,6 +112,13 @@ class _ReceivedViewState extends State<_ReceivedView> {
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
+                ),
+                const SizedBox(height: Space.xs),
+                Text(
+                  key: ReceivedKeys.state(share),
+                  vm.hasEnded(share)
+                      ? 'Ended. They have stopped sharing with you.'
+                      : vm.stateText(share),
                 ),
                 const SizedBox(height: Space.sm),
                 Wrap(

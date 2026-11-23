@@ -29,12 +29,13 @@ void main() {
   final copyUrl = SharePlan.forRecipient(me).documentUrl(ownerRoot);
   final theirs = HealthData.empty.withPeriod(PeriodEvent(startDate: may1));
 
+  late HealthRepository health;
   late FakeShareReader reader;
   late ReceivedShareRepository repo;
   late ReceivedViewModel vm;
 
   setUp(() async {
-    final health = HealthRepository(
+    health = HealthRepository(
       FakePodService(),
       protection: DataProtection.plain,
     );
@@ -119,5 +120,25 @@ void main() {
     expect(filled.canAdd, isFalse);
     filled.setLabel('Elric');
     expect(filled.canAdd, isTrue);
+  });
+
+  test('describes each share\'s state after a check', () async {
+    vm.setLabel('Elric');
+    vm.setWebId(owner);
+    vm.setCode(key.code);
+    await vm.add();
+    final share = vm.received.single;
+    expect(vm.stateText(share), 'Up to date');
+    expect(vm.hasEnded(share), isFalse);
+    reader.documents.clear();
+    await vm.refreshAll();
+    expect(vm.stateText(share), 'Ended');
+    expect(vm.hasEnded(share), isTrue);
+    final fresh = ReceivedViewModel(
+      ReceivedShareRepository(health, reader, ownWebId: me),
+      ownWebId: me,
+      now: () => may1,
+    );
+    expect(fresh.stateText(share), 'Checking…');
   });
 }

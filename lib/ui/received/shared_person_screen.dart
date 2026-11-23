@@ -40,7 +40,9 @@ class SharedPersonScreen extends StatelessWidget {
     create: (context) {
       final repo = context.read<ReceivedShareRepository>();
       final vm = SharedPersonViewModel(repo, share, now: now);
-      if (repo.viewOf(share) is SharedViewLoading) vm.refresh();
+      if (repo.viewOf(share) is SharedViewLoading) {
+        Future<void>.microtask(vm.refresh);
+      }
       return vm;
     },
     child: const _SharedPersonView(),
@@ -57,6 +59,7 @@ class _SharedPersonView extends StatelessWidget {
     String date(DateTime d) => formatShortDate(d, today: vm.today);
     return PageScaffold(
       title: vm.share.label,
+      onRefresh: vm.refresh,
       actions: [
         IconButton(
           key: SharedPersonKeys.refresh,
