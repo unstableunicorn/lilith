@@ -83,6 +83,52 @@ class ReceivedViewModel extends ChangeNotifier {
 
   Future<void> remove(ReceivedShare share) => _repo.remove(share);
 
+  String? _editingCodeFor;
+  String _newCode = '';
+  ReceivedShareError? _codeError;
+
+  /// The sharer whose code is being changed, if any.
+  bool isEditingCode(ReceivedShare share) =>
+      _editingCodeFor == share.sharerWebId;
+  String get newCode => _newCode;
+
+  /// Why the last code change failed, until the field changes.
+  ReceivedShareError? get codeError => _codeError;
+  bool get canSaveCode => _newCode.trim().isNotEmpty && !_busy;
+
+  void startChangingCode(ReceivedShare share) => _edit(() {
+    _editingCodeFor = share.sharerWebId;
+    _newCode = '';
+    _codeError = null;
+  });
+
+  void cancelChangingCode() => _edit(() {
+    _editingCodeFor = null;
+    _newCode = '';
+    _codeError = null;
+  });
+
+  void setNewCode(String text) => _edit(() {
+    _newCode = text;
+    _codeError = null;
+  });
+
+  /// True when the new code opened the share and was saved.
+  Future<bool> saveCode(ReceivedShare share) async {
+    if (!canSaveCode) return false;
+    _busy = true;
+    notifyListeners();
+    final error = await _repo.changeCode(share, _newCode);
+    _busy = false;
+    _codeError = error;
+    if (error == null) {
+      _editingCodeFor = null;
+      _newCode = '';
+    }
+    notifyListeners();
+    return error == null;
+  }
+
   /// Fetches every share again, for a pull down on the list.
   Future<void> refreshAll() => _repo.refreshAll();
 

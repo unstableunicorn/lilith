@@ -141,4 +141,37 @@ void main() {
     );
     expect(fresh.stateText(share), 'Checking…');
   });
+
+  test(
+    'changes a code in place: refuses a wrong one, keeps a right one',
+    () async {
+      vm.setLabel('Elric');
+      vm.setWebId(owner);
+      vm.setCode(key.code);
+      await vm.add();
+      final share = vm.received.single;
+      final newKey = ShareKey.generate(Random(11));
+      reader.documents[copyUrl] = const ShareCipher().encrypt(
+        codec.encode(theirs),
+        newKey,
+        Random(3),
+      );
+      expect(vm.isEditingCode(share), isFalse);
+      vm.startChangingCode(share);
+      expect(vm.isEditingCode(share), isTrue);
+      expect(vm.canSaveCode, isFalse);
+      vm.setNewCode(key.code);
+      expect(await vm.saveCode(share), isFalse);
+      expect(vm.codeError, ReceivedShareError.wrongCode);
+      expect(vm.isEditingCode(share), isTrue);
+      vm.setNewCode(newKey.code);
+      expect(vm.codeError, isNull);
+      expect(await vm.saveCode(share), isTrue);
+      expect(vm.isEditingCode(share), isFalse);
+      expect(vm.received.single.code, newKey.code);
+      vm.startChangingCode(vm.received.single);
+      vm.cancelChangingCode();
+      expect(vm.isEditingCode(vm.received.single), isFalse);
+    },
+  );
 }

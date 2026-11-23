@@ -185,6 +185,13 @@ class ReceivedShare {
   /// The share's code, when the copy is encrypted.
   final String? code;
 
+  ReceivedShare withCode(String? code) => ReceivedShare(
+    sharerWebId: sharerWebId,
+    label: label,
+    addedOn: addedOn,
+    code: code,
+  );
+
   Map<String, dynamic> toJson() => {
     'sharer': sharerWebId,
     'label': label,
