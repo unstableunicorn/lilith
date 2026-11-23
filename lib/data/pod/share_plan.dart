@@ -10,8 +10,11 @@ class SharePlan {
 
   factory SharePlan.forRecipient(String recipientWebId) => SharePlan._(
     recipientWebId: recipientWebId.trim(),
-    folderPath: 'shares/${shareId(recipientWebId)}',
+    folderPath: '$sharesFolder/${shareId(recipientWebId)}',
   );
+
+  /// The folder under the data folder that holds every share.
+  static const String sharesFolder = 'shares';
 
   final String recipientWebId;
 
