@@ -8,6 +8,7 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_cipher.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/pod/share_reader.dart';
+import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
 
@@ -49,6 +50,7 @@ class ReceivedShareRepository extends ChangeNotifier {
     this._health,
     this._reader, {
     required this.ownWebId,
+    this._settings,
     this.codec = const HealthDocumentCodec(),
     this.cipher = const ShareCipher(),
   }) {
@@ -57,6 +59,8 @@ class ReceivedShareRepository extends ChangeNotifier {
 
   final HealthRepository _health;
   final ShareReader _reader;
+  final SettingsStore? _settings;
+  ShareInvite? _invite;
 
   /// This user's WebID, which names the folder on every sharer's pod.
   final String ownWebId;
@@ -66,6 +70,21 @@ class ReceivedShareRepository extends ChangeNotifier {
   final Map<String, SharedView> _views = {};
 
   List<ReceivedShare> get received => _health.data.received;
+
+  /// An invite the app was opened with and the user has not acted on.
+  ShareInvite? get pendingInvite => _invite;
+
+  /// Picks up the invite kept across the login, if any.
+  Future<void> loadInvite() async {
+    _invite = await _settings?.readInvite();
+    notifyListeners();
+  }
+
+  Future<void> clearInvite() async {
+    _invite = null;
+    await _settings?.clearInvite();
+    notifyListeners();
+  }
 
   /// The latest fetch for [share]; loading until [refresh] has run.
   SharedView viewOf(ReceivedShare share) =>
@@ -89,6 +108,7 @@ class ReceivedShareRepository extends ChangeNotifier {
     if (view is SharedViewFailed) return view.error;
     _views[share.sharerWebId] = view;
     await _health.apply((d) => d.withReceived(share));
+    if (_invite?.sharerWebId == share.sharerWebId) await clearInvite();
     return null;
   }
 

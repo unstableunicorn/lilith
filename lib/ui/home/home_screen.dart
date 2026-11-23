@@ -1,6 +1,9 @@
 // The Today tab: the prediction, the key numbers and the two quick logs.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/domain/share.dart';
+import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -33,6 +36,9 @@ abstract final class HomeKeys {
   static const Key todaysReading = Key('home.todaysReading');
   static const Key logDay = Key('home.logDay');
   static const Key todaysLog = Key('home.todaysLog');
+  static const Key invite = Key('home.invite');
+  static const Key acceptInvite = Key('home.acceptInvite');
+  static const Key dismissInvite = Key('home.dismissInvite');
 }
 
 class HomeScreen extends StatelessWidget {
@@ -99,6 +105,9 @@ class _HomeViewState extends State<_HomeView> {
             dismissKey: HomeKeys.dismissError,
             onDismiss: vm.clearError,
           ),
+        if (context.watch<ReceivedShareRepository>().pendingInvite
+            case final invite?)
+          _InviteCard(invite: invite, now: vm.now),
         if (!vm.isLoaded)
           const BusyIndicator(key: HomeKeys.loading, label: 'Loading your data')
         else ...[
@@ -369,6 +378,55 @@ class _FactCard extends StatelessWidget {
               label: Text(fact.source.name),
               onPressed: () => openUrl(Uri.parse(fact.source.url)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The app was opened from an invite link: offer to add the sharer.
+class _InviteCard extends StatelessWidget {
+  const _InviteCard({required this.invite, required this.now});
+
+  final ShareInvite invite;
+  final DateTime Function() now;
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = context.read<ReceivedShareRepository>();
+    return AppCard(
+      key: HomeKeys.invite,
+      icon: Icons.people_outline_rounded,
+      title: 'Someone is sharing with you',
+      tone: CardTone.highlight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(invite.sharerWebId),
+          const SizedBox(height: Space.sm),
+          Wrap(
+            spacing: Space.sm,
+            children: [
+              FilledButton.icon(
+                key: HomeKeys.acceptInvite,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: repo,
+                      child: ReceivedScreen(now: now, prefill: invite),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.person_add_alt_rounded),
+                label: const Text('Add them'),
+              ),
+              TextButton(
+                key: HomeKeys.dismissInvite,
+                onPressed: repo.clearInvite,
+                child: const Text('Not now'),
+              ),
+            ],
           ),
         ],
       ),

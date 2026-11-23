@@ -122,6 +122,7 @@ void main() {
       final share = shares.shares.single;
       expect(find.byKey(ShareKeys.created), findsOneWidget);
       expect(find.byKey(ShareKeys.createdCode), findsOneWidget);
+      expect(find.byKey(ShareKeys.createdQr), findsOneWidget);
       expect(find.byKey(ShareKeys.card(share)), findsOneWidget);
       expect(find.byKey(ShareKeys.end(share)), findsOneWidget);
       expect(find.byKey(ShareKeys.empty), findsNothing);
@@ -145,9 +146,12 @@ void main() {
       await tester.pumpAndSettle();
       final share = shares.shares.single;
       expect(find.byKey(ShareKeys.code(share)), findsNothing);
+      expect(find.byKey(ShareKeys.qr(share)), findsNothing);
       await tester.tap(find.byKey(ShareKeys.showCode(share)));
       await tester.pumpAndSettle();
       expect(find.byKey(ShareKeys.code(share)), findsOneWidget);
+      expect(find.byKey(ShareKeys.qr(share)), findsOneWidget);
+      await expectAccessible(tester);
       await tester.tap(find.byKey(ShareKeys.revoke(share)));
       await tester.pumpAndSettle();
       expect(shares.shares, isEmpty);
@@ -184,7 +188,13 @@ void main() {
       final share = shares.shares.single;
       expect(find.byKey(ShareKeys.created), findsOneWidget);
       expect(find.byKey(ShareKeys.createdCode), findsNothing);
-      expect(find.byKey(ShareKeys.showCode(share)), findsNothing);
+      expect(find.byKey(ShareKeys.createdQr), findsOneWidget);
+      await tester.tap(find.byKey(ShareKeys.dismissCreated));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ShareKeys.showCode(share)));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.code(share)), findsNothing);
+      expect(find.byKey(ShareKeys.qr(share)), findsOneWidget);
       await expectAccessible(tester);
     });
   });

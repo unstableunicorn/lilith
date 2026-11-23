@@ -7,6 +7,7 @@ export 'label_badge.dart';
 export 'notice_banner.dart';
 export 'page_scaffold.dart';
 export 'problem_text.dart';
+export 'qr_code.dart';
 export 'section_heading.dart';
 export 'stat_tile.dart';
 export 'strikeable_text.dart';

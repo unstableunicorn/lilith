@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -28,5 +29,24 @@ void main() {
       SharedPreferencesSettingsStore.providerKey: 'not json',
     });
     expect(await store.readProvider(), isNull);
+  });
+
+  test('keeps an invite until it is cleared', () async {
+    expect(await store.readInvite(), isNull);
+    const invite = ShareInvite(
+      sharerWebId: 'https://x.example/p/profile/card#me',
+      code: 'ABCD-EFGH-JKMN-PQRS',
+    );
+    await store.writeInvite(invite);
+    expect(await store.readInvite(), invite);
+    await store.clearInvite();
+    expect(await store.readInvite(), isNull);
+  });
+
+  test('a corrupt stored invite reads as none', () async {
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesSettingsStore.inviteKey: '::not a uri::',
+    });
+    expect(await store.readInvite(), isNull);
   });
 }

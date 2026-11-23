@@ -2,6 +2,7 @@
 // wrong with it, how each share's end is described, and the code to show.
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/data/pod/solid_client.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -77,7 +78,14 @@ class ShareViewModel extends ChangeNotifier {
 
   Future<void> revoke(Share share) => _repo.revoke(share);
 
-  /// Whether the share's code is shown in the list.
+  /// The link that adds this share in the recipient's app: the sharer's
+  /// WebID and, for an encrypted copy, the code.
+  Uri inviteLink(Share share) => ShareInvite(
+    sharerWebId: ownWebId,
+    code: share.code,
+  ).toUri(Uri.parse(SolidClient.webOrigin));
+
+  /// Whether the share's code and QR code are shown in the list.
   bool isRevealed(Share share) => _revealed.contains(share.id);
 
   void toggleRevealed(Share share) => _edit(() {

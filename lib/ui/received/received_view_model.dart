@@ -7,7 +7,13 @@ import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/share/share_view_model.dart';
 
 class ReceivedViewModel extends ChangeNotifier {
-  ReceivedViewModel(this._repo, {required this.ownWebId, required this.now}) {
+  ReceivedViewModel(
+    this._repo, {
+    required this.ownWebId,
+    required this.now,
+    ShareInvite? prefill,
+  }) : _webId = prefill?.sharerWebId ?? '',
+       _code = prefill?.code ?? '' {
     _repo.addListener(notifyListeners);
   }
 
@@ -18,8 +24,8 @@ class ReceivedViewModel extends ChangeNotifier {
   final DateTime Function() now;
 
   String _label = '';
-  String _webId = '';
-  String _code = '';
+  String _webId;
+  String _code;
   bool _busy = false;
   ReceivedShareError? _error;
 

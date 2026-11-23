@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract interface class SettingsStore {
@@ -10,10 +11,19 @@ abstract interface class SettingsStore {
   Future<PodProvider?> readProvider();
 
   Future<void> writeProvider(PodProvider provider);
+
+  /// An invite the app was opened with, kept until it has been acted on,
+  /// since the login may leave and come back to the page in between.
+  Future<ShareInvite?> readInvite();
+
+  Future<void> writeInvite(ShareInvite invite);
+
+  Future<void> clearInvite();
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
   static const String providerKey = 'pod_provider';
+  static const String inviteKey = 'share_invite';
 
   @override
   Future<PodProvider?> readProvider() async {
@@ -31,5 +41,26 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   Future<void> writeProvider(PodProvider provider) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(providerKey, jsonEncode(provider.toJson()));
+  }
+
+  @override
+  Future<ShareInvite?> readInvite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(inviteKey);
+    if (raw == null) return null;
+    final uri = Uri.tryParse(raw);
+    return uri == null ? null : ShareInvite.fromUri(uri);
+  }
+
+  @override
+  Future<void> writeInvite(ShareInvite invite) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(inviteKey, invite.toUri(Uri()).toString());
+  }
+
+  @override
+  Future<void> clearInvite() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(inviteKey);
   }
 }

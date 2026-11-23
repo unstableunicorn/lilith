@@ -28,6 +28,8 @@ abstract final class ShareKeys {
   static Key end(Share s) => Key('share.end.${s.id}');
   static Key code(Share s) => Key('share.code.${s.id}');
   static Key showCode(Share s) => Key('share.showCode.${s.id}');
+  static Key qr(Share s) => Key('share.qr.${s.id}');
+  static const Key createdQr = Key('share.createdQr');
   static Key revoke(Share s) => Key('share.revoke.${s.id}');
 }
 
@@ -213,6 +215,14 @@ class _CreatedCard extends StatelessWidget {
             const Text(
               'They can read it as soon as they log in with their WebID.',
             ),
+          const SizedBox(height: Space.md),
+          const Text('Or let them scan this with their phone:'),
+          const SizedBox(height: Space.sm),
+          QrCodeBox(
+            key: ShareKeys.createdQr,
+            data: vm.inviteLink(share).toString(),
+            label: 'Invite for ${share.label}',
+          ),
           const SizedBox(height: Space.sm),
           TextButton(
             key: ShareKeys.dismissCreated,
@@ -261,7 +271,7 @@ class _ShareCard extends StatelessWidget {
           ),
           const SizedBox(height: Space.xs),
           Text(key: ShareKeys.end(share), shareEndText(share, today: today)),
-          if (vm.isRevealed(share))
+          if (vm.isRevealed(share)) ...[
             if (share.code case final code?)
               Padding(
                 padding: const EdgeInsets.only(top: Space.sm),
@@ -271,21 +281,35 @@ class _ShareCard extends StatelessWidget {
                   style: theme.textTheme.titleLarge,
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.only(top: Space.sm),
+              child: QrCodeBox(
+                key: ShareKeys.qr(share),
+                data: vm.inviteLink(share).toString(),
+                label: 'Invite for ${share.label}',
+              ),
+            ),
+          ],
           const SizedBox(height: Space.sm),
           Wrap(
             spacing: Space.sm,
             children: [
-              if (share.isEncrypted)
-                TextButton.icon(
-                  key: ShareKeys.showCode(share),
-                  onPressed: () => vm.toggleRevealed(share),
-                  icon: Icon(
-                    vm.isRevealed(share)
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_rounded,
-                  ),
-                  label: Text(vm.isRevealed(share) ? 'Hide code' : 'Show code'),
+              TextButton.icon(
+                key: ShareKeys.showCode(share),
+                onPressed: () => vm.toggleRevealed(share),
+                icon: Icon(
+                  vm.isRevealed(share)
+                      ? Icons.visibility_off_rounded
+                      : Icons.qr_code_rounded,
                 ),
+                label: Text(
+                  vm.isRevealed(share)
+                      ? 'Hide'
+                      : share.isEncrypted
+                      ? 'Show code and QR'
+                      : 'Show QR',
+                ),
+              ),
               TextButton.icon(
                 key: ShareKeys.revoke(share),
                 onPressed: vm.isBusy ? null : () => vm.revoke(share),

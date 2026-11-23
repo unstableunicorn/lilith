@@ -21,6 +21,7 @@ import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
@@ -33,6 +34,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   final settings = SharedPreferencesSettingsStore();
+  if (ShareInvite.fromUri(Uri.base) case final invite?) {
+    unawaited(settings.writeInvite(invite));
+  }
   final session = SessionRepository(SolidPodSessionService(settings), settings);
   unawaited(session.restore());
   runApp(
@@ -42,6 +46,7 @@ void main() {
       podFor: (provider) => SolidPodService(provider: provider),
       shareService: const SolidShareService(),
       shareReader: const SolidShareReader(),
+      settings: settings,
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
@@ -60,6 +65,7 @@ class LilithApp extends StatelessWidget {
     required this.podFor,
     required this.shareService,
     required this.shareReader,
+    required this.settings,
     required this.openUrl,
     required this.shareFile,
     required this.pdfReport,
@@ -73,6 +79,7 @@ class LilithApp extends StatelessWidget {
   final PodService Function(PodProvider provider) podFor;
   final ShareService shareService;
   final ShareReader shareReader;
+  final SettingsStore settings;
   final UrlOpener openUrl;
   final FileSharer shareFile;
   final PdfReport pdfReport;
@@ -88,6 +95,7 @@ class LilithApp extends StatelessWidget {
       Provider<PodService Function(PodProvider)>.value(value: podFor),
       Provider<ShareService>.value(value: shareService),
       Provider<ShareReader>.value(value: shareReader),
+      Provider<SettingsStore>.value(value: settings),
     ],
     child: MaterialApp(
       title: 'Lilith',
@@ -177,11 +185,14 @@ class _RootState extends State<_Root> {
         return shares;
       },
       child: ChangeNotifierProvider(
+        // Not lazy: an invite the app was opened with shows on Today at once.
+        lazy: false,
         create: (context) => ReceivedShareRepository(
           context.read<HealthRepository>(),
           context.read<ShareReader>(),
           ownWebId: current.webId,
-        ),
+          settings: context.read<SettingsStore>(),
+        )..loadInvite(),
         child: const AppShell(),
       ),
     ),

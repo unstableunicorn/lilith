@@ -103,6 +103,11 @@ class _Samples extends StatelessWidget {
         ],
         periodStarts: {DateTime(2026, 6, 3)},
       ),
+      const SectionHeading('QR code'),
+      const QrCodeBox(
+        data: 'https://lilith.unstableunicorn.dev/?share=example',
+        label: 'An example invite',
+      ),
       const SectionHeading('Buttons'),
       Wrap(
         spacing: Space.sm,

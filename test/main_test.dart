@@ -42,6 +42,7 @@ void main() {
     podFor: (_) => pod,
     shareService: FakeShareService(),
     shareReader: FakeShareReader(),
+    settings: FakeSettingsStore(),
     openUrl: (_) async {},
     shareFile: (_) async {},
     pdfReport: const PdfReport(),

@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/share.dart';
+import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
@@ -15,9 +18,11 @@ import 'package:material_ui/material_ui.dart';
 import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_settings_store.dart';
+import '../../fakes/fake_share_reader.dart';
 import '../../harness.dart';
 
 void main() {
+  inviteCardTests();
   final today = DateTime(2026, 6, 10);
   late FakePodSessionService auth;
   late SessionRepository session;
@@ -25,6 +30,8 @@ void main() {
   late HealthRepository health;
   late ShellTabs tabs;
   late RecordingUrlOpener urls;
+  late FakeSettingsStore settings;
+  late ReceivedShareRepository received;
 
   setUp(() async {
     auth = FakePodSessionService();
@@ -33,6 +40,13 @@ void main() {
     health = HealthRepository(pod, protection: DataProtection.encrypted);
     tabs = ShellTabs();
     urls = RecordingUrlOpener();
+    settings = FakeSettingsStore();
+    received = ReceivedShareRepository(
+      health,
+      FakeShareReader(),
+      ownWebId: auth.webId,
+      settings: settings,
+    );
   });
 
   // The wait indicator animates forever, so a test that expects it cannot settle.
@@ -49,6 +63,7 @@ void main() {
       harness(
         session: session,
         health: health,
+        received: received,
         tabs: tabs,
         openUrl: urls.call,
         child: HomeScreen(now: () => today),
@@ -205,5 +220,84 @@ void main() {
     await health.load();
     await pump(tester);
     await expectAccessible(tester);
+  });
+}
+
+void inviteCardTests() {
+  const owner =
+      'https://solid.unstableunicorn.dev/unstableunicorn/profile/card#me';
+  const invite = ShareInvite(sharerWebId: owner, code: 'ABCD-EFGH-JKMN-PQRS');
+  final today = DateTime(2026, 6, 10);
+
+  late FakePodSessionService auth;
+  late SessionRepository session;
+  late HealthRepository health;
+  late FakeSettingsStore settings;
+  late ReceivedShareRepository received;
+
+  setUp(() async {
+    auth = FakePodSessionService();
+    session = SessionRepository(auth, FakeSettingsStore());
+    health = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await health.load();
+    settings = FakeSettingsStore()..invite = invite;
+    received = ReceivedShareRepository(
+      health,
+      FakeShareReader(),
+      ownWebId: auth.webId,
+      settings: settings,
+    );
+    await received.loadInvite();
+  });
+
+  Future<void> pump(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        health: health,
+        received: received,
+        child: HomeScreen(now: () => today),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('an invite shows on Today and can be put off', (tester) async {
+    await pump(tester);
+    expect(find.byKey(HomeKeys.invite), findsOneWidget);
+    expect(find.text(owner), findsOneWidget);
+    await expectAccessible(tester);
+    await tester.tap(find.byKey(HomeKeys.dismissInvite));
+    await tester.pumpAndSettle();
+    expect(find.byKey(HomeKeys.invite), findsNothing);
+    expect(settings.invite, isNull);
+  });
+
+  testWidgets('accepting opens the add form filled in from the invite', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(HomeKeys.acceptInvite));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ReceivedKeys.submit), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byKey(ReceivedKeys.webId)).controller!.text,
+      owner,
+    );
+    expect(
+      tester.widget<TextField>(find.byKey(ReceivedKeys.code)).controller!.text,
+      invite.code,
+    );
   });
 }
