@@ -18,11 +18,11 @@ class SolidShareService implements ShareService {
     try {
       final webId = await solid.AuthDataManager.getWebId();
       if (webId == null) throw const PodNotLoggedInException();
+      // solidpod makes a folder by POSTing to its parent, and CSS answers
+      // 404 when the parent is missing, so shares/ comes first.
+      await _ensureDir(await _sharesUrl());
       final folderUrl = await _folderUrl(plan);
-      if (await solid.checkResourceStatus(folderUrl, isFile: false) !=
-          solid.ResourceStatus.exist) {
-        await solid.createDir(folderUrl);
-      }
+      await _ensureDir(folderUrl);
       await solid.createResource(
         '$folderUrl.acl',
         content: await plan.aclTurtle(ownerWebId: webId, folderUrl: folderUrl),
@@ -89,6 +89,17 @@ class SolidShareService implements ShareService {
 
   Future<String> _folderUrl(SharePlan plan) async =>
       solid.getDirUrl('${await solid.getDataDirPath()}/${plan.folderPath}');
+
+  Future<String> _sharesUrl() async => solid.getDirUrl(
+    '${await solid.getDataDirPath()}/${SharePlan.sharesFolder}',
+  );
+
+  Future<void> _ensureDir(String url) async {
+    if (await solid.checkResourceStatus(url, isFile: false) !=
+        solid.ResourceStatus.exist) {
+      await solid.createDir(url);
+    }
+  }
 
   Future<void> _deleteIfExists(
     String url,
