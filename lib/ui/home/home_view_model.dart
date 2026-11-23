@@ -10,6 +10,7 @@ import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -45,7 +46,27 @@ class HomeViewModel extends ChangeNotifier {
     readings: _repo.data.readings,
     periods: _repo.data.periods,
     today: today,
+    usualCycleLength: _repo.data.profile.usualCycleLength,
   );
+
+  /// How the prediction was arrived at, for the person reading it.
+  String howText(CyclePrediction p) => switch (p.method) {
+    PredictionMethod.temperatureShift =>
+      'A sustained temperature rise around '
+          '${formatShortDate(p.estimatedOvulation!, today: today)} '
+          'suggests ovulation; a ${p.lutealLength}-day luteal phase follows.',
+    PredictionMethod.usualCycleLength =>
+      'Based on the usual cycle length you entered. Your own cycles take '
+          'over once two are logged.',
+    PredictionMethod.cycleAverage when p.cycleCount == 0 =>
+      'Only one period logged, so this assumes a typical '
+          '${CyclePredictor.defaultCycleLength}-day cycle.',
+    PredictionMethod.cycleAverage =>
+      'Based on your average cycle of '
+          '${p.averageCycleLength!.toStringAsFixed(1)} days over '
+          '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
+    PredictionMethod.insufficientData => 'Not enough data yet.',
+  };
 
   PeriodFact get fact => factOfTheDay(today);
 

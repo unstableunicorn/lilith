@@ -2,7 +2,6 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
-import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -10,6 +9,8 @@ import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_summary.dart';
+import 'package:lilith/ui/period/period_form_screen.dart';
+import 'package:lilith/ui/period/period_form_view_model.dart';
 import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -21,6 +22,9 @@ abstract final class HomeKeys {
   static const Key error = Key('home.error');
   static const Key dismissError = Key('home.dismissError');
   static const Key noData = Key('home.noData');
+  static const Key startedToday = Key('home.startedToday');
+  static const Key midPeriod = Key('home.midPeriod');
+  static const Key notBleeding = Key('home.notBleeding');
   static const Key prediction = Key('home.prediction');
   static const Key stats = Key('home.stats');
   static const Key avgPeriod = Key('home.avgPeriod');
@@ -114,15 +118,7 @@ class _HomeViewState extends State<_HomeView> {
           const BusyIndicator(key: HomeKeys.loading, label: 'Loading your data')
         else ...[
           if (!vm.hasData)
-            const AppCard(
-              key: HomeKeys.noData,
-              icon: Icons.spa_rounded,
-              title: 'Welcome',
-              child: Text(
-                'Log the day your period starts to begin predicting. Daily '
-                'temperature readings sharpen the estimate.',
-              ),
-            )
+            _WelcomeCard(vm: vm)
           else ...[
             _PredictionCard(vm: vm),
             _StatsRow(vm: vm),
@@ -307,7 +303,7 @@ class _PredictionCard extends StatelessWidget {
             ),
             const SizedBox(height: Space.sm),
           ],
-          Text(_how(p)),
+          Text(vm.howText(p)),
         ],
       ),
     );
@@ -318,20 +314,6 @@ class _PredictionCard extends StatelessWidget {
     1 => 'Your period is expected tomorrow',
     < 0 => 'Your period was expected ${-days} days ago, on ${_date(date)}',
     _ => 'Next period in $days days, around ${_date(date)}',
-  };
-
-  String _how(CyclePrediction p) => switch (p.method) {
-    PredictionMethod.temperatureShift =>
-      'A sustained temperature rise around ${_date(p.estimatedOvulation!)} '
-          'suggests ovulation; a ${p.lutealLength}-day luteal phase follows.',
-    PredictionMethod.cycleAverage when p.cycleCount == 0 =>
-      'Only one period logged, so this assumes a typical '
-          '${CyclePredictor.defaultCycleLength}-day cycle.',
-    PredictionMethod.cycleAverage =>
-      'Based on your average cycle of '
-          '${p.averageCycleLength!.toStringAsFixed(1)} days over '
-          '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
-    PredictionMethod.insufficientData => 'Not enough data yet.',
   };
 
   String _date(DateTime d) => formatShortDate(d, today: vm.today);
@@ -445,6 +427,62 @@ class _InviteCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Nothing logged yet: where the user is in their cycle, in one tap.
+class _WelcomeCard extends StatelessWidget {
+  const _WelcomeCard({required this.vm});
+
+  final HomeViewModel vm;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    key: HomeKeys.noData,
+    icon: Icons.spa_rounded,
+    title: 'Welcome',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Where are you in your cycle? Predictions start from your first '
+          'period, and daily temperatures sharpen them.',
+        ),
+        const SizedBox(height: Space.md),
+        FilledButton.icon(
+          key: HomeKeys.startedToday,
+          onPressed: vm.logPeriodStart,
+          icon: const Icon(Icons.water_drop_rounded),
+          label: const Text('My period started today'),
+        ),
+        const SizedBox(height: Space.sm),
+        FilledButton.tonalIcon(
+          key: HomeKeys.midPeriod,
+          onPressed: () => _open(context, PeriodFormMode.midPeriod),
+          icon: const Icon(Icons.timelapse_rounded),
+          label: const Text("I'm in the middle of my period"),
+        ),
+        const SizedBox(height: Space.sm),
+        FilledButton.tonalIcon(
+          key: HomeKeys.notBleeding,
+          onPressed: () => _open(context, PeriodFormMode.pastPeriod),
+          icon: const Icon(Icons.history_rounded),
+          label: const Text('Not bleeding now: add my last period'),
+        ),
+      ],
+    ),
+  );
+
+  void _open(BuildContext context, PeriodFormMode mode) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: PeriodFormScreen(mode: mode, now: vm.now),
+        ),
       ),
     );
   }

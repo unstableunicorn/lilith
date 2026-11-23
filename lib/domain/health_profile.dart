@@ -51,6 +51,8 @@ class HealthProfile {
     Set<ReproductiveCondition> conditions = const {},
     Set<FertilityTreatment> treatments = const {},
     this.notes = '',
+    this.usualCycleLength,
+    this.usualPeriodLength,
   }) : conditions = Set.unmodifiable(conditions),
        treatments = Set.unmodifiable(treatments);
 
@@ -64,30 +66,61 @@ class HealthProfile {
         ?FertilityTreatment.fromName(t as String?),
     },
     notes: json['notes'] as String? ?? '',
+    usualCycleLength: (json['usualCycleLength'] as num?)?.toInt(),
+    usualPeriodLength: (json['usualPeriodLength'] as num?)?.toInt(),
   );
+
+  /// What the app accepts as a usual cycle length, in days.
+  static const int minCycleLength = 15;
+  static const int maxCycleLength = 60;
+
+  /// What the app accepts as a usual period length, in days.
+  static const int minPeriodLength = 1;
+  static const int maxPeriodLength = 10;
 
   final Set<ReproductiveCondition> conditions;
   final Set<FertilityTreatment> treatments;
   final String notes;
 
+  /// The user's own idea of their cycle and period length, in days, used
+  /// only until real cycles have been logged.
+  final int? usualCycleLength;
+  final int? usualPeriodLength;
+
   /// True when there is nothing worth storing.
   bool get isEmpty =>
-      conditions.isEmpty && treatments.isEmpty && notes.trim().isEmpty;
+      conditions.isEmpty &&
+      treatments.isEmpty &&
+      notes.trim().isEmpty &&
+      usualCycleLength == null &&
+      usualPeriodLength == null;
 
   HealthProfile copyWith({
     Set<ReproductiveCondition>? conditions,
     Set<FertilityTreatment>? treatments,
     String? notes,
+    int? usualCycleLength,
+    bool clearUsualCycleLength = false,
+    int? usualPeriodLength,
+    bool clearUsualPeriodLength = false,
   }) => HealthProfile(
     conditions: conditions ?? this.conditions,
     treatments: treatments ?? this.treatments,
     notes: notes ?? this.notes,
+    usualCycleLength: clearUsualCycleLength
+        ? null
+        : usualCycleLength ?? this.usualCycleLength,
+    usualPeriodLength: clearUsualPeriodLength
+        ? null
+        : usualPeriodLength ?? this.usualPeriodLength,
   );
 
   Map<String, dynamic> toJson() => {
     'conditions': conditions.map((c) => c.name).toList(),
     'treatments': treatments.map((t) => t.name).toList(),
     'notes': notes,
+    if (usualCycleLength != null) 'usualCycleLength': usualCycleLength,
+    if (usualPeriodLength != null) 'usualPeriodLength': usualPeriodLength,
   };
 
   @override
@@ -95,12 +128,16 @@ class HealthProfile {
       other is HealthProfile &&
       _conditions.equals(other.conditions, conditions) &&
       _treatments.equals(other.treatments, treatments) &&
-      other.notes == notes;
+      other.notes == notes &&
+      other.usualCycleLength == usualCycleLength &&
+      other.usualPeriodLength == usualPeriodLength;
 
   @override
   int get hashCode => Object.hash(
     _conditions.hash(conditions),
     _treatments.hash(treatments),
     notes,
+    usualCycleLength,
+    usualPeriodLength,
   );
 }
