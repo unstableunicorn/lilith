@@ -14,6 +14,7 @@ import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:provider/provider.dart';
 
+import 'fakes/fake_notification_service.dart';
 import 'fakes/fake_pod_service.dart';
 import 'fakes/fake_share_reader.dart';
 import 'fakes/fake_share_service.dart';
@@ -43,6 +44,7 @@ void main() {
     shareService: FakeShareService(),
     shareReader: FakeShareReader(),
     settings: FakeSettingsStore(),
+    notifications: FakeNotificationService(),
     openUrl: (_) async {},
     shareFile: (_) async {},
     pdfReport: const PdfReport(),

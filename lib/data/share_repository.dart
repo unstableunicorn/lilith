@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lilith/data/export/csv_export.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_cipher.dart';
@@ -16,6 +17,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/share_reminder.dart';
 
 /// What last went wrong, for the UI to phrase.
 enum ShareError { notLoggedIn, unreachable, failed }
@@ -25,6 +27,7 @@ class ShareRepository extends ChangeNotifier {
     this._health,
     this._pod, {
     required this.protection,
+    this._notifications = const NoNotificationService(),
     this._now = DateTime.now,
     Random? random,
     this._codec = const HealthDocumentCodec(),
@@ -37,6 +40,7 @@ class ShareRepository extends ChangeNotifier {
 
   final HealthRepository _health;
   final ShareService _pod;
+  final NotificationService _notifications;
 
   /// How the sharer's own data is stored. Encrypted data gets encrypted
   /// copies, each with its own key.
@@ -89,6 +93,7 @@ class ShareRepository extends ChangeNotifier {
     await _pod.open(SharePlan.forRecipient(share.recipientWebId));
     await _writeCopy(share, sharedView(_health.data));
     await _health.apply((d) => d.withShare(share));
+    await _remind(share);
     return share;
   });
 
@@ -100,13 +105,27 @@ class ShareRepository extends ChangeNotifier {
   Future<void> revoke(Share share) => _run(() async {
     await _pod.close(SharePlan.forRecipient(share.recipientWebId));
     await _health.apply((d) => d.withoutShare(share.recipientWebId));
+    await _notifications.cancel(shareReminderId(share));
   });
 
-  /// Ends every share past its last day. Safe to call on every start.
+  /// Ends every share past its last day and makes sure the rest have their
+  /// reminder on this device. Safe to call on every start.
   Future<void> sweep(DateTime today) async {
     for (final share in overdue(today)) {
       await revoke(share);
     }
+    for (final share in shares) {
+      await _remind(share, ask: false);
+    }
+  }
+
+  /// Schedules the share's end-day reminder, asking for permission on the
+  /// first share made here. A share with no end day has no reminder.
+  Future<void> _remind(Share share, {bool ask = true}) async {
+    final reminder = shareReminder(share);
+    if (reminder == null) return;
+    if (ask) await _notifications.requestPermission();
+    await _notifications.schedule(reminder);
   }
 
   void clearError() {

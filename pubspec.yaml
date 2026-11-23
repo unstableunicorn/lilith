@@ -24,6 +24,8 @@ dependencies:
   encrypter_plus: ^5.1.0
   meta: ^1.16.0
   qr_flutter: ^4.1.0
+  flutter_local_notifications: ^23.0.4
+  timezone: ^0.11.2
 
 dev_dependencies:
   flutter_test:

@@ -12,12 +12,15 @@ import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/share_reminder.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
+import '../fakes/fake_notification_service.dart';
 import '../fakes/fake_pod_service.dart';
 import '../fakes/fake_share_service.dart';
 
 void main() {
+  reminderTests();
   reportShareTests();
   const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   const codec = HealthDocumentCodec();
@@ -373,5 +376,83 @@ void reportShareTests() {
         'https://pod.example/me/lilith/data/shares/${share.id}/',
       );
     });
+  });
+}
+
+void reminderTests() {
+  const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
+  const codec = HealthDocumentCodec();
+  final may1 = DateTime(2026, 5, 1);
+
+  late FakePodService pod;
+  late FakeShareService shares;
+  late FakeNotificationService notifications;
+  late HealthRepository health;
+  late ShareRepository repo;
+
+  setUp(() async {
+    pod = FakePodService();
+    health = HealthRepository(pod, protection: DataProtection.plain);
+    pod.documents[health.documentPath] = codec.encode(HealthData.empty);
+    shares = FakeShareService();
+    notifications = FakeNotificationService();
+    repo = ShareRepository(
+      health,
+      shares,
+      protection: DataProtection.plain,
+      notifications: notifications,
+      random: Random(1),
+    );
+    await health.load();
+  });
+
+  test(
+    'a share with an end day asks once and schedules its reminder',
+    () async {
+      final share = (await repo.create(
+        recipientWebId: wife,
+        label: 'Alex',
+        duration: ShareDuration.thirtyDays,
+        today: may1,
+      ))!;
+      expect(notifications.permissionRequests, 1);
+      final r = notifications.scheduled[shareReminderId(share)]!;
+      expect(r.at, DateTime(2026, 6, 1, reminderHour));
+    },
+  );
+
+  test('a share without an end day schedules nothing', () async {
+    await repo.create(
+      recipientWebId: wife,
+      label: 'A',
+      duration: ShareDuration.untilRevoked,
+      today: may1,
+    );
+    expect(notifications.scheduled, isEmpty);
+    expect(notifications.permissionRequests, 0);
+  });
+
+  test('revoking cancels the reminder; sweep re-schedules the rest', () async {
+    final a = (await repo.create(
+      recipientWebId: wife,
+      label: 'A',
+      duration: ShareDuration.thirtyDays,
+      today: may1,
+    ))!;
+    final b = (await repo.create(
+      recipientWebId: '${wife}2',
+      label: 'B',
+      duration: ShareDuration.ninetyDays,
+      today: may1,
+    ))!;
+    await repo.revoke(a);
+    expect(notifications.cancelled, [shareReminderId(a)]);
+    expect(notifications.scheduled.keys, [shareReminderId(b)]);
+    notifications.scheduled.clear();
+    await repo.sweep(may1);
+    expect(notifications.scheduled.keys, [shareReminderId(b)]);
+    await repo.sweep(DateTime(2026, 8, 1));
+    expect(repo.shares, isEmpty);
+    expect(notifications.cancelled, contains(shareReminderId(b)));
   });
 }
