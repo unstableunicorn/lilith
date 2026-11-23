@@ -303,6 +303,8 @@ void refreshTests() {
       await pullDown(tester, find.textContaining('Someone who shares'));
       expect(reader.reads, greaterThan(before));
       expect(find.textContaining('Ended'), findsOneWidget);
+      expect(find.byKey(ReceivedKeys.open(share)), findsNothing);
+      expect(find.byKey(ReceivedKeys.remove(share)), findsOneWidget);
       await expectAccessible(tester);
     },
   );
