@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,5 +49,12 @@ void main() {
       SharedPreferencesSettingsStore.inviteKey: '::not a uri::',
     });
     expect(await store.readInvite(), isNull);
+  });
+
+  test('keeps the daily reminder, off by default', () async {
+    expect(await store.readReminder(), const ReminderSetting());
+    const on = ReminderSetting(enabled: true, hour: 6, minute: 45);
+    await store.writeReminder(on);
+    expect(await store.readReminder(), on);
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
@@ -11,6 +12,9 @@ import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
+
+import 'fakes/fake_notification_service.dart';
+import 'fakes/fake_settings_store.dart';
 
 /// Records the URLs a screen asked to open.
 class RecordingUrlOpener {
@@ -28,6 +32,7 @@ Widget harness({
   SetupRepository? setup,
   ShareRepository? shares,
   ReceivedShareRepository? received,
+  ReminderRepository? reminders,
   ShellTabs? tabs,
   UrlOpener? openUrl,
   FileSharer? shareFile,
@@ -39,6 +44,11 @@ Widget harness({
     if (setup != null) ChangeNotifierProvider.value(value: setup),
     if (shares != null) ChangeNotifierProvider.value(value: shares),
     if (received != null) ChangeNotifierProvider.value(value: received),
+    ChangeNotifierProvider.value(
+      value:
+          reminders ??
+          ReminderRepository(FakeSettingsStore(), FakeNotificationService()),
+    ),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
     Provider<FileSharer>.value(value: shareFile ?? (_) async {}),

@@ -31,8 +31,15 @@ class Reminder {
 }
 
 abstract interface class NotificationService {
+  /// Whether this device can show scheduled notifications at all.
+  bool get isAvailable;
+
   /// Asks the system once; true when notifications may be shown.
   Future<bool> requestPermission();
+
+  /// Shows [reminder] at its time and again every day at that time of day,
+  /// replacing any with the same id.
+  Future<void> scheduleDaily(Reminder reminder);
 
   /// Shows [reminder] at its time, replacing any with the same id. A time
   /// already past is dropped.
@@ -46,7 +53,13 @@ class NoNotificationService implements NotificationService {
   const NoNotificationService();
 
   @override
+  bool get isAvailable => false;
+
+  @override
   Future<bool> requestPermission() async => false;
+
+  @override
+  Future<void> scheduleDaily(Reminder reminder) async {}
 
   @override
   Future<void> schedule(Reminder reminder) async {}
