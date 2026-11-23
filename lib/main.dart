@@ -4,7 +4,10 @@ import 'dart:async';
 
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/export/share_file.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/notifications/local_notification_service.dart';
+import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/pod/share_reader.dart';
@@ -47,6 +50,9 @@ void main() {
       shareService: const SolidShareService(),
       shareReader: const SolidShareReader(),
       settings: settings,
+      notifications: kIsWeb
+          ? const NoNotificationService()
+          : LocalNotificationService(),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
@@ -66,6 +72,7 @@ class LilithApp extends StatelessWidget {
     required this.shareService,
     required this.shareReader,
     required this.settings,
+    required this.notifications,
     required this.openUrl,
     required this.shareFile,
     required this.pdfReport,
@@ -80,6 +87,7 @@ class LilithApp extends StatelessWidget {
   final ShareService shareService;
   final ShareReader shareReader;
   final SettingsStore settings;
+  final NotificationService notifications;
   final UrlOpener openUrl;
   final FileSharer shareFile;
   final PdfReport pdfReport;
@@ -96,6 +104,7 @@ class LilithApp extends StatelessWidget {
       Provider<ShareService>.value(value: shareService),
       Provider<ShareReader>.value(value: shareReader),
       Provider<SettingsStore>.value(value: settings),
+      Provider<NotificationService>.value(value: notifications),
     ],
     child: MaterialApp(
       title: 'Lilith',
@@ -180,6 +189,7 @@ class _RootState extends State<_Root> {
           health,
           context.read<ShareService>(),
           protection: protection,
+          notifications: context.read<NotificationService>(),
         );
         unawaited(health.load().then((_) => shares.sweep(DateTime.now())));
         return shares;
