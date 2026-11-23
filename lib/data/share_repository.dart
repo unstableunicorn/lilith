@@ -4,6 +4,8 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/data/export/csv_export.dart';
+import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
@@ -11,6 +13,7 @@ import 'package:lilith/data/pod/share_cipher.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/pod/share_service.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
 
@@ -22,9 +25,12 @@ class ShareRepository extends ChangeNotifier {
     this._health,
     this._pod, {
     required this.protection,
+    this._now = DateTime.now,
     Random? random,
     this._codec = const HealthDocumentCodec(),
     this._cipher = const ShareCipher(),
+    this._pdf = const PdfReport(),
+    this._csv = const CsvExport(),
   }) : _random = random ?? Random.secure() {
     _health.addListener(_onHealthChanged);
   }
@@ -36,9 +42,12 @@ class ShareRepository extends ChangeNotifier {
   /// copies, each with its own key.
   final DataProtection protection;
 
+  final DateTime Function() _now;
   final Random _random;
   final HealthDocumentCodec _codec;
   final ShareCipher _cipher;
+  final PdfReport _pdf;
+  final CsvExport _csv;
 
   HealthData? _lastCopied;
   bool _busy = false;
@@ -61,22 +70,31 @@ class ShareRepository extends ChangeNotifier {
     required String label,
     required ShareDuration duration,
     required DateTime today,
+    ShareContent content = ShareContent.cycleData,
+    ExportRange? range,
   }) => _run(() async {
     final share = Share(
       recipientWebId: recipientWebId.trim(),
       label: label.trim(),
       createdOn: today,
       expiresOn: duration.endFrom(today),
-      code: protection == DataProtection.encrypted
+      code:
+          protection == DataProtection.encrypted &&
+              content == ShareContent.cycleData
           ? ShareKey.generate(_random).code
           : null,
+      content: content,
+      range: range,
     );
-    final plan = SharePlan.forRecipient(share.recipientWebId);
-    await _pod.open(plan);
-    await _pod.write(plan, _copyFor(share, sharedView(_health.data)));
+    await _pod.open(SharePlan.forRecipient(share.recipientWebId));
+    await _writeCopy(share, sharedView(_health.data));
     await _health.apply((d) => d.withShare(share));
     return share;
   });
+
+  /// Where the share's folder is, for a recipient without the app.
+  Future<Uri> folderUrl(Share share) =>
+      _pod.folderUrl(SharePlan.forRecipient(share.recipientWebId));
 
   /// Ends the share on the pod, then forgets it.
   Future<void> revoke(Share share) => _run(() async {
@@ -110,20 +128,37 @@ class ShareRepository extends ChangeNotifier {
     }
     _run(() async {
       for (final share in shares) {
-        await _pod.write(
-          SharePlan.forRecipient(share.recipientWebId),
-          _copyFor(share, current),
-        );
+        await _writeCopy(share, current);
       }
     });
   }
 
-  String _copyFor(Share share, HealthData view) {
-    final json = _codec.encode(view);
-    return switch (share.code) {
-      final code? => _cipher.encrypt(json, ShareKey.fromCode(code)!, _random),
-      null => json,
-    };
+  /// The app view as JSON or a JWE; a report as a PDF and a CSV.
+  Future<void> _writeCopy(Share share, HealthData view) async {
+    final plan = SharePlan.forRecipient(share.recipientWebId);
+    if (!share.isReport) {
+      final json = _codec.encode(view);
+      return _pod.write(plan, switch (share.code) {
+        final code? => _cipher.encrypt(json, ShareKey.fromCode(code)!, _random),
+        null => json,
+      });
+    }
+    final range = share.range!;
+    final today = _now();
+    final pdf = await _pdf.build(
+      reportContent(view, range: range, today: today),
+    );
+    await _pod.writeFile(plan, SharePlan.reportName, pdf.bytes);
+    await _pod.writeFile(
+      plan,
+      SharePlan.csvName,
+      _csv
+          .build(
+            exportRows(view, range: range, today: today),
+            today: today,
+          )
+          .bytes,
+    );
   }
 
   Future<T?> _run<T>(Future<T> Function() action) async {

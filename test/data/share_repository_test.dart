@@ -7,6 +7,7 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_cipher.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
@@ -17,6 +18,7 @@ import '../fakes/fake_pod_service.dart';
 import '../fakes/fake_share_service.dart';
 
 void main() {
+  reportShareTests();
   const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   const codec = HealthDocumentCodec();
   const cipher = ShareCipher();
@@ -268,5 +270,108 @@ void main() {
       today: may1,
     );
     expect(notified, greaterThan(0));
+  });
+}
+
+void reportShareTests() {
+  const doctor = 'https://pods.example/clinic/profile/card#me';
+  const codec = HealthDocumentCodec();
+  final may1 = DateTime(2026, 5, 1);
+  final stored = HealthData.empty
+      .withPeriod(PeriodEvent(startDate: may1))
+      .withReading(TemperatureReading(date: may1, celsius: 36.4))
+      .withProfile(HealthProfile(notes: 'private'));
+
+  late FakePodService pod;
+  late FakeShareService shares;
+  late HealthRepository health;
+  late ShareRepository repo;
+
+  setUp(() async {
+    pod = FakePodService();
+    health = HealthRepository(pod, protection: DataProtection.encrypted);
+    pod.documents[health.documentPath] = codec.encode(stored);
+    shares = FakeShareService();
+    repo = ShareRepository(
+      health,
+      shares,
+      protection: DataProtection.encrypted,
+      now: () => DateTime(2026, 6, 10),
+      random: Random(1),
+    );
+    await health.load();
+  });
+
+  group('a report share', () {
+    test(
+      'writes a PDF and a CSV, plain, with no code even when encrypted',
+      () async {
+        final share = (await repo.create(
+          recipientWebId: doctor,
+          label: 'Dr Patel',
+          duration: ShareDuration.thirtyDays,
+          today: may1,
+          content: ShareContent.report,
+          range: ExportRange.year,
+        ))!;
+        expect(share.isReport, isTrue);
+        expect(share.code, isNull);
+        expect(share.range, ExportRange.year);
+        final folder = 'shares/${share.id}';
+        expect(shares.calls, [
+          'open $folder',
+          'file $folder report.pdf',
+          'file $folder cycle_data.csv',
+        ]);
+        expect(shares.folders[folder], isNull);
+        final files = shares.files[folder]!;
+        expect(String.fromCharCodes(files['report.pdf']!.take(4)), '%PDF');
+        final csv = String.fromCharCodes(files['cycle_data.csv']!);
+        expect(csv.split('\n').first, startsWith('date,temperature_c'));
+        expect(csv, contains('2026-05-01'));
+        expect(csv, isNot(contains('private')));
+      },
+    );
+
+    test('a save rewrites the report', () async {
+      final share = (await repo.create(
+        recipientWebId: doctor,
+        label: 'Dr',
+        duration: ShareDuration.untilRevoked,
+        today: may1,
+        content: ShareContent.report,
+      ))!;
+      shares.calls.clear();
+      await health.apply(
+        (d) => d.withReading(
+          TemperatureReading(date: DateTime(2026, 5, 2), celsius: 36.6),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(shares.calls, [
+        'file shares/${share.id} report.pdf',
+        'file shares/${share.id} cycle_data.csv',
+      ]);
+      expect(
+        String.fromCharCodes(
+          shares.files['shares/${share.id}']!['cycle_data.csv']!,
+        ),
+        contains('2026-05-02'),
+      );
+    });
+
+    test('tells where the folder is', () async {
+      final share = (await repo.create(
+        recipientWebId: doctor,
+        label: 'Dr',
+        duration: ShareDuration.untilRevoked,
+        today: may1,
+        content: ShareContent.report,
+      ))!;
+      expect(
+        (await repo.folderUrl(share)).toString(),
+        'https://pod.example/me/lilith/data/shares/${share.id}/',
+      );
+    });
   });
 }

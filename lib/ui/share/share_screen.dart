@@ -4,6 +4,7 @@
 import 'package:flutter/services.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/share/share_view_model.dart';
@@ -24,6 +25,11 @@ abstract final class ShareKeys {
   static const Key webIdProblem = Key('share.webIdProblem');
   static const Key submit = Key('share.submit');
   static Key duration(ShareDuration d) => Key('share.duration.${d.name}');
+  static Key content(ShareContent c) => Key('share.content.${c.name}');
+  static Key range(ExportRange r) => Key('share.range.${r.name}');
+  static const Key createdLink = Key('share.createdLink');
+  static const Key copyLink = Key('share.copyLink');
+  static Key link(Share s) => Key('share.link.${s.id}');
   static Key card(Share s) => Key('share.card.${s.id}');
   static Key end(Share s) => Key('share.end.${s.id}');
   static Key code(Share s) => Key('share.code.${s.id}');
@@ -132,7 +138,46 @@ class _ShareViewState extends State<_ShareView> {
         if (vm.webId.isNotEmpty)
           if (vm.webIdProblem case final problem?)
             ProblemText(key: ShareKeys.webIdProblem, _describeProblem(problem)),
-        const SizedBox(height: Space.md),
+        const SectionHeading('What they get'),
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xs,
+          children: [
+            for (final c in ShareContent.values)
+              ChoiceChip(
+                key: ShareKeys.content(c),
+                label: Text(c.label),
+                selected: vm.content == c,
+                onSelected: (_) => vm.setContent(c),
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: Space.sm),
+          child: Text(
+            vm.content.description,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        if (vm.content == ShareContent.report) ...[
+          const SectionHeading('How far back'),
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.xs,
+            children: [
+              for (final r in ExportRange.values)
+                ChoiceChip(
+                  key: ShareKeys.range(r),
+                  label: Text(r.label),
+                  selected: vm.range == r,
+                  onSelected: (_) => vm.setRange(r),
+                ),
+            ],
+          ),
+        ],
+        const SectionHeading('For how long'),
         Wrap(
           spacing: Space.sm,
           runSpacing: Space.xs,
@@ -188,7 +233,33 @@ class _CreatedCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (share.code case final code?) ...[
+          if (share.isReport) ...[
+            const Text(
+              'Their PDF report and CSV are in this folder on your pod. '
+              'They open it with their own Solid login, in a Solid data '
+              'browser or any Solid app.',
+            ),
+            const SizedBox(height: Space.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    key: ShareKeys.createdLink,
+                    vm.createdLink?.toString() ?? '',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                IconButton(
+                  key: ShareKeys.copyLink,
+                  tooltip: 'Copy link',
+                  icon: const Icon(Icons.copy_rounded),
+                  onPressed: vm.createdLink == null
+                      ? null
+                      : () => _copy(context, vm.createdLink.toString()),
+                ),
+              ],
+            ),
+          ] else if (share.code case final code?) ...[
             const Text(
               'Tell them this code in person. It is the only way to read '
               'the share. You can see it again from the list.',
@@ -215,14 +286,16 @@ class _CreatedCard extends StatelessWidget {
             const Text(
               'They can read it as soon as they log in with their WebID.',
             ),
-          const SizedBox(height: Space.md),
-          const Text('Or let them scan this with their phone:'),
-          const SizedBox(height: Space.sm),
-          QrCodeBox(
-            key: ShareKeys.createdQr,
-            data: vm.inviteLink(share).toString(),
-            label: 'Invite for ${share.label}',
-          ),
+          if (!share.isReport) ...[
+            const SizedBox(height: Space.md),
+            const Text('Or let them scan this with their phone:'),
+            const SizedBox(height: Space.sm),
+            QrCodeBox(
+              key: ShareKeys.createdQr,
+              data: vm.inviteLink(share).toString(),
+              label: 'Invite for ${share.label}',
+            ),
+          ],
           const SizedBox(height: Space.sm),
           TextButton(
             key: ShareKeys.dismissCreated,
@@ -253,6 +326,14 @@ class _ShareCard extends StatelessWidget {
   final ShareViewModel vm;
   final DateTime today;
 
+  Future<void> _copyLink(BuildContext context) async {
+    final url = await vm.folderUrl(share);
+    await Clipboard.setData(ClipboardData(text: url.toString()));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Link copied')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -270,6 +351,7 @@ class _ShareCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Space.xs),
+          Text(shareContentText(share)),
           Text(key: ShareKeys.end(share), shareEndText(share, today: today)),
           if (vm.isRevealed(share)) ...[
             if (share.code case final code?)
@@ -294,22 +376,30 @@ class _ShareCard extends StatelessWidget {
           Wrap(
             spacing: Space.sm,
             children: [
-              TextButton.icon(
-                key: ShareKeys.showCode(share),
-                onPressed: () => vm.toggleRevealed(share),
-                icon: Icon(
-                  vm.isRevealed(share)
-                      ? Icons.visibility_off_rounded
-                      : Icons.qr_code_rounded,
+              if (share.isReport)
+                TextButton.icon(
+                  key: ShareKeys.link(share),
+                  onPressed: () => _copyLink(context),
+                  icon: const Icon(Icons.link_rounded),
+                  label: const Text('Copy link'),
+                )
+              else
+                TextButton.icon(
+                  key: ShareKeys.showCode(share),
+                  onPressed: () => vm.toggleRevealed(share),
+                  icon: Icon(
+                    vm.isRevealed(share)
+                        ? Icons.visibility_off_rounded
+                        : Icons.qr_code_rounded,
+                  ),
+                  label: Text(
+                    vm.isRevealed(share)
+                        ? 'Hide'
+                        : share.isEncrypted
+                        ? 'Show code and QR'
+                        : 'Show QR',
+                  ),
                 ),
-                label: Text(
-                  vm.isRevealed(share)
-                      ? 'Hide'
-                      : share.isEncrypted
-                      ? 'Show code and QR'
-                      : 'Show QR',
-                ),
-              ),
               TextButton.icon(
                 key: ShareKeys.revoke(share),
                 onPressed: vm.isBusy ? null : () => vm.revoke(share),

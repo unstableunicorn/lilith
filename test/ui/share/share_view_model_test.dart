@@ -5,6 +5,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/share/share_view_model.dart';
 
@@ -142,6 +143,49 @@ void main() {
     expect(
       ShareInvite.fromUri(link),
       ShareInvite(sharerWebId: me, code: vm.shares.single.code),
+    );
+  });
+
+  test(
+    'a report share takes a span, has no code, and knows its folder',
+    () async {
+      vm.setLabel('Dr Patel');
+      vm.setWebId(wife);
+      vm.setContent(ShareContent.report);
+      vm.setRange(ExportRange.year);
+      await vm.share();
+      final share = vm.created!;
+      expect(share.isReport, isTrue);
+      expect(share.range, ExportRange.year);
+      expect(share.code, isNull);
+      expect(vm.createdLink.toString(), endsWith('/shares/${share.id}/'));
+      expect(vm.content, ShareContent.cycleData);
+      expect(vm.range, ExportRange.sixMonths);
+      expect((await vm.folderUrl(share)), vm.createdLink);
+      vm.dismissCreated();
+      expect(vm.createdLink, isNull);
+    },
+  );
+
+  test('describes what a share holds', () {
+    final today = DateTime(2026, 5, 1);
+    expect(
+      shareContentText(
+        Share(recipientWebId: wife, label: 'A', createdOn: today),
+      ),
+      'The app view',
+    );
+    expect(
+      shareContentText(
+        Share(
+          recipientWebId: wife,
+          label: 'A',
+          createdOn: today,
+          content: ShareContent.report,
+          range: ExportRange.all,
+        ),
+      ),
+      'A PDF report and CSV, everything',
     );
   });
 }

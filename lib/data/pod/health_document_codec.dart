@@ -32,7 +32,8 @@ class UnsupportedDocumentVersionException implements Exception {
 /// Brings [doc] up to [HealthDocumentCodec.currentVersion], one step at a time.
 ///
 /// A document without a version is version 1. Version 2 was never written.
-/// Version 4 added the shares, version 5 the shares received.
+/// Version 4 added the shares, version 5 the shares received, version 6 what
+/// each share holds.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -44,6 +45,7 @@ Map<String, dynamic> migrate(Map<String, dynamic> doc) {
       1 => _v1ToV3(current),
       3 => _v3ToV4(current),
       4 => _v4ToV5(current),
+      5 => _v5ToV6(current),
       _ => throw UnsupportedDocumentVersionException(version),
     };
     version = current['version'] as int;
@@ -71,11 +73,21 @@ Map<String, dynamic> _v4ToV5(Map<String, dynamic> doc) => {
   'received': <Object>[],
 };
 
+/// Every share so far held the app view.
+Map<String, dynamic> _v5ToV6(Map<String, dynamic> doc) => {
+  ...doc,
+  'version': 6,
+  'shares': [
+    for (final s in (doc['shares'] as List? ?? const []))
+      {...s as Map<String, dynamic>, 'content': 'cycleData'},
+  ],
+};
+
 /// Encodes and decodes [HealthData] as the pod document.
 class HealthDocumentCodec {
   const HealthDocumentCodec();
 
-  static const int currentVersion = 5;
+  static const int currentVersion = 6;
 
   String encode(HealthData data) => jsonEncode({
     'version': currentVersion,

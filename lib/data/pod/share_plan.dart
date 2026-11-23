@@ -19,7 +19,14 @@ class SharePlan {
   final String folderPath;
 
   /// The share copy of the cycle data, in that folder.
-  String get documentPath => '$folderPath/cycle_data.json';
+  String get documentPath => '$folderPath/$documentName';
+
+  static const String documentName = 'cycle_data.json';
+  static const String reportName = 'report.pdf';
+  static const String csvName = 'cycle_data.csv';
+
+  /// Everything a share folder may hold, for closing it.
+  static const List<String> fileNames = [documentName, reportName, csvName];
 
   /// Where the copy lives on the sharer's pod, for the recipient to fetch.
   /// [podRoot] is the sharer's storage root; the app folder and data folder

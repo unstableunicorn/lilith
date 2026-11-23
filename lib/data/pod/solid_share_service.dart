@@ -1,5 +1,7 @@
 // ShareService on a real Solid pod through solidpod's resource functions.
 
+import 'dart:typed_data';
+
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/pod/share_service.dart';
@@ -51,18 +53,34 @@ class SolidShareService implements ShareService {
   }
 
   @override
+  Future<void> writeFile(SharePlan plan, String name, Uint8List bytes) async {
+    await solidPodReady;
+    try {
+      await solid.createResource(
+        '${await _folderUrl(plan)}$name',
+        content: bytes,
+        contentType: solid.ResourceContentType.auto,
+      );
+    } catch (e) {
+      throw toPodException(e);
+    }
+  }
+
+  @override
+  Future<Uri> folderUrl(SharePlan plan) async {
+    await solidPodReady;
+    return Uri.parse(await _folderUrl(plan));
+  }
+
+  @override
   Future<void> close(SharePlan plan) async {
     await solidPodReady;
     try {
       final folderUrl = await _folderUrl(plan);
       await _deleteIfExists('$folderUrl.acl', solid.ResourceContentType.any);
-      await _deleteIfExists(
-        await solid.getFileUrl(
-          '${await solid.getDataDirPath()}/'
-          '${plan.documentPath}',
-        ),
-        solid.ResourceContentType.any,
-      );
+      for (final name in SharePlan.fileNames) {
+        await _deleteIfExists('$folderUrl$name', solid.ResourceContentType.any);
+      }
       await _deleteIfExists(folderUrl, solid.ResourceContentType.directory);
     } catch (e) {
       throw toPodException(e);

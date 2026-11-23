@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/pod/solid_client.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/dates.dart';
 
@@ -23,7 +24,10 @@ class ShareViewModel extends ChangeNotifier {
   String _label = '';
   String _webId = '';
   ShareDuration _duration = ShareDuration.recommended;
+  ShareContent _content = ShareContent.cycleData;
+  ExportRange _range = ExportRange.sixMonths;
   Share? _created;
+  Uri? _createdLink;
   final Set<String> _revealed = {};
 
   List<Share> get shares => _repo.shares;
@@ -33,9 +37,16 @@ class ShareViewModel extends ChangeNotifier {
   String get label => _label;
   String get webId => _webId;
   ShareDuration get duration => _duration;
+  ShareContent get content => _content;
+
+  /// How far back a report reaches; only asked for a report.
+  ExportRange get range => _range;
 
   /// The share just made, with its code to pass on, until dismissed.
   Share? get created => _created;
+
+  /// Where the just-made report lives, for a recipient without the app.
+  Uri? get createdLink => _createdLink;
 
   WebIdProblem? get webIdProblem {
     final text = _webId.trim();
@@ -57,6 +68,8 @@ class ShareViewModel extends ChangeNotifier {
   void setLabel(String text) => _edit(() => _label = text);
   void setWebId(String text) => _edit(() => _webId = text);
   void setDuration(ShareDuration d) => _edit(() => _duration = d);
+  void setContent(ShareContent c) => _edit(() => _content = c);
+  void setRange(ExportRange r) => _edit(() => _range = r);
 
   Future<void> share() async {
     if (!canShare) return;
@@ -65,16 +78,27 @@ class ShareViewModel extends ChangeNotifier {
       label: _label,
       duration: _duration,
       today: now(),
+      content: _content,
+      range: _range,
     );
     if (share == null) return;
     _created = share;
+    _createdLink = share.isReport ? await _repo.folderUrl(share) : null;
     _label = '';
     _webId = '';
     _duration = ShareDuration.recommended;
+    _content = ShareContent.cycleData;
+    _range = ExportRange.sixMonths;
     notifyListeners();
   }
 
-  void dismissCreated() => _edit(() => _created = null);
+  void dismissCreated() => _edit(() {
+    _created = null;
+    _createdLink = null;
+  });
+
+  /// Where a report share's folder is, to copy for the recipient.
+  Future<Uri> folderUrl(Share share) => _repo.folderUrl(share);
 
   Future<void> revoke(Share share) => _repo.revoke(share);
 
@@ -120,4 +144,10 @@ String sharingSummary(List<Share> shares) => switch (shares.length) {
   0 => 'Not shared with anyone',
   1 => 'Shared with ${shares.single.label}',
   final n => 'Shared with $n people',
+};
+
+/// "The app view", "PDF report and CSV, last 6 months".
+String shareContentText(Share share) => switch (share.range) {
+  final r? => '${share.content.label}, ${r.label.toLowerCase()}',
+  null => share.content.label,
 };

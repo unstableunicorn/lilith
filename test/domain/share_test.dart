@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
@@ -11,6 +12,7 @@ import 'package:lilith/domain/temperature_reading.dart';
 void main() {
   receivedShareTests();
   shareInviteTests();
+  reportShareTests();
   const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
   final may1 = DateTime(2026, 5, 1);
 
@@ -232,6 +234,50 @@ void shareInviteTests() {
         ),
         const ShareInvite(sharerWebId: owner),
       );
+    });
+  });
+}
+
+void reportShareTests() {
+  const wife = 'https://solid.unstableunicorn.dev/wife/profile/card#me';
+  final may1 = DateTime(2026, 5, 1);
+
+  group('a report share', () {
+    test('holds a report over a span and is never encrypted', () {
+      final share = Share(
+        recipientWebId: wife,
+        label: 'Dr Patel',
+        createdOn: may1,
+        content: ShareContent.report,
+      );
+      expect(share.isReport, isTrue);
+      expect(share.range, ExportRange.sixMonths);
+      expect(share.isEncrypted, isFalse);
+      expect(Share.fromJson(share.toJson()), share);
+      expect(share.toJson()['content'], 'report');
+      expect(share.toJson()['range'], 'sixMonths');
+    });
+
+    test('an app-view share has no span even when given one', () {
+      final share = Share(
+        recipientWebId: wife,
+        label: 'A',
+        createdOn: may1,
+        range: ExportRange.year,
+      );
+      expect(share.range, isNull);
+      expect(share.toJson().containsKey('range'), isFalse);
+      expect(share.content, ShareContent.cycleData);
+    });
+
+    test('an old share without content holds the app view', () {
+      final share = Share.fromJson({
+        'recipient': wife,
+        'label': 'A',
+        'createdOn': '2026-05-01T00:00:00.000',
+      });
+      expect(share.content, ShareContent.cycleData);
+      expect(ShareContent.fromName('nonsense'), ShareContent.cycleData);
     });
   });
 }

@@ -7,6 +7,7 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/share/share_screen.dart';
@@ -196,6 +197,54 @@ void main() {
       expect(find.byKey(ShareKeys.code(share)), findsNothing);
       expect(find.byKey(ShareKeys.qr(share)), findsOneWidget);
       await expectAccessible(tester);
+    });
+  });
+
+  group('a report share', () {
+    setUp(() => setUpWith(DataProtection.encrypted));
+
+    testWidgets('asks how far back, then shows the folder link to copy', (
+      tester,
+    ) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      await pump(tester);
+      expect(find.byKey(ShareKeys.range(ExportRange.year)), findsNothing);
+      await tester.tap(find.byKey(ShareKeys.content(ShareContent.report)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ShareKeys.range(ExportRange.year)));
+      await fillIn(tester);
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      final share = shares.shares.single;
+      expect(share.isReport, isTrue);
+      expect(share.range, ExportRange.year);
+      expect(find.byKey(ShareKeys.createdLink), findsOneWidget);
+      expect(find.byKey(ShareKeys.createdCode), findsNothing);
+      expect(find.byKey(ShareKeys.createdQr), findsNothing);
+      expect(pod.files['shares/${share.id}']!.keys, {
+        'report.pdf',
+        'cycle_data.csv',
+      });
+      await expectAccessible(tester);
+      await tester.tap(find.byKey(ShareKeys.copyLink));
+      await tester.pumpAndSettle();
+      expect(copied, endsWith('/shares/${share.id}/'));
+      await tester.tap(find.byKey(ShareKeys.dismissCreated));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.showCode(share)), findsNothing);
+      await tester.tap(find.byKey(ShareKeys.link(share)));
+      await tester.pumpAndSettle();
+      expect(copied, endsWith('/shares/${share.id}/'));
+      await tester.pump(const Duration(seconds: 5));
     });
   });
 }
