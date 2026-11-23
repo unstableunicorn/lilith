@@ -1,5 +1,6 @@
 // First use on a pod: choose how the data is protected, or enter the key.
 
+import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
@@ -20,6 +21,7 @@ abstract final class SetupKeys {
   static const Key error = Key('setup.error');
   static const Key errorDetail = Key('setup.errorDetail');
   static const Key busy = Key('setup.busy');
+  static const Key account = Key('setup.account');
 }
 
 class SetupScreen extends StatelessWidget {
@@ -38,9 +40,23 @@ class _SetupView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<SetupViewModel>();
+    final theme = Theme.of(context);
+    final webId = context.watch<SessionRepository>().session?.webId;
     return PageScaffold(
       title: 'Lilith',
+      actions: const [AppMenu()],
       children: [
+        if (webId != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.md),
+            child: Text(
+              key: SetupKeys.account,
+              'Logged in as $webId. Not you? Log out from the menu.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ...switch (vm.state) {
           SetupChoose() => _chooser(context, vm),
           SetupEnterKey() => _unlocker(vm),

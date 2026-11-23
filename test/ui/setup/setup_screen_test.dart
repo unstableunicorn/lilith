@@ -3,6 +3,8 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -181,5 +183,23 @@ void main() {
     await tester.tap(find.byKey(SetupKeys.retry));
     await tester.pumpAndSettle();
     expect(setup.state, const SetupState.choose());
+  });
+
+  testWidgets('says which account is asking, and the menu can log out', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    await pump(tester);
+    expect(find.byKey(SetupKeys.account), findsOneWidget);
+    expect(find.textContaining(session.session!.webId), findsOneWidget);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.logout)));
+    await tester.pumpAndSettle();
+    expect(session.session, isNull);
   });
 }
