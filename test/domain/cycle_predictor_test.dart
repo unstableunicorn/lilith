@@ -17,6 +17,7 @@ List<PeriodEvent> periodsOn(List<DateTime> starts) => [
 ];
 
 void main() {
+  periodSpanPredictorTests();
   const predictor = CyclePredictor();
 
   test('no periods logged: insufficient data', () {
@@ -244,4 +245,94 @@ void main() {
       expect(none.daysUntilNextPeriod(DateTime(2026, 6, 1)), isNull);
     });
   });
+}
+
+void periodSpanPredictorTests() {
+  const predictor = CyclePredictor();
+  DateTime june(int d) => DateTime(2026, 6, d);
+  TemperatureReading r(int day, double c) =>
+      TemperatureReading(date: june(day), celsius: c);
+
+  test('averages the length of the periods whose end is known', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [
+        PeriodEvent(
+          startDate: DateTime(2026, 4, 1),
+          endDate: DateTime(2026, 4, 5),
+        ),
+        PeriodEvent(
+          startDate: DateTime(2026, 4, 29),
+          endDate: DateTime(2026, 5, 2),
+        ),
+        PeriodEvent(startDate: DateTime(2026, 5, 27)),
+      ],
+      today: june(10),
+    );
+    expect(p.averagePeriodLength, 4.5);
+    expect(p.periodCount, 2);
+  });
+
+  test('a period that ended in the last three days is left out', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [
+        PeriodEvent(
+          startDate: DateTime(2026, 5, 1),
+          endDate: DateTime(2026, 5, 5),
+        ),
+        PeriodEvent(startDate: june(1), endDate: june(8)),
+      ],
+      today: june(10),
+    );
+    expect(p.averagePeriodLength, 5);
+    expect(p.periodCount, 1);
+    final later = predictor.predict(
+      readings: const [],
+      periods: [
+        PeriodEvent(
+          startDate: DateTime(2026, 5, 1),
+          endDate: DateTime(2026, 5, 5),
+        ),
+        PeriodEvent(startDate: june(1), endDate: june(8)),
+      ],
+      today: june(12),
+    );
+    expect(later.averagePeriodLength, 6.5);
+  });
+
+  test('with no known end there is no average', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [PeriodEvent(startDate: june(1))],
+      today: june(10),
+    );
+    expect(p.averagePeriodLength, isNull);
+    expect(p.periodCount, 0);
+  });
+
+  test(
+    'warm period days do not pull the baseline up once the end is known',
+    () {
+      // Five warm period days, then a cool follicular week, then the rise.
+      final readings = [
+        for (var d = 1; d <= 5; d++) r(d, 36.7),
+        for (var d = 6; d <= 12; d++) r(d, 36.3),
+        for (var d = 13; d <= 16; d++) r(d, 36.6),
+      ];
+      final open = predictor.predict(
+        readings: readings,
+        periods: [PeriodEvent(startDate: june(1))],
+        today: june(16),
+      );
+      final closed = predictor.predict(
+        readings: readings,
+        periods: [PeriodEvent(startDate: june(1), endDate: june(5))],
+        today: june(16),
+      );
+      expect(open.method, PredictionMethod.cycleAverage);
+      expect(closed.method, PredictionMethod.temperatureShift);
+      expect(closed.estimatedOvulation, june(12));
+    },
+  );
 }

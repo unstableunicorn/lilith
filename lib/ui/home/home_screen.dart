@@ -23,6 +23,7 @@ abstract final class HomeKeys {
   static const Key noData = Key('home.noData');
   static const Key prediction = Key('home.prediction');
   static const Key stats = Key('home.stats');
+  static const Key avgPeriod = Key('home.avgPeriod');
   static const Key forecast = Key('home.forecast');
   static const Key fact = Key('home.fact');
   static const Key factSource = Key('home.factSource');
@@ -254,6 +255,17 @@ class _StatsRow extends StatelessWidget {
             icon: Icons.loop_rounded,
             label: 'Avg cycle',
             value: switch (p.averageCycleLength) {
+              final d? => '${d.toStringAsFixed(1)} days',
+              null => '—',
+            },
+          ),
+        ),
+        Expanded(
+          child: StatTile(
+            key: HomeKeys.avgPeriod,
+            icon: Icons.water_drop_outlined,
+            label: 'Avg period',
+            value: switch (p.averagePeriodLength) {
               final d? => '${d.toStringAsFixed(1)} days',
               null => '—',
             },

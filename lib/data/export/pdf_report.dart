@@ -127,6 +127,12 @@ List<(String, String)> _summary(
           : '${average.toStringAsFixed(1)} days over ${p.cycleCount} '
                 '${p.cycleCount == 1 ? 'cycle' : 'cycles'}',
     ),
+    if (p.averagePeriodLength case final period?)
+      (
+        'Average period length',
+        '${period.toStringAsFixed(1)} days over ${p.periodCount} '
+            '${p.periodCount == 1 ? 'period' : 'periods'}',
+      ),
     if (p.lutealLength case final luteal?)
       ('Luteal phase', '$luteal days, from the temperature shift'),
     if (p.lastPeriodStart case final last?)

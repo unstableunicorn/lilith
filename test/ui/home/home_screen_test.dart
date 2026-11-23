@@ -212,6 +212,23 @@ void main() {
       expect(find.byKey(HomeKeys.lastPeriod), findsOneWidget);
       expect(find.byKey(HomeKeys.prediction), findsOneWidget);
     });
+
+    testWidgets('the average period length shows once an end is known', (
+      tester,
+    ) async {
+      await health.apply(
+        (d) => d.withPeriod(
+          PeriodEvent(
+            startDate: DateTime(2026, 4, 1),
+            endDate: DateTime(2026, 4, 5),
+          ),
+        ),
+      );
+      await pump(tester);
+      expect(find.byKey(HomeKeys.avgPeriod), findsOneWidget);
+      expect(find.text('5.0 days'), findsOneWidget);
+      await expectAccessible(tester);
+    });
   });
 
   testWidgets('meets the accessibility guidelines', (tester) async {

@@ -10,6 +10,7 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  periodLengthRowTests();
   TestWidgetsFlutterBinding.ensureInitialized();
   final today = DateTime(2026, 6, 10, 8);
   HealthData threeCycles() {
@@ -215,5 +216,42 @@ void main() {
       );
       expect(latin1.decode(file.bytes), startsWith('%PDF-'));
     });
+  });
+}
+
+void periodLengthRowTests() {
+  test('reportContent gives the average period length when ends are known', () {
+    final data = HealthData.empty
+        .withPeriod(
+          PeriodEvent(
+            startDate: DateTime(2026, 4, 1),
+            endDate: DateTime(2026, 4, 5),
+          ),
+        )
+        .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 29)));
+    final content = reportContent(
+      data,
+      range: ExportRange.all,
+      today: DateTime(2026, 6, 10),
+    );
+    final summary = Map.fromEntries(
+      content.summary.map((s) => MapEntry(s.$1, s.$2)),
+    );
+    expect(summary['Average period length'], '5.0 days over 1 period');
+    final cycles = content.cycles;
+    expect(cycles.first.periodLength, 5);
+    expect(cycles.last.periodLength, isNull);
+  });
+
+  test('reportContent has no period length row without known ends', () {
+    final content = reportContent(
+      HealthData.empty.withPeriod(PeriodEvent(startDate: DateTime(2026, 6, 1))),
+      range: ExportRange.all,
+      today: DateTime(2026, 6, 10),
+    );
+    final summary = Map.fromEntries(
+      content.summary.map((s) => MapEntry(s.$1, s.$2)),
+    );
+    expect(summary.containsKey('Average period length'), isFalse);
   });
 }
