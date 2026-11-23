@@ -169,12 +169,13 @@ class _ReceivedViewState extends State<_ReceivedView> {
                   Wrap(
                     spacing: Space.sm,
                     children: [
-                      FilledButton.tonalIcon(
-                        key: ReceivedKeys.open(share),
-                        onPressed: () => _open(context, share),
-                        icon: const Icon(Icons.visibility_rounded),
-                        label: const Text('View'),
-                      ),
+                      if (!vm.hasEnded(share))
+                        FilledButton.tonalIcon(
+                          key: ReceivedKeys.open(share),
+                          onPressed: () => _open(context, share),
+                          icon: const Icon(Icons.visibility_rounded),
+                          label: const Text('View'),
+                        ),
                       TextButton.icon(
                         key: ReceivedKeys.changeCode(share),
                         onPressed: () => vm.startChangingCode(share),
