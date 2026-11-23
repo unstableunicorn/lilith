@@ -61,15 +61,16 @@ class CsvExport {
         '',
         '',
       ],
-      row.periodStart ? 'yes' : '',
-      log == null || !log.flow.isBleeding ? '' : log.flow.name,
+      if (row.periodStart) 'yes' else '',
+      if (log == null || !log.flow.isBleeding) '' else log.flow.name,
       log?.painLevel?.toString() ?? '',
-      log == null
-          ? ''
-          : Symptom.values
-                .where(log.symptoms.contains)
-                .map((s) => s.name)
-                .join('; '),
+      if (log == null)
+        ''
+      else
+        Symptom.values
+            .where(log.symptoms.contains)
+            .map((s) => s.name)
+            .join('; '),
     ];
   }
 }

@@ -42,7 +42,7 @@ void main() {
     });
 
     test('reads the document shape the original app wrote', () {
-      final r = TemperatureReading.fromJson({
+      final r = TemperatureReading.fromJson(const {
         'date': '2026-05-02T00:00:00.000',
         'celsius': 36,
         'source': 'ring',

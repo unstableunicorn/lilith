@@ -1,6 +1,9 @@
 // Local notifications: scheduled on the device, no server involved.
 
+import 'package:meta/meta.dart';
+
 /// One notification to show at a time.
+@immutable
 class Reminder {
   const Reminder({
     required this.id,

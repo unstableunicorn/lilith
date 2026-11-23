@@ -21,13 +21,8 @@ class ShareUndecryptableException implements Exception {
 /// A share's secret: 16 characters from a 32-letter alphabet without the
 /// letters people confuse with digits, shown in groups of four. The AES key
 /// is derived from the code, so the code is all the recipient needs to type.
+@immutable
 class ShareKey {
-  const ShareKey._(this.code);
-
-  /// Crockford's base-32 alphabet: no I, L, O or U.
-  static const String alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-  static const int length = 16;
-
   factory ShareKey.generate(Random random) {
     final chars = [
       for (var i = 0; i < length; i++)
@@ -35,6 +30,12 @@ class ShareKey {
     ];
     return ShareKey._(_grouped(chars.join()));
   }
+
+  const ShareKey._(this.code);
+
+  /// Crockford's base-32 alphabet: no I, L, O or U.
+  static const String alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  static const int length = 16;
 
   /// The code as typed: case, spaces and dashes do not matter, and I, L and
   /// O are read as 1, 1 and 0. Null when it is not a code.

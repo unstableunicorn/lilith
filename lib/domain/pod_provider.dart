@@ -1,9 +1,15 @@
 // Where a user's Solid pod lives: a built-in provider or any server they name.
 
+import 'package:meta/meta.dart';
+
 /// A Solid pod provider: the server the app logs in against and the website
 /// where the user manages their data.
+@immutable
 class PodProvider {
-  PodProvider._({
+  factory PodProvider.fromJson(Map<String, dynamic> json) =>
+      custom(json['server'] as String)!;
+
+  const PodProvider._({
     required this.name,
     required this.serverUrl,
     required this.manageUrl,
@@ -64,9 +70,6 @@ class PodProvider {
       isBuiltIn: false,
     );
   }
-
-  factory PodProvider.fromJson(Map<String, dynamic> json) =>
-      custom(json['server'] as String)!;
 
   static final _hostname = RegExp(r'^[A-Za-z0-9.-]+$');
 

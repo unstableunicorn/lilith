@@ -45,14 +45,14 @@ void main() {
     });
 
     test('reads the document shape the original app wrote', () {
-      final got = ShoppingItem.fromJson({
+      final got = ShoppingItem.fromJson(const {
         'name': 'Heat pack',
         'note': 'for cramps',
         'symptom': 'cramps',
         'bought': false,
       });
       expect(got, item);
-      expect(ShoppingItem.fromJson({'name': 'Tea'}).bought, isFalse);
+      expect(ShoppingItem.fromJson(const {'name': 'Tea'}).bought, isFalse);
     });
   });
 }

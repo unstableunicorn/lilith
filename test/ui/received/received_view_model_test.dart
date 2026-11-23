@@ -122,7 +122,7 @@ void main() {
     expect(filled.canAdd, isTrue);
   });
 
-  test('describes each share\'s state after a check', () async {
+  test("describes each share's state after a check", () async {
     vm.setLabel('Elric');
     vm.setWebId(owner);
     vm.setCode(key.code);

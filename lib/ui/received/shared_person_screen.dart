@@ -1,6 +1,8 @@
 // One sharer's cycle data, read-only: their prediction, numbers, trend and
 // lists, fetched from their pod when the page opens or is refreshed.
 
+import 'dart:async';
+
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
@@ -41,7 +43,7 @@ class SharedPersonScreen extends StatelessWidget {
       final repo = context.read<ReceivedShareRepository>();
       final vm = SharedPersonViewModel(repo, share, now: now);
       if (repo.viewOf(share) is SharedViewLoading) {
-        Future<void>.microtask(vm.refresh);
+        unawaited(Future<void>.microtask(vm.refresh));
       }
       return vm;
     },

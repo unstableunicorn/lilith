@@ -1,6 +1,7 @@
 // One skin-temperature reading for one calendar day.
 
 import 'package:lilith/domain/day.dart';
+import 'package:meta/meta.dart';
 
 /// Where a reading came from.
 enum ReadingSource {
@@ -15,6 +16,7 @@ enum ReadingSource {
 }
 
 /// A resting skin temperature for [date], at most one per day.
+@immutable
 class TemperatureReading {
   TemperatureReading({
     required DateTime date,

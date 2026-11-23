@@ -35,8 +35,8 @@ void main() {
     expect(
       repo.data.profile,
       HealthProfile(
-        conditions: {ReproductiveCondition.pcos},
-        treatments: {FertilityTreatment.contraceptive},
+        conditions: const {ReproductiveCondition.pcos},
+        treatments: const {FertilityTreatment.contraceptive},
         notes: 'Iron tablets since March',
       ),
     );
@@ -46,7 +46,7 @@ void main() {
     await repo.apply(
       (d) => d.withProfile(
         HealthProfile(
-          conditions: {
+          conditions: const {
             ReproductiveCondition.endometriosis,
             ReproductiveCondition.pmdd,
           },
@@ -65,7 +65,7 @@ void main() {
     );
     expect(profileSummary(HealthProfile()), 'Nothing recorded yet');
     expect(
-      profileSummary(HealthProfile(treatments: {FertilityTreatment.ivf})),
+      profileSummary(HealthProfile(treatments: const {FertilityTreatment.ivf})),
       'No conditions, 1 treatment',
     );
   });

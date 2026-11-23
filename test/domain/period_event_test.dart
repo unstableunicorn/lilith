@@ -25,7 +25,9 @@ void main() {
     });
 
     test('reads the document shape the original app wrote', () {
-      final p = PeriodEvent.fromJson({'startDate': '2026-05-02T00:00:00.000'});
+      final p = PeriodEvent.fromJson(const {
+        'startDate': '2026-05-02T00:00:00.000',
+      });
       expect(p.startDate, DateTime(2026, 5, 2));
     });
   });

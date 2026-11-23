@@ -48,7 +48,7 @@ void main() {
       ],
       shopping: const [ShoppingItem(name: 'tea')],
       profile: HealthProfile(
-        conditions: {ReproductiveCondition.pcos},
+        conditions: const {ReproductiveCondition.pcos},
         notes: 'private',
       ),
       shares: [Share(recipientWebId: wife, label: 'W', createdOn: may1)],
@@ -131,7 +131,7 @@ void main() {
 
   group('HealthData shares', () {
     final a = Share(recipientWebId: wife, label: 'A', createdOn: may1);
-    final other = 'https://solid.unstableunicorn.dev/o/profile/card#me';
+    const other = 'https://solid.unstableunicorn.dev/o/profile/card#me';
     final b = Share(recipientWebId: other, label: 'B', createdOn: may1);
 
     test('adds a share and replaces one for the same recipient', () {
@@ -271,7 +271,7 @@ void reportShareTests() {
     });
 
     test('an old share without content holds the app view', () {
-      final share = Share.fromJson({
+      final share = Share.fromJson(const {
         'recipient': wife,
         'label': 'A',
         'createdOn': '2026-05-01T00:00:00.000',

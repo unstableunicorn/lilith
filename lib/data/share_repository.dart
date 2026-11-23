@@ -1,6 +1,7 @@
 // The shares the logged-in user has given, for the whole app: creating and
 // ending them, keeping every copy current, and ending the ones past their day.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -145,11 +146,13 @@ class ShareRepository extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    _run(() async {
-      for (final share in shares) {
-        await _writeCopy(share, current);
-      }
-    });
+    unawaited(
+      _run(() async {
+        for (final share in shares) {
+          await _writeCopy(share, current);
+        }
+      }),
+    );
   }
 
   /// The app view as JSON or a JWE; a report as a PDF and a CSV.
@@ -157,7 +160,7 @@ class ShareRepository extends ChangeNotifier {
     final plan = SharePlan.forRecipient(share.recipientWebId);
     if (!share.isReport) {
       final json = _codec.encode(view);
-      return _pod.write(plan, switch (share.code) {
+      return await _pod.write(plan, switch (share.code) {
         final code? => _cipher.encrypt(json, ShareKey.fromCode(code)!, _random),
         null => json,
       });

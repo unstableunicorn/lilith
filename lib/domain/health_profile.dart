@@ -1,6 +1,7 @@
 // The user's reproductive-health context: conditions, treatments, notes.
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 
 /// A diagnosed condition that affects the cycle.
 enum ReproductiveCondition {
@@ -14,7 +15,7 @@ enum ReproductiveCondition {
   thyroidDisorder('Thyroid disorder'),
   perimenopause('Perimenopause');
 
-  const ReproductiveCondition(this.label);
+  ReproductiveCondition(this.label);
 
   final String label;
 
@@ -32,7 +33,7 @@ enum FertilityTreatment {
   eggFreezing('Egg freezing'),
   contraceptive('Hormonal contraceptive');
 
-  const FertilityTreatment(this.label);
+  FertilityTreatment(this.label);
 
   final String label;
 
@@ -44,6 +45,7 @@ const _conditions = SetEquality<ReproductiveCondition>();
 const _treatments = SetEquality<FertilityTreatment>();
 
 /// Conditions, treatments and free-text notes kept beside the cycle data.
+@immutable
 class HealthProfile {
   HealthProfile({
     Set<ReproductiveCondition> conditions = const {},

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:lilith/domain/pod_provider.dart';
 
 /// A logged-in user: who they are and which provider holds their pod.
+@immutable
 class PodSession {
   const PodSession({required this.webId, required this.provider});
 

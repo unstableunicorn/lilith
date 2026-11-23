@@ -138,7 +138,8 @@ void main() {
       );
       expect(
         base64Url.encode(ciphertext).replaceAll('=', ''),
-        '5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6jiSdiwkIr3ajwQzaBtQD_A',
+        '5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6ji'
+        'SdiwkIr3ajwQzaBtQD_A',
       );
       expect(
         base64Url.encode(tag).replaceAll('=', ''),
@@ -174,11 +175,14 @@ void main() {
         () => cipher.decrypt(parts.join('.'), key),
         throwsA(isA<ShareUndecryptableException>()),
       );
+      final otherAlgorithm =
+          'eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ'
+          '..${parts[2]}.${parts[3]}.${parts[4]}';
       for (final bad in [
         'not a jwe',
         'a.b.c.d',
         '${parts[0]}.KEY.${parts[2]}.${parts[3]}.${parts[4]}',
-        'eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ..${parts[2]}.${parts[3]}.${parts[4]}',
+        otherAlgorithm,
       ]) {
         expect(
           () => cipher.decrypt(bad, key),

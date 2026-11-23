@@ -13,10 +13,12 @@ import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:meta/meta.dart';
 
 const _list = ListEquality<Object>();
 
 /// The user's cycle data, remedy verdicts, shopping list, profile and shares.
+@immutable
 class HealthData {
   HealthData({
     Iterable<TemperatureReading> readings = const [],
@@ -165,7 +167,7 @@ class HealthData {
   HealthData toggleBought(String name) => copyWith(
     shopping: [
       for (final s in shopping)
-        s.name == name ? s.copyWith(bought: !s.bought) : s,
+        if (s.name == name) s.copyWith(bought: !s.bought) else s,
     ],
   );
 

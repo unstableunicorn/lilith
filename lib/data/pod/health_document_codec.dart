@@ -127,6 +127,8 @@ class HealthDocumentCodec {
       rethrow;
     } on FormatException catch (e) {
       throw MalformedDocumentException(e);
+      // A document of the wrong shape is a bad document, not a bug here.
+      // ignore: avoid_catching_errors
     } on TypeError catch (e) {
       throw MalformedDocumentException(e);
     }

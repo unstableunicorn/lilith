@@ -48,7 +48,8 @@ class CyclePrediction {
   /// The luteal length added to [estimatedOvulation], when a shift was used.
   final int? lutealLength;
 
-  /// Calendar days from [today] to [predictedNextPeriod]; negative when overdue.
+  /// Calendar days from [today] to [predictedNextPeriod]; negative when
+  /// overdue.
   int? daysUntilNextPeriod(DateTime today) {
     final next = predictedNextPeriod;
     return next == null ? null : daysBetween(today, next);

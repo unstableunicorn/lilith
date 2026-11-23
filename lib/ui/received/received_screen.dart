@@ -1,6 +1,8 @@
 // Shared with you: who shares their cycle data with this user, a way to open
 // each one, and the form to add someone by WebID and, if encrypted, code.
 
+import 'dart:async';
+
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/share.dart';
@@ -55,7 +57,7 @@ class ReceivedScreen extends StatelessWidget {
         prefill: prefill,
       );
       // After this build: the first fetch notifies, which a build cannot take.
-      Future<void>.microtask(vm.refreshUnseen);
+      unawaited(Future<void>.microtask(vm.refreshUnseen));
       return vm;
     },
     child: _ReceivedView(now: now),

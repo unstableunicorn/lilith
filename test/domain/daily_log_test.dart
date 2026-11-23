@@ -77,7 +77,7 @@ void main() {
       ),
       (
         name: 'a symptom alone is not empty',
-        log: DailyLog(date: day, symptoms: {Symptom.cramps}),
+        log: DailyLog(date: day, symptoms: const {Symptom.cramps}),
         want: false,
       ),
       (
@@ -92,7 +92,7 @@ void main() {
     }
 
     test('symptoms cannot be changed after construction', () {
-      final log = DailyLog(date: day, symptoms: {Symptom.cramps});
+      final log = DailyLog(date: day, symptoms: const {Symptom.cramps});
       expect(() => log.symptoms.add(Symptom.nausea), throwsUnsupportedError);
     });
 
@@ -100,7 +100,7 @@ void main() {
       final log = DailyLog(
         date: day,
         flow: FlowIntensity.medium,
-        symptoms: {Symptom.cramps},
+        symptoms: const {Symptom.cramps},
         painLevel: 5,
       );
       final changed = log.copyWith(symptoms: {Symptom.mood});
@@ -118,12 +118,12 @@ void main() {
     test('is equal by value, whatever the symptom order', () {
       final a = DailyLog(
         date: day,
-        symptoms: {Symptom.cramps, Symptom.mood},
+        symptoms: const {Symptom.cramps, Symptom.mood},
         painLevel: 2,
       );
       final b = DailyLog(
         date: day,
-        symptoms: {Symptom.mood, Symptom.cramps},
+        symptoms: const {Symptom.mood, Symptom.cramps},
         painLevel: 2,
       );
       expect(a, b);
@@ -135,7 +135,7 @@ void main() {
       final log = DailyLog(
         date: day,
         flow: FlowIntensity.heavy,
-        symptoms: {Symptom.cramps, Symptom.backPain},
+        symptoms: const {Symptom.cramps, Symptom.backPain},
         painLevel: 6,
       );
       expect(DailyLog.fromJson(log.toJson()), log);
@@ -146,7 +146,7 @@ void main() {
     });
 
     test('drops unknown symptoms instead of failing to load', () {
-      final log = DailyLog.fromJson({
+      final log = DailyLog.fromJson(const {
         'date': '2026-05-02T00:00:00.000',
         'flow': 'light',
         'symptoms': ['cramps', 'hiccups'],

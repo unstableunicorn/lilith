@@ -87,10 +87,11 @@ class SolidShareService implements ShareService {
     }
   }
 
-  Future<String> _folderUrl(SharePlan plan) async =>
-      solid.getDirUrl('${await solid.getDataDirPath()}/${plan.folderPath}');
+  Future<String> _folderUrl(SharePlan plan) async => await solid.getDirUrl(
+    '${await solid.getDataDirPath()}/${plan.folderPath}',
+  );
 
-  Future<String> _sharesUrl() async => solid.getDirUrl(
+  Future<String> _sharesUrl() async => await solid.getDirUrl(
     '${await solid.getDataDirPath()}/${SharePlan.sharesFolder}',
   );
 

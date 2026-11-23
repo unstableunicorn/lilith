@@ -1,4 +1,7 @@
-// The user's verdict on a relief suggestion, so what worked for them ranks first.
+// The user's verdict on a relief suggestion, so what worked for them ranks
+// first.
+
+import 'package:meta/meta.dart';
 
 /// Whether a remedy helped. [untried] is never stored: it is the absence of a
 /// verdict.
@@ -22,6 +25,7 @@ enum RemedyRating {
 }
 
 /// One verdict on one remedy for one symptom.
+@immutable
 class RemedyFeedback {
   const RemedyFeedback({
     required this.symptomKey,
@@ -35,7 +39,7 @@ class RemedyFeedback {
     rating: RemedyRating.fromName(json['rating'] as String?),
   );
 
-  /// The [Symptom.name] the remedy belongs to.
+  /// The Symptom name the remedy belongs to.
   final String symptomKey;
 
   /// The remedy's title, its identity within a symptom.

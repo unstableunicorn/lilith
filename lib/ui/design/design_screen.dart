@@ -20,7 +20,8 @@ class DesignScreen extends StatelessWidget {
     children: [
       for (final brightness in Brightness.values) ...[
         SectionHeading(
-          '${brightness.name[0].toUpperCase()}${brightness.name.substring(1)} theme',
+          '${brightness.name[0].toUpperCase()}'
+          '${brightness.name.substring(1)} theme',
         ),
         Theme(
           data: lilithTheme(brightness),
@@ -46,7 +47,7 @@ class _Samples extends StatelessWidget {
       const AppCard(
         icon: Icons.favorite_rounded,
         title: 'Card with icon and title',
-        child: Text('Body text sits here, in the card\'s own colour.'),
+        child: Text("Body text sits here, in the card's own colour."),
       ),
       const AppCard(
         tone: CardTone.highlight,

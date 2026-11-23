@@ -63,4 +63,4 @@ void main() {
   });
 }
 
-final _provider = PodProvider.solidCommunityAu;
+final PodProvider _provider = PodProvider.solidCommunityAu;

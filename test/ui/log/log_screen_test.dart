@@ -82,7 +82,7 @@ void main() {
       DailyLog(
         date: today,
         flow: FlowIntensity.light,
-        symptoms: {Symptom.headache},
+        symptoms: const {Symptom.headache},
       ),
     ]);
     expect(find.byKey(LogKeys.saved), findsOneWidget);

@@ -1,6 +1,8 @@
 // The shares other people gave this user: adding one, fetching its data,
 // and forgetting it. The list lives in the user's own pod document.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
@@ -79,6 +81,9 @@ class ReceivedShareRepository extends ChangeNotifier {
     _invite = await _settings?.readInvite();
     notifyListeners();
   }
+
+  /// [loadInvite] with nothing to wait for, for a provider's create.
+  void loadInviteLater() => unawaited(loadInvite());
 
   Future<void> clearInvite() async {
     _invite = null;

@@ -1,17 +1,26 @@
-include: package:flutter_lints/flutter.yaml
-
-linter:
-  rules:
-    avoid_print: true
-    prefer_single_quotes: true
-    require_trailing_commas: true
-    prefer_const_constructors: true
-    always_declare_return_types: true
-    unawaited_futures: true
+# very_good_analysis is the stricter, widely used rule set; the few rules
+# turned off below are documented in CONTRIBUTING.md.
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
   exclude:
     - build/**
     - android/**
     - ios/**
     - web/**
+
+linter:
+  rules:
+    # Doc comments are for what is not obvious; the file header says the rest.
+    public_member_api_docs: false
+    # Dart's new class-name-less constructors are still unfamiliar; the
+    # classic `Foo(...)` reads plainly to anyone who knows Flutter.
+    unnecessary_type_name_in_constructor: false
+    # Tests read better as separate statements than as a cascade.
+    cascade_invocations: false
+    # An explicit argument that equals the default is often the point.
+    avoid_redundant_argument_values: false

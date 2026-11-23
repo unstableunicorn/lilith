@@ -14,7 +14,7 @@ abstract interface class PodSetupService {
   Future<void> setUpPlain();
 
   /// Verifies [securityKey] against the pod and keeps it on this device.
-  /// Throws [PodWrongKeyException] when it does not match.
+  /// Throws a PodWrongKeyException when it does not match.
   Future<void> unlock(String securityKey);
 
   /// Drops the key from this device; the pod is untouched.

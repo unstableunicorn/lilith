@@ -1,6 +1,9 @@
 // Something to buy for symptom relief, identified by its name.
 
+import 'package:meta/meta.dart';
+
 /// One item on the relief shopping list.
+@immutable
 class ShoppingItem {
   const ShoppingItem({
     required this.name,
@@ -22,7 +25,7 @@ class ShoppingItem {
   /// Where the suggestion came from, if anywhere.
   final String? note;
 
-  /// The [Symptom.name] it was added for, if any.
+  /// The Symptom name it was added for, if any.
   final String? symptomKey;
 
   final bool bought;

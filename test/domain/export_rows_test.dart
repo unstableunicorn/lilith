@@ -39,10 +39,10 @@ void main() {
         DailyLog(
           date: DateTime(2026, 6, 1),
           flow: FlowIntensity.medium,
-          symptoms: {Symptom.cramps},
+          symptoms: const {Symptom.cramps},
           painLevel: 5,
         ),
-        DailyLog(date: DateTime(2026, 6, 2), symptoms: {Symptom.fatigue}),
+        DailyLog(date: DateTime(2026, 6, 2), symptoms: const {Symptom.fatigue}),
       ],
     );
 

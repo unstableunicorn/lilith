@@ -161,7 +161,7 @@ void main() {
       expect(vm.createdLink.toString(), endsWith('/shares/${share.id}/'));
       expect(vm.content, ShareContent.cycleData);
       expect(vm.range, ExportRange.sixMonths);
-      expect((await vm.folderUrl(share)), vm.createdLink);
+      expect(await vm.folderUrl(share), vm.createdLink);
       vm.dismissCreated();
       expect(vm.createdLink, isNull);
     },

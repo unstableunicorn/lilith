@@ -193,7 +193,7 @@ void main() {
       expect((again.viewOf(share) as SharedViewReady).data, theirs);
     });
 
-    test('refresh picks up the sharer\'s new data', () async {
+    test("refresh picks up the sharer's new data", () async {
       final newer = theirs.withPeriod(
         PeriodEvent(startDate: DateTime(2026, 5, 29)),
       );

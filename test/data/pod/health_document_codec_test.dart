@@ -21,7 +21,7 @@ void main() {
         DailyLog(
           date: DateTime(2026, 5, 1),
           flow: FlowIntensity.heavy,
-          symptoms: {Symptom.cramps},
+          symptoms: const {Symptom.cramps},
           painLevel: 6,
         ),
       )
@@ -30,7 +30,10 @@ void main() {
         const ShoppingItem(name: 'Heat pack', symptomKey: 'cramps'),
       )
       .withProfile(
-        HealthProfile(conditions: {ReproductiveCondition.pcos}, notes: 'n'),
+        HealthProfile(
+          conditions: const {ReproductiveCondition.pcos},
+          notes: 'n',
+        ),
       );
 
   test('round-trips every section', () {

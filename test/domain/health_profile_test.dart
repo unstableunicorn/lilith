@@ -14,12 +14,12 @@ void main() {
     final emptyCases = <({String name, HealthProfile profile, bool want})>[
       (
         name: 'a condition is content',
-        profile: HealthProfile(conditions: {ReproductiveCondition.pcos}),
+        profile: HealthProfile(conditions: const {ReproductiveCondition.pcos}),
         want: false,
       ),
       (
         name: 'a treatment is content',
-        profile: HealthProfile(treatments: {FertilityTreatment.ivf}),
+        profile: HealthProfile(treatments: const {FertilityTreatment.ivf}),
         want: false,
       ),
       (
@@ -38,7 +38,7 @@ void main() {
     }
 
     test('sets cannot be changed after construction', () {
-      final p = HealthProfile(conditions: {ReproductiveCondition.pcos});
+      final p = HealthProfile(conditions: const {ReproductiveCondition.pcos});
       expect(
         () => p.conditions.add(ReproductiveCondition.pmdd),
         throwsUnsupportedError,
@@ -47,7 +47,7 @@ void main() {
 
     test('copyWith replaces only what is given', () {
       final p = HealthProfile(
-        conditions: {ReproductiveCondition.pcos},
+        conditions: const {ReproductiveCondition.pcos},
         notes: 'a',
       );
       final changed = p.copyWith(treatments: {FertilityTreatment.iui});
@@ -58,13 +58,19 @@ void main() {
 
     test('is equal by value', () {
       final a = HealthProfile(
-        conditions: {ReproductiveCondition.pcos, ReproductiveCondition.pmdd},
-        treatments: {FertilityTreatment.ivf},
+        conditions: const {
+          ReproductiveCondition.pcos,
+          ReproductiveCondition.pmdd,
+        },
+        treatments: const {FertilityTreatment.ivf},
         notes: 'n',
       );
       final b = HealthProfile(
-        conditions: {ReproductiveCondition.pmdd, ReproductiveCondition.pcos},
-        treatments: {FertilityTreatment.ivf},
+        conditions: const {
+          ReproductiveCondition.pmdd,
+          ReproductiveCondition.pcos,
+        },
+        treatments: const {FertilityTreatment.ivf},
         notes: 'n',
       );
       expect(a, b);
@@ -74,15 +80,15 @@ void main() {
 
     test('round-trips through JSON', () {
       final p = HealthProfile(
-        conditions: {ReproductiveCondition.endometriosis},
-        treatments: {FertilityTreatment.contraceptive},
+        conditions: const {ReproductiveCondition.endometriosis},
+        treatments: const {FertilityTreatment.contraceptive},
         notes: 'n',
       );
       expect(HealthProfile.fromJson(p.toJson()), p);
     });
 
     test('drops unknown names and tolerates missing keys', () {
-      final p = HealthProfile.fromJson({
+      final p = HealthProfile.fromJson(const {
         'conditions': ['pcos', 'gout'],
       });
       expect(p.conditions, {ReproductiveCondition.pcos});

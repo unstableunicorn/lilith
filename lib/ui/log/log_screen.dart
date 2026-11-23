@@ -81,7 +81,7 @@ class _LogViewState extends State<_LogView> {
         _DayPicker(vm: vm),
         const SectionHeading('Flow'),
         Wrap(
-          spacing: 8,
+          spacing: Space.sm,
           children: [
             for (final f in FlowIntensity.values)
               ChoiceChip(
@@ -125,8 +125,8 @@ class _LogViewState extends State<_LogView> {
           ),
         const SectionHeading('Symptoms'),
         Wrap(
-          spacing: 8,
-          runSpacing: 4,
+          spacing: Space.sm,
+          runSpacing: Space.xs,
           children: [
             for (final s in Symptom.values)
               FilterChip(

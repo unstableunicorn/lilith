@@ -65,7 +65,7 @@ void main() {
     });
 
     test('reads the document shape the original app wrote', () {
-      final got = RemedyFeedback.fromJson({
+      final got = RemedyFeedback.fromJson(const {
         'symptom': 'cramps',
         'remedy': 'Heat pack',
         'rating': 'helped',

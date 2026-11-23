@@ -7,7 +7,7 @@ import 'package:lilith/domain/export_file.dart';
 class RecordingFileSharer {
   final List<ExportFile> shared = [];
   bool hold = false;
-  Object? failWith;
+  Exception? failWith;
   Completer<void>? _pending;
 
   Future<void> call(ExportFile file) async {

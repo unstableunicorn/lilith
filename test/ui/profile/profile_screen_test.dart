@@ -73,8 +73,8 @@ void main() {
     expect(
       health.data.profile,
       HealthProfile(
-        conditions: {ReproductiveCondition.pcos},
-        treatments: {FertilityTreatment.ivf},
+        conditions: const {ReproductiveCondition.pcos},
+        treatments: const {FertilityTreatment.ivf},
         notes: 'Seeing Dr A in July',
       ),
     );

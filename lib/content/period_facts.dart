@@ -37,7 +37,7 @@ class KnowledgeEntry {
     for (final k in keywords) {
       if (q.contains(k)) score += 2;
     }
-    for (final word in q.split(RegExp(r'[^a-z0-9]+'))) {
+    for (final word in q.split(RegExp('[^a-z0-9]+'))) {
       if (word.length < 3) continue;
       if (question.toLowerCase().contains(word)) score += 1;
       if (answer.toLowerCase().contains(word)) score += 1;
@@ -54,7 +54,7 @@ const List<PeriodFact> periodFacts = [
     'first day of the next. Anywhere from 21 to 35 days is considered '
     'normal for adults — there is no single "right" length.',
     Source(
-      'Office on Women\'s Health',
+      "Office on Women's Health",
       'https://www.womenshealth.gov/menstrual-cycle/your-menstrual-cycle',
     ),
   ),
@@ -105,7 +105,7 @@ const List<PeriodFact> periodFacts = [
     'at some point. Severe, life-disrupting symptoms can be PMDD, which '
     'has specific treatments.',
     Source(
-      'Office on Women\'s Health',
+      "Office on Women's Health",
       'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
     ),
   ),
@@ -173,7 +173,7 @@ const List<KnowledgeEntry> knowledgeBase = [
     keywords: ['cycle length', 'how long', 'normal cycle', 'days', '28'],
     sources: [
       Source(
-        'Office on Women\'s Health',
+        "Office on Women's Health",
         'https://www.womenshealth.gov/menstrual-cycle/your-menstrual-cycle',
       ),
     ],
@@ -255,7 +255,7 @@ const List<KnowledgeEntry> knowledgeBase = [
     ],
     sources: [
       Source(
-        'Office on Women\'s Health',
+        "Office on Women's Health",
         'https://www.womenshealth.gov/menstrual-cycle/premenstrual-syndrome',
       ),
     ],

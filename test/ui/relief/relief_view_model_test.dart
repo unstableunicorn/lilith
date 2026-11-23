@@ -32,23 +32,26 @@ void main() {
   );
 
   test(
-    'recent symptoms are the last fortnight\'s, latest first, and lead',
+    "recent symptoms are the last fortnight's, latest first, and lead",
     () async {
       await repo.apply(
         (d) => d
             .withDailyLog(
-              DailyLog(date: DateTime(2026, 5, 1), symptoms: {Symptom.nausea}),
+              DailyLog(
+                date: DateTime(2026, 5, 1),
+                symptoms: const {Symptom.nausea},
+              ),
             )
             .withDailyLog(
               DailyLog(
                 date: DateTime(2026, 6, 1),
-                symptoms: {Symptom.bloating},
+                symptoms: const {Symptom.bloating},
               ),
             )
             .withDailyLog(
               DailyLog(
                 date: DateTime(2026, 6, 9),
-                symptoms: {Symptom.headache, Symptom.bloating},
+                symptoms: const {Symptom.headache, Symptom.bloating},
               ),
             ),
       );
@@ -62,7 +65,9 @@ void main() {
   test('a choice sticks even when the logs change', () async {
     vm.select(Symptom.insomnia);
     await repo.apply(
-      (d) => d.withDailyLog(DailyLog(date: today, symptoms: {Symptom.cramps})),
+      (d) => d.withDailyLog(
+        DailyLog(date: today, symptoms: const {Symptom.cramps}),
+      ),
     );
     expect(vm.selected, Symptom.insomnia);
   });
