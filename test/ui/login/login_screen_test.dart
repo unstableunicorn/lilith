@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/pod_provider.dart';
+import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 
 import '../../fakes/fake_pod_session_service.dart';
@@ -128,5 +129,31 @@ void main() {
     await tester.tap(find.byKey(LoginKeys.other));
     await tester.pump();
     expect(find.byKey(LoginKeys.manage), findsNothing);
+  });
+
+  testWidgets('on the web it offers the Android app; in the app it does not', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        openUrl: urls.call,
+        child: const LoginScreen(offerAndroidApp: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(LoginKeys.androidApp));
+    expect(urls.opened, [AppLinks.androidApk]);
+    expect(AppLinks.androidApk.host, 'github.com');
+    await expectAccessible(tester);
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        openUrl: urls.call,
+        child: const LoginScreen(offerAndroidApp: false),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(LoginKeys.androidApp), findsNothing);
   });
 }
