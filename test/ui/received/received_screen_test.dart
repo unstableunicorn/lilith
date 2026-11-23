@@ -307,6 +307,37 @@ void refreshTests() {
     },
   );
 
+  testWidgets('a new code can be entered on the card after a re-share', (
+    tester,
+  ) async {
+    final newKey = ShareKey.generate(Random(11));
+    reader.documents[copyUrl] = const ShareCipher().encrypt(
+      codec.encode(theirs),
+      newKey,
+      Random(3),
+    );
+    await pumpList(tester);
+    final share = received.received.single;
+    await tester.tap(find.byKey(ReceivedKeys.changeCode(share)));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(ReceivedKeys.newCode(share)), 'ABCD');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ReceivedKeys.saveCode(share)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ReceivedKeys.codeError(share)), findsOneWidget);
+    await expectAccessible(tester);
+    await tester.enterText(
+      find.byKey(ReceivedKeys.newCode(share)),
+      newKey.code,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ReceivedKeys.saveCode(share)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ReceivedKeys.newCode(share)), findsNothing);
+    expect(received.received.single.code, newKey.code);
+    expect(find.text('Up to date'), findsOneWidget);
+  });
+
   testWidgets('a fresh list checks the shares it has not seen', (tester) async {
     received = ReceivedShareRepository(health, reader, ownWebId: auth.webId);
     reader.documents.clear();

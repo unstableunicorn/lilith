@@ -225,6 +225,32 @@ void main() {
       expect(view.detail, 'timeout');
     });
 
+    test('changeCode takes a new code after a re-share, or refuses', () async {
+      final newKey = ShareKey.generate(Random(11));
+      reader.documents[copyUrl] = cipher.encrypt(
+        codec.encode(theirs),
+        newKey,
+        Random(3),
+      );
+      await repo.refresh(share);
+      expect(
+        (repo.viewOf(share) as SharedViewFailed).error,
+        ReceivedShareError.wrongCode,
+      );
+      expect(
+        await repo.changeCode(share, 'nonsense'),
+        ReceivedShareError.needsCode,
+      );
+      expect(repo.received.single.code, key.code);
+      expect(await repo.changeCode(share, newKey.code.toLowerCase()), isNull);
+      expect(repo.received.single.code, newKey.code.toLowerCase());
+      expect(repo.viewOf(repo.received.single), isA<SharedViewReady>());
+      expect(
+        codec.decode(pod.documents[health.documentPath]!).received.single.code,
+        newKey.code.toLowerCase(),
+      );
+    });
+
     test('remove forgets the share and its view', () async {
       await repo.remove(share);
       expect(repo.received, isEmpty);

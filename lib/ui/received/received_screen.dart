@@ -24,6 +24,16 @@ abstract final class ReceivedKeys {
   static Key state(ReceivedShare s) => Key('received.state.${s.sharerWebId}');
   static Key open(ReceivedShare s) => Key('received.open.${s.sharerWebId}');
   static Key remove(ReceivedShare s) => Key('received.remove.${s.sharerWebId}');
+  static Key changeCode(ReceivedShare s) =>
+      Key('received.changeCode.${s.sharerWebId}');
+  static Key newCode(ReceivedShare s) =>
+      Key('received.newCode.${s.sharerWebId}');
+  static Key saveCode(ReceivedShare s) =>
+      Key('received.saveCode.${s.sharerWebId}');
+  static Key cancelCode(ReceivedShare s) =>
+      Key('received.cancelCode.${s.sharerWebId}');
+  static Key codeError(ReceivedShare s) =>
+      Key('received.codeError.${s.sharerWebId}');
 }
 
 class ReceivedScreen extends StatelessWidget {
@@ -121,23 +131,64 @@ class _ReceivedViewState extends State<_ReceivedView> {
                       : vm.stateText(share),
                 ),
                 const SizedBox(height: Space.sm),
-                Wrap(
-                  spacing: Space.sm,
-                  children: [
-                    FilledButton.tonalIcon(
-                      key: ReceivedKeys.open(share),
-                      onPressed: () => _open(context, share),
-                      icon: const Icon(Icons.visibility_rounded),
-                      label: const Text('View'),
+                if (vm.isEditingCode(share)) ...[
+                  TextField(
+                    key: ReceivedKeys.newCode(share),
+                    decoration: const InputDecoration(
+                      labelText: 'Their new code',
+                      hintText: 'XXXX-XXXX-XXXX-XXXX',
                     ),
-                    TextButton.icon(
-                      key: ReceivedKeys.remove(share),
-                      onPressed: () => vm.remove(share),
-                      icon: const Icon(Icons.person_remove_rounded),
-                      label: const Text('Remove'),
+                    autocorrect: false,
+                    autofocus: true,
+                    onChanged: vm.setNewCode,
+                  ),
+                  if (vm.codeError case final error?)
+                    ProblemText(
+                      key: ReceivedKeys.codeError(share),
+                      describeReceivedError(error),
                     ),
-                  ],
-                ),
+                  const SizedBox(height: Space.sm),
+                  Wrap(
+                    spacing: Space.sm,
+                    children: [
+                      FilledButton(
+                        key: ReceivedKeys.saveCode(share),
+                        onPressed: vm.canSaveCode
+                            ? () => vm.saveCode(share)
+                            : null,
+                        child: Text(vm.isBusy ? 'Checking…' : 'Save code'),
+                      ),
+                      TextButton(
+                        key: ReceivedKeys.cancelCode(share),
+                        onPressed: vm.cancelChangingCode,
+                        child: const Text('Cancel'),
+                      ),
+                    ],
+                  ),
+                ] else
+                  Wrap(
+                    spacing: Space.sm,
+                    children: [
+                      FilledButton.tonalIcon(
+                        key: ReceivedKeys.open(share),
+                        onPressed: () => _open(context, share),
+                        icon: const Icon(Icons.visibility_rounded),
+                        label: const Text('View'),
+                      ),
+                      TextButton.icon(
+                        key: ReceivedKeys.changeCode(share),
+                        onPressed: () => vm.startChangingCode(share),
+                        icon: const Icon(Icons.key_rounded),
+                        label: const Text('Change code'),
+                      ),
+                      TextButton.icon(
+                        key: ReceivedKeys.remove(share),
+                        onPressed: () => vm.remove(share),
+                        icon: const Icon(Icons.person_remove_rounded),
+                        label: const Text('Remove'),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),

@@ -112,6 +112,23 @@ class ReceivedShareRepository extends ChangeNotifier {
     return null;
   }
 
+  /// Takes a new code for [share], as after a re-share: proves it opens the
+  /// copy, then records it. Null on success, else why not; nothing changes
+  /// on failure.
+  Future<ReceivedShareError?> changeCode(
+    ReceivedShare share,
+    String? code,
+  ) async {
+    final updated = share.withCode(
+      (code ?? '').trim().isEmpty ? null : code!.trim(),
+    );
+    final view = await _fetch(updated);
+    if (view is SharedViewFailed) return view.error;
+    _views[share.sharerWebId] = view;
+    await _health.apply((d) => d.withReceived(updated));
+    return null;
+  }
+
   Future<void> refresh(ReceivedShare share) async {
     _views[share.sharerWebId] = const SharedViewLoading();
     notifyListeners();
