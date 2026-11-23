@@ -36,12 +36,22 @@ class ExportRow {
     required DateTime date,
     this.reading,
     this.periodStart = false,
+    this.periodDay = false,
+    this.periodEnd = false,
     this.log,
   }) : date = dateOnly(date);
 
   final DateTime date;
   final TemperatureReading? reading;
+
+  /// The first day of a period.
   final bool periodStart;
+
+  /// A known day of a period, first and last included.
+  final bool periodDay;
+
+  /// The known last day of a period.
+  final bool periodEnd;
   final DailyLog? log;
 
   @override
@@ -50,10 +60,13 @@ class ExportRow {
       other.date == date &&
       other.reading == reading &&
       other.periodStart == periodStart &&
+      other.periodDay == periodDay &&
+      other.periodEnd == periodEnd &&
       other.log == log;
 
   @override
-  int get hashCode => Object.hash(date, reading, periodStart, log);
+  int get hashCode =>
+      Object.hash(date, reading, periodStart, periodDay, periodEnd, log);
 }
 
 /// One row per day with anything logged from [range]'s start, oldest first.
@@ -64,13 +77,19 @@ List<ExportRow> exportRows(
 }) {
   final since = range.since(today);
   bool included(DateTime day) => since == null || !day.isBefore(since);
+  final periodDays = <DateTime>{
+    for (final p in data.periods)
+      for (var d = p.startDate; !d.isAfter(p.lastKnownDay); d = addDays(d, 1))
+        d,
+  };
   final days = <DateTime>{
     ...data.readings.map((r) => r.date),
-    ...data.periods.map((p) => p.startDate),
+    ...periodDays,
     ...data.dailyLogs.map((l) => l.date),
   }.where(included).sorted();
   final readings = {for (final r in data.readings) r.date: r};
   final starts = data.periods.map((p) => p.startDate).toSet();
+  final ends = {for (final p in data.periods) ?p.endDate};
   final logs = {for (final l in data.dailyLogs) l.date: l};
   return [
     for (final day in days)
@@ -78,6 +97,8 @@ List<ExportRow> exportRows(
         date: day,
         reading: readings[day],
         periodStart: starts.contains(day),
+        periodDay: periodDays.contains(day),
+        periodEnd: ends.contains(day),
         log: logs[day],
       ),
   ];

@@ -17,10 +17,23 @@ import 'package:pdf/widgets.dart' as pw;
 
 /// One cycle: its first day and its length, null while it is current.
 class CycleRow {
-  const CycleRow({required this.start, this.length});
+  const CycleRow({
+    required this.start,
+    this.length,
+    this.periodLength,
+    this.flow,
+  });
 
   final DateTime start;
+
+  /// Days to the next period's start; null for the current cycle.
   final int? length;
+
+  /// Days the period lasted, when its end is known.
+  final int? periodLength;
+
+  /// The period's overall flow, when said.
+  final String? flow;
 }
 
 /// The readings as a chart: x is days since [firstDay], y is °C.
@@ -161,16 +174,18 @@ List<(String, String)> _profile(HealthProfile profile) {
 }
 
 List<CycleRow> _cycles(HealthData data, List<ExportRow> rows) {
-  final starts = data.periods.map((p) => p.startDate).toList();
+  final periods = data.periods;
   final inSpan = rows.where((r) => r.periodStart).map((r) => r.date).toSet();
   return [
-    for (var i = 0; i < starts.length; i++)
-      if (inSpan.contains(starts[i]))
+    for (var i = 0; i < periods.length; i++)
+      if (inSpan.contains(periods[i].startDate))
         CycleRow(
-          start: starts[i],
-          length: i + 1 < starts.length
-              ? daysBetween(starts[i], starts[i + 1])
+          start: periods[i].startDate,
+          length: i + 1 < periods.length
+              ? daysBetween(periods[i].startDate, periods[i + 1].startDate)
               : null,
+          periodLength: periods[i].lengthDays,
+          flow: periods[i].flow?.name,
         ),
   ];
 }
@@ -264,10 +279,15 @@ class PdfReport {
           if (content.cycles.isNotEmpty) ...[
             pw.Header(level: 1, text: 'Cycles'),
             _table(
-              ['Started', 'Length (days)'],
+              ['Started', 'Cycle (days)', 'Period (days)', 'Flow'],
               [
                 for (final c in content.cycles)
-                  [isoDay(c.start), c.length?.toString() ?? 'current'],
+                  [
+                    isoDay(c.start),
+                    c.length?.toString() ?? 'current',
+                    c.periodLength?.toString() ?? '',
+                    c.flow ?? '',
+                  ],
               ],
             ),
           ],
@@ -326,7 +346,14 @@ class PdfReport {
     return [
       isoDay(r.date),
       if (r.reading == null) '' else formatCelsius(r.reading!.celsius),
-      if (r.periodStart) 'start' else '',
+      if (r.periodStart)
+        'start'
+      else if (r.periodEnd)
+        'end'
+      else if (r.periodDay)
+        'day'
+      else
+        '',
       if (log == null || !log.flow.isBleeding) '' else log.flow.name,
       log?.painLevel?.toString() ?? '',
       if (log == null)

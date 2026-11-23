@@ -19,7 +19,8 @@ void main() {
   test('a header only when there are no rows', () {
     expect(
       csv.text(const []),
-      'date,temperature_c,temperature_source,period_start,flow,pain_0_10,'
+      'date,temperature_c,temperature_source,period_start,period_end,flow,'
+      'pain_0_10,'
       'symptoms\r\n',
     );
   });
@@ -52,13 +53,14 @@ void main() {
     ];
     final lines = csv.text(rows).split('\r\n');
     const header =
-        'date,temperature_c,temperature_source,period_start,flow,pain_0_10,'
+        'date,temperature_c,temperature_source,period_start,period_end,flow,'
+        'pain_0_10,'
         'symptoms';
     expect(lines, [
       header,
-      '2026-06-01,36.4,manual,yes,medium,5,cramps; fatigue',
-      '2026-06-02,,,,,2,',
-      '2026-06-03,37.0,ring,,,,',
+      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue',
+      '2026-06-02,,,,,,2,',
+      '2026-06-03,37.0,ring,,,,,',
       '',
     ]);
   });

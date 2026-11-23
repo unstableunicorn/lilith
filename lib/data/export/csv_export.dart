@@ -32,6 +32,7 @@ class CsvExport {
     'temperature_c',
     'temperature_source',
     'period_start',
+    'period_end',
     'flow',
     'pain_0_10',
     'symptoms',
@@ -62,6 +63,7 @@ class CsvExport {
         '',
       ],
       if (row.periodStart) 'yes' else '',
+      if (row.periodEnd) 'yes' else '',
       if (log == null || !log.flow.isBleeding) '' else log.flow.name,
       log?.painLevel?.toString() ?? '',
       if (log == null)
