@@ -66,15 +66,21 @@ class HomeViewModel extends ChangeNotifier {
     readings: _repo.data.readings,
     periods: _repo.data.periods,
     today: today,
+    deltas: _repo.data.temperatureDeltas,
     usualCycleLength: _repo.data.profile.usualCycleLength,
     suppressShift: _repo.data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(_repo.data.profile.regularity),
   );
 
+  static String _riseText(CyclePrediction p) =>
+      p.shiftSeries == TemperatureSeries.delta
+      ? 'A sustained rise in the night temperature from your wearable'
+      : 'A sustained temperature rise';
+
   /// How the prediction was arrived at, for the person reading it.
   String howText(CyclePrediction p) => switch (p.method) {
     PredictionMethod.temperatureShift =>
-      'A sustained temperature rise around '
+      '${_riseText(p)} around '
           '${formatShortDate(p.estimatedOvulation!, today: today)} '
           'suggests ovulation; a ${p.lutealLength}-day luteal phase follows.',
     PredictionMethod.usualCycleLength =>

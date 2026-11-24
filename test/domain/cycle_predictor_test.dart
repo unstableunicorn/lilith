@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 /// [count] readings of [celsius] on consecutive days from [from].
@@ -17,6 +18,7 @@ List<PeriodEvent> periodsOn(List<DateTime> starts) => [
 ];
 
 void main() {
+  deltaTests();
   profileEffectTests();
   usualCycleLengthTests();
   periodSpanPredictorTests();
@@ -434,5 +436,54 @@ void profileEffectTests() {
       maxConfidence: PredictionConfidence.high,
     );
     expect(single.confidence, PredictionConfidence.low);
+  });
+}
+
+void deltaTests() {
+  DateTime june(int d) => DateTime(2026, 6, d);
+  const predictor = CyclePredictor();
+
+  List<TemperatureDelta> deltasWithShift() => [
+    for (var d = 6; d <= 13; d++)
+      TemperatureDelta(date: june(d), deltaCelsius: -0.05),
+    for (var d = 14; d <= 18; d++)
+      TemperatureDelta(date: june(d), deltaCelsius: 0.3),
+  ];
+
+  test(
+    'a wearable shift alone predicts from ovulation and names the series',
+    () {
+      final p = predictor.predict(
+        readings: const [],
+        deltas: deltasWithShift(),
+        periods: [PeriodEvent(startDate: june(1), endDate: june(5))],
+        today: june(18),
+      );
+      expect(p.method, PredictionMethod.temperatureShift);
+      expect(p.shiftSeries, TemperatureSeries.delta);
+      expect(p.estimatedOvulation, june(13));
+    },
+  );
+
+  test('with both series the one with more points this cycle is used', () {
+    final p = predictor.predict(
+      readings: [
+        TemperatureReading(date: june(6), celsius: 36.3),
+        TemperatureReading(date: june(7), celsius: 36.3),
+      ],
+      deltas: deltasWithShift(),
+      periods: [PeriodEvent(startDate: june(1), endDate: june(5))],
+      today: june(18),
+    );
+    expect(p.shiftSeries, TemperatureSeries.delta);
+  });
+
+  test('without any temperature the series is none', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [PeriodEvent(startDate: june(1))],
+      today: june(18),
+    );
+    expect(p.shiftSeries, TemperatureSeries.none);
   });
 }

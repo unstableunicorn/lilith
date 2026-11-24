@@ -9,6 +9,7 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 /// The document could not be read as a health document.
@@ -33,7 +34,8 @@ class UnsupportedDocumentVersionException implements Exception {
 ///
 /// A document without a version is version 1. Version 2 was never written.
 /// Version 4 added the shares, version 5 the shares received, version 6 what
-/// each share holds, version 7 a period's end and flow.
+/// each share holds, version 7 a period's end and flow, version 8 the
+/// wearable temperature deltas.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -47,6 +49,7 @@ Map<String, dynamic> migrate(Map<String, dynamic> doc) {
       4 => _v4ToV5(current),
       5 => _v5ToV6(current),
       6 => _v6ToV7(current),
+      7 => _v7ToV8(current),
       _ => throw UnsupportedDocumentVersionException(version),
     };
     version = current['version'] as int;
@@ -91,11 +94,17 @@ Map<String, dynamic> _v6ToV7(Map<String, dynamic> doc) => {
   'version': 7,
 };
 
+Map<String, dynamic> _v7ToV8(Map<String, dynamic> doc) => {
+  ...doc,
+  'version': 8,
+  'temperatureDeltas': <Object>[],
+};
+
 /// Encodes and decodes [HealthData] as the pod document.
 class HealthDocumentCodec {
   const HealthDocumentCodec();
 
-  static const int currentVersion = 7;
+  static const int currentVersion = 8;
 
   String encode(HealthData data) => jsonEncode({
     'version': currentVersion,
@@ -107,6 +116,7 @@ class HealthDocumentCodec {
     'profile': data.profile.toJson(),
     'shares': [for (final s in data.shares) s.toJson()],
     'received': [for (final r in data.received) r.toJson()],
+    'temperatureDeltas': [for (final d in data.temperatureDeltas) d.toJson()],
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -127,6 +137,11 @@ class HealthDocumentCodec {
         shopping: _section(doc, 'shopping', ShoppingItem.fromJson),
         shares: _section(doc, 'shares', Share.fromJson),
         received: _section(doc, 'received', ReceivedShare.fromJson),
+        temperatureDeltas: _section(
+          doc,
+          'temperatureDeltas',
+          TemperatureDelta.fromJson,
+        ),
         profile: profile is Map<String, dynamic>
             ? HealthProfile.fromJson(profile)
             : null,

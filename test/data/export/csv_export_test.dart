@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/csv_export.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
@@ -21,7 +22,7 @@ void main() {
       csv.text(const []),
       'date,temperature_c,temperature_source,period_start,period_end,flow,'
       'pain_0_10,'
-      'symptoms\r\n',
+      'symptoms,skin_temp_delta_c,skin_temp_delta_source\r\n',
     );
   });
 
@@ -41,6 +42,7 @@ void main() {
       ExportRow(
         date: DateTime(2026, 6, 2),
         log: DailyLog(date: DateTime(2026, 6, 2), painLevel: 2),
+        delta: TemperatureDelta(date: DateTime(2026, 6, 2), deltaCelsius: 0.3),
       ),
       ExportRow(
         date: DateTime(2026, 6, 3),
@@ -55,12 +57,12 @@ void main() {
     const header =
         'date,temperature_c,temperature_source,period_start,period_end,flow,'
         'pain_0_10,'
-        'symptoms';
+        'symptoms,skin_temp_delta_c,skin_temp_delta_source';
     expect(lines, [
       header,
-      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue',
-      '2026-06-02,,,,,,2,',
-      '2026-06-03,37.0,ring,,,,,',
+      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,',
+      '2026-06-02,,,,,,2,,0.30,watch',
+      '2026-06-03,37.0,ring,,,,,,,',
       '',
     ]);
   });
