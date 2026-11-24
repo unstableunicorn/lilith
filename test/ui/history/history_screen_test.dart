@@ -64,6 +64,7 @@ void main() {
     await pump(tester);
     expect(find.byKey(HistoryKeys.empty), findsOneWidget);
     expect(find.byType(TemperatureChart), findsNothing);
+    await expectAccessible(tester);
   });
 
   testWidgets('a reading can be added for a past day from a dialog', (
@@ -127,6 +128,7 @@ void main() {
     await pump(tester);
     await tester.tap(find.byKey(HistoryKeys.removeReading(d(9))));
     await tester.pumpAndSettle();
+    await expectAccessible(tester);
     await tester.tap(find.byKey(HistoryKeys.cancel));
     await tester.pumpAndSettle();
     expect(health.data.readings, hasLength(2));
