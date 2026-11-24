@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/domain/share.dart';
@@ -25,12 +26,18 @@ abstract interface class SettingsStore {
   Future<ReminderSetting> readReminder();
 
   Future<void> writeReminder(ReminderSetting setting);
+
+  /// What the tabs show on this device; everything until set.
+  Future<PageSettings> readPageSettings();
+
+  Future<void> writePageSettings(PageSettings settings);
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
   static const String providerKey = 'pod_provider';
   static const String inviteKey = 'share_invite';
   static const String reminderKey = 'daily_reminder';
+  static const String pageSettingsKey = 'page_settings';
 
   @override
   Future<PodProvider?> readProvider() async {
@@ -87,5 +94,23 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   Future<void> writeReminder(ReminderSetting setting) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(reminderKey, jsonEncode(setting.toJson()));
+  }
+
+  @override
+  Future<PageSettings> readPageSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(pageSettingsKey);
+    if (raw == null) return const PageSettings();
+    try {
+      return PageSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } on Object {
+      return const PageSettings();
+    }
+  }
+
+  @override
+  Future<void> writePageSettings(PageSettings settings) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(pageSettingsKey, jsonEncode(settings.toJson()));
   }
 }

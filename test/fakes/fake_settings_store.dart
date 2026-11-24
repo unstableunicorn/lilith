@@ -1,4 +1,5 @@
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/domain/share.dart';
@@ -8,6 +9,7 @@ class FakeSettingsStore implements SettingsStore {
   PodProvider? provider;
   ShareInvite? invite;
   ReminderSetting reminder = const ReminderSetting();
+  PageSettings pageSettings = const PageSettings();
 
   @override
   Future<PodProvider?> readProvider() async => provider;
@@ -31,4 +33,11 @@ class FakeSettingsStore implements SettingsStore {
   @override
   Future<void> writeReminder(ReminderSetting setting) async =>
       reminder = setting;
+
+  @override
+  Future<PageSettings> readPageSettings() async => pageSettings;
+
+  @override
+  Future<void> writePageSettings(PageSettings settings) async =>
+      pageSettings = settings;
 }

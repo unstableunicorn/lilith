@@ -1,6 +1,11 @@
 // Every shared component, with sample content, in both themes. The place
 // to look before building a screen and to check a change to a component.
 
+import 'package:lilith/domain/calendar.dart';
+import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -110,6 +115,38 @@ class _Samples extends StatelessWidget {
           start: DateTime(2026, 6, 11),
           end: DateTime(2026, 6, 14),
         ),
+      ),
+      const SectionHeading('Calendar'),
+      MonthCalendar(
+        title: 'June 2026',
+        days: calendarMonth(
+          HealthData.empty
+              .withPeriod(
+                PeriodEvent(
+                  startDate: DateTime(2026, 6, 3),
+                  endDate: DateTime(2026, 6, 7),
+                ),
+              )
+              .withDailyLog(DailyLog(date: DateTime(2026, 6, 12), painLevel: 2))
+              .withReading(
+                TemperatureReading(date: DateTime(2026, 6, 14), celsius: 36.6),
+              ),
+          CyclePrediction(
+            method: PredictionMethod.cycleAverage,
+            confidence: PredictionConfidence.medium,
+            predictedNextPeriod: DateTime(2026, 7, 1),
+            estimatedOvulation: DateTime(2026, 6, 17),
+            averagePeriodLength: 4,
+          ),
+          year: 2026,
+          month: 6,
+        ),
+        leadingBlanks: leadingBlanks(year: 2026, month: 6),
+        today: DateTime(2026, 6, 20),
+        onPrevious: () {},
+        onNext: () {},
+        onDay: (_) {},
+        dayKey: (d) => Key('design.calendar.$d'),
       ),
       const SectionHeading('QR code'),
       const QrCodeBox(
