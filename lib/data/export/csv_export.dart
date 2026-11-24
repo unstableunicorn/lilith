@@ -36,8 +36,8 @@ class CsvExport {
     'flow',
     'pain_0_10',
     'symptoms',
-    'skin_temp_delta_c',
-    'skin_temp_delta_source',
+    'skin_temp_c',
+    'skin_temp_source',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -75,8 +75,8 @@ class CsvExport {
             .where(log.symptoms.contains)
             .map((s) => s.name)
             .join('; '),
-      if (row.delta case final d?) ...[
-        d.deltaCelsius.toStringAsFixed(2),
+      if (row.night case final d?) ...[
+        d.celsius.toStringAsFixed(2),
         d.source.name,
       ] else ...[
         '',

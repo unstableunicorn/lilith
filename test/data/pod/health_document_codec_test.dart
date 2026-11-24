@@ -8,8 +8,8 @@ import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/shopping_item.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 void main() {
   v8Tests();
@@ -57,7 +57,7 @@ void main() {
         'profile',
         'shares',
         'received',
-        'temperatureDeltas',
+        'wearableNights',
       ]),
     );
   });
@@ -156,7 +156,7 @@ void main() {
         'shopping': <Object>[],
         'shares': <Object>[],
         'received': <Object>[],
-        'temperatureDeltas': <Object>[],
+        'wearableNights': <Object>[],
       });
     });
 
@@ -166,7 +166,7 @@ void main() {
         'version': 8,
         'shares': <Object>[],
         'received': <Object>[],
-        'temperatureDeltas': <Object>[],
+        'wearableNights': <Object>[],
       });
     });
 
@@ -182,7 +182,7 @@ void main() {
         'periods': [
           {'startDate': '2026-05-01T00:00:00.000'},
         ],
-        'temperatureDeltas': <Object>[],
+        'wearableNights': <Object>[],
       });
     });
 
@@ -221,7 +221,7 @@ void main() {
             'content': 'cycleData',
           },
         ],
-        'temperatureDeltas': <Object>[],
+        'wearableNights': <Object>[],
       });
     });
 
@@ -236,7 +236,7 @@ void main() {
 }
 
 void v8Tests() {
-  test('a v7 document gains an empty delta list and loads', () {
+  test('a v7 document gains an empty night list and loads', () {
     const codec = HealthDocumentCodec();
     final v7 = jsonEncode({
       'version': 7,
@@ -250,18 +250,18 @@ void v8Tests() {
     });
     final migrated = migrate(jsonDecode(v7) as Map<String, dynamic>);
     expect(migrated['version'], 8);
-    expect(migrated['temperatureDeltas'], isEmpty);
-    expect(codec.decode(v7).temperatureDeltas, isEmpty);
+    expect(migrated['wearableNights'], isEmpty);
+    expect(codec.decode(v7).wearableNights, isEmpty);
   });
 
-  test('deltas round-trip at v8', () {
+  test('nights round-trip at v8', () {
     const codec = HealthDocumentCodec();
-    final data = HealthData.empty.withDeltas([
-      TemperatureDelta(date: DateTime(2026, 6, 2), deltaCelsius: 0.2),
+    final data = HealthData.empty.withNights([
+      WearableNight(date: DateTime(2026, 6, 2), celsius: 0.2),
     ]);
     expect(
-      codec.decode(codec.encode(data)).temperatureDeltas,
-      data.temperatureDeltas,
+      codec.decode(codec.encode(data)).wearableNights,
+      data.wearableNights,
     );
   });
 }

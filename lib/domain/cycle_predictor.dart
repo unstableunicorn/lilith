@@ -7,8 +7,8 @@
 
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 /// Which temperature series a shift was looked for in.
 enum TemperatureSeries {
@@ -17,8 +17,8 @@ enum TemperatureSeries {
   /// Logged readings in °C.
   absolute,
 
-  /// A wearable's nightly change from the wearer's baseline.
-  delta,
+  /// A wearable's nightly skin temperature.
+  wearable,
 }
 
 /// How a prediction was derived.
@@ -120,14 +120,14 @@ class CyclePredictor {
     required List<TemperatureReading> readings,
     required List<PeriodEvent> periods,
     required DateTime today,
-    List<TemperatureDelta> deltas = const [],
+    List<WearableNight> nights = const [],
     int? usualCycleLength,
     bool suppressShift = false,
     PredictionConfidence? maxConfidence,
   }) {
     final result = _predict(
       readings: readings,
-      deltas: deltas,
+      nights: nights,
       periods: periods,
       today: today,
       usualCycleLength: usualCycleLength,
@@ -156,7 +156,7 @@ class CyclePredictor {
 
   CyclePrediction _predict({
     required List<TemperatureReading> readings,
-    required List<TemperatureDelta> deltas,
+    required List<WearableNight> nights,
     required List<PeriodEvent> periods,
     required DateTime today,
     required int? usualCycleLength,
@@ -192,7 +192,7 @@ class CyclePredictor {
         : periodLengths.reduce((a, b) => a + b) / periodLengths.length;
 
     final absolute = [for (final r in readings) (r.date, r.celsius)];
-    final changes = [for (final d in deltas) (d.date, d.deltaCelsius)];
+    final changes = [for (final d in nights) (d.date, d.celsius)];
     final (series, points) = _seriesFor(absolute, changes, sorted.last, now);
     final ovulation = suppressShift
         ? null
@@ -254,22 +254,22 @@ class CyclePredictor {
   }
 
   /// The series with more points in the current cycle; readings on a tie.
-  /// A wearable's baseline drifts with the cycle, so its deltas are judged
+  /// Skin runs below core and differs by device, so its nights are judged
   /// against their own early-cycle mean just as readings are.
   (TemperatureSeries, List<(DateTime, double)>) _seriesFor(
     List<(DateTime, double)> absolute,
-    List<(DateTime, double)> deltas,
+    List<(DateTime, double)> nights,
     PeriodEvent period,
     DateTime until,
   ) {
     int inCycle(List<(DateTime, double)> points) => points
         .where((p) => !p.$1.isBefore(period.startDate) && !p.$1.isAfter(until))
         .length;
-    if (absolute.isEmpty && deltas.isEmpty) {
+    if (absolute.isEmpty && nights.isEmpty) {
       return (TemperatureSeries.none, const []);
     }
-    return inCycle(deltas) > inCycle(absolute)
-        ? (TemperatureSeries.delta, deltas)
+    return inCycle(nights) > inCycle(absolute)
+        ? (TemperatureSeries.wearable, nights)
         : (TemperatureSeries.absolute, absolute);
   }
 

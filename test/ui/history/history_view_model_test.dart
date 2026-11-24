@@ -5,12 +5,14 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  nightTests();
   groupingTests();
   chartSpanTests();
   cycleTextTests();
@@ -216,5 +218,17 @@ void groupingTests() {
     final vm = HistoryViewModel(repo, now: () => june(25));
     expect(vm.cycles, isEmpty);
     expect(vm.readingsBeforeFirstPeriod, hasLength(1));
+  });
+}
+
+void nightTests() {
+  test('nights are charted relative to their own mean', () {
+    final nights = nightsRelativeToMean([
+      WearableNight(date: DateTime(2026, 6, 1), celsius: 33.1),
+      WearableNight(date: DateTime(2026, 6, 2), celsius: 33.5),
+      WearableNight(date: DateTime(2026, 6, 3), celsius: 33.3),
+    ]);
+    expect(nights.map((n) => n.celsius), [-0.2, 0.2, 0]);
+    expect(nightsRelativeToMean(const []), isEmpty);
   });
 }

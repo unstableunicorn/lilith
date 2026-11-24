@@ -13,8 +13,8 @@ import 'package:lilith/domain/period_linker.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 import 'package:meta/meta.dart';
 
 const _list = ListEquality<Object>();
@@ -31,10 +31,10 @@ class HealthData {
     HealthProfile? profile,
     Iterable<Share> shares = const [],
     Iterable<ReceivedShare> received = const [],
-    Iterable<TemperatureDelta> temperatureDeltas = const [],
+    Iterable<WearableNight> wearableNights = const [],
   }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
-       temperatureDeltas = List.unmodifiable(
-         temperatureDeltas.sortedBy((d) => d.date),
+       wearableNights = List.unmodifiable(
+         wearableNights.sortedBy((d) => d.date),
        ),
        periods = List.unmodifiable(periods.sortedBy((p) => p.startDate)),
        dailyLogs = List.unmodifiable(dailyLogs.sortedBy((l) => l.date)),
@@ -70,15 +70,15 @@ class HealthData {
   /// Who shares their cycle data with this user.
   final List<ReceivedShare> received;
 
-  /// Nightly changes from a wearable's baseline, oldest first.
-  final List<TemperatureDelta> temperatureDeltas;
+  /// A wearable's nightly skin temperatures, oldest first.
+  final List<WearableNight> wearableNights;
 
   /// True once any cycle data has been logged.
   bool get hasData =>
       readings.isNotEmpty ||
       periods.isNotEmpty ||
       dailyLogs.isNotEmpty ||
-      temperatureDeltas.isNotEmpty;
+      wearableNights.isNotEmpty;
 
   HealthData copyWith({
     Iterable<TemperatureReading>? readings,
@@ -89,7 +89,7 @@ class HealthData {
     HealthProfile? profile,
     Iterable<Share>? shares,
     Iterable<ReceivedShare>? received,
-    Iterable<TemperatureDelta>? temperatureDeltas,
+    Iterable<WearableNight>? wearableNights,
   }) => HealthData(
     readings: readings ?? this.readings,
     periods: periods ?? this.periods,
@@ -99,7 +99,7 @@ class HealthData {
     profile: profile ?? this.profile,
     shares: shares ?? this.shares,
     received: received ?? this.received,
-    temperatureDeltas: temperatureDeltas ?? this.temperatureDeltas,
+    wearableNights: wearableNights ?? this.wearableNights,
   );
 
   HealthData withReading(TemperatureReading reading) => withReadings([reading]);
@@ -113,20 +113,18 @@ class HealthData {
     return copyWith(readings: byDay.values);
   }
 
-  /// Adds or replaces the delta for each day in [imported].
-  HealthData withDeltas(Iterable<TemperatureDelta> imported) {
-    final byDay = {for (final d in temperatureDeltas) d.date: d};
+  /// Adds or replaces the night for each day in [imported].
+  HealthData withNights(Iterable<WearableNight> imported) {
+    final byDay = {for (final d in wearableNights) d.date: d};
     for (final d in imported) {
       byDay[d.date] = d;
     }
-    return copyWith(temperatureDeltas: byDay.values);
+    return copyWith(wearableNights: byDay.values);
   }
 
-  HealthData withoutDelta(DateTime date) {
+  HealthData withoutNight(DateTime date) {
     final day = dateOnly(date);
-    return copyWith(
-      temperatureDeltas: temperatureDeltas.where((d) => d.date != day),
-    );
+    return copyWith(wearableNights: wearableNights.where((d) => d.date != day));
   }
 
   HealthData withoutReading(DateTime date) {
@@ -261,7 +259,7 @@ class HealthData {
       other.profile == profile &&
       _list.equals(other.shares, shares) &&
       _list.equals(other.received, received) &&
-      _list.equals(other.temperatureDeltas, temperatureDeltas);
+      _list.equals(other.wearableNights, wearableNights);
 
   @override
   int get hashCode => Object.hash(
@@ -273,6 +271,6 @@ class HealthData {
     profile,
     _list.hash(shares),
     _list.hash(received),
-    _list.hash(temperatureDeltas),
+    _list.hash(wearableNights),
   );
 }

@@ -61,14 +61,14 @@ class WearableRepository extends ChangeNotifier {
         return;
       }
       final today = dateOnly(now());
-      final deltas = await _source.readDeltas(
+      final nights = await _source.readNights(
         from: addDays(today, -windowDays),
         to: today,
       );
-      if (deltas.isNotEmpty) {
-        await _health.apply((d) => d.withDeltas(deltas));
+      if (nights.isNotEmpty) {
+        await _health.apply((d) => d.withNights(nights));
       }
-      _set(WearableSynced(deltas.length));
+      _set(WearableSynced(nights.length));
     } on Exception catch (e) {
       _set(WearableFailed(e));
     }

@@ -23,7 +23,7 @@ HealthData sharedView(HealthData data) => HealthData(
   readings: data.readings,
   periods: data.periods,
   dailyLogs: data.dailyLogs,
-  temperatureDeltas: data.temperatureDeltas,
+  wearableNights: data.wearableNights,
 );
 
 /// How long a share lasts, as offered on the share screen.

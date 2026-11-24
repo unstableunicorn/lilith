@@ -47,7 +47,7 @@ class SharedPersonViewModel extends ChangeNotifier {
       readings: d.readings,
       periods: d.periods,
       today: today,
-      deltas: d.temperatureDeltas,
+      nights: d.wearableNights,
     ),
     null => null,
   };
