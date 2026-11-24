@@ -28,6 +28,7 @@ class LogViewModel extends ChangeNotifier {
   FlowIntensity get flow => _draft.flow;
   Set<Symptom> get symptoms => _draft.symptoms;
   int? get pain => _draft.painLevel;
+  OvulationTest? get ovulationTest => _draft.ovulationTest;
   bool get isEmpty => _draft.isEmpty;
   bool get isSaving => _saving;
   RepositoryError? get error => _repo.error;
@@ -69,6 +70,13 @@ class LogViewModel extends ChangeNotifier {
     level == null
         ? _draft.copyWith(clearPain: true)
         : _draft.copyWith(painLevel: level),
+  );
+
+  /// Records the day's ovulation test, or none with null.
+  void setOvulationTest(OvulationTest? result) => _edit(
+    result == null
+        ? _draft.copyWith(clearOvulationTest: true)
+        : _draft.copyWith(ovulationTest: result),
   );
 
   void clear() => _edit(DailyLog(date: _date));

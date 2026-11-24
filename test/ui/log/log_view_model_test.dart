@@ -100,6 +100,17 @@ void main() {
     expect(vm.pain, isNull);
   });
 
+  test('an ovulation test result is saved, and can be unset', () async {
+    expect(vm.ovulationTest, isNull);
+    vm.setOvulationTest(OvulationTest.positive);
+    expect(vm.isDirty, isTrue);
+    await vm.save();
+    expect(repo.data.logFor(day)?.ovulationTest, OvulationTest.positive);
+    vm.setOvulationTest(null);
+    await vm.save();
+    expect(repo.data.logFor(day), isNull);
+  });
+
   test(
     'is saving while the repository writes, and surfaces its error',
     () async {
