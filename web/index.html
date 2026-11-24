@@ -44,6 +44,12 @@
 
   <title>Lilith</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* The browser's pull-to-reload must not fire on the app: a pull down is
+       the app's own gesture where it has one, and a reload mid-gesture
+       starts the app at the wrong size. */
+    html, body { overscroll-behavior-y: none; }
+  </style>
 </head>
 <body>
   <!--
