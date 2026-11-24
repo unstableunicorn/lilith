@@ -9,6 +9,7 @@ String logSummary(DailyLog log) {
     for (final s in Symptom.values.where(log.symptoms.contains))
       s.label.toLowerCase(),
     if (log.painLevel case final pain?) 'pain $pain/10',
+    if (log.ovulationTest case final t?) 'ovulation test ${t.name}',
   ];
   return parts.isEmpty ? 'nothing logged' : parts.join(', ');
 }
