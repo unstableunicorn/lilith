@@ -4,10 +4,12 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/components/trend_chart.dart';
 
 /// One cycle: when it started and how long it ran, null while it is current.
 class CycleEntry {
@@ -31,9 +33,19 @@ class CycleEntry {
 }
 
 class HistoryViewModel extends ChangeNotifier {
-  HistoryViewModel(this._repo) {
+  HistoryViewModel(
+    this._repo, {
+    this.now = DateTime.now,
+    this.predictor = const CyclePredictor(),
+  }) {
     _repo.addListener(notifyListeners);
   }
+
+  /// The clock, injected so tests pick the day.
+  final DateTime Function() now;
+  final CyclePredictor predictor;
+
+  DateTime get today => dateOnly(now());
 
   /// How many readings the chart shows at most.
   static const int chartWindow = 60;
@@ -88,6 +100,21 @@ class HistoryViewModel extends ChangeNotifier {
         : all;
   }
 
+  /// The known days of each period, for the chart's shading.
+  List<ChartSpan> get periodSpans => chartSpansFor(_repo.data.periods);
+
+  /// From the estimated ovulation to the predicted period, when the
+  /// temperature shift gave one.
+  ChartSpan? get lutealSpan => lutealSpanFor(
+    predictor.predict(
+      readings: _repo.data.readings,
+      periods: _repo.data.periods,
+      today: today,
+      usualCycleLength: _repo.data.profile.usualCycleLength,
+      suppressShift: _repo.data.profile.usesHormonalContraception,
+    ),
+  );
+
   Set<DateTime> get periodStarts =>
       _repo.data.periods.map((p) => p.startDate).toSet();
 
@@ -104,4 +131,17 @@ class HistoryViewModel extends ChangeNotifier {
     _repo.removeListener(notifyListeners);
     super.dispose();
   }
+}
+
+/// Every period as a span of its known days.
+List<ChartSpan> chartSpansFor(Iterable<PeriodEvent> periods) => [
+  for (final p in periods) ChartSpan(start: p.startDate, end: p.lastKnownDay),
+];
+
+/// The days after ovulation up to the predicted period, when both are known.
+ChartSpan? lutealSpanFor(CyclePrediction p) {
+  final ovulation = p.estimatedOvulation;
+  final next = p.predictedNextPeriod;
+  if (ovulation == null || next == null) return null;
+  return ChartSpan(start: addDays(ovulation, 1), end: addDays(next, -1));
 }

@@ -9,6 +9,7 @@ import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 
@@ -89,6 +90,13 @@ class SharedPersonViewModel extends ChangeNotifier {
         ? all.sublist(all.length - HistoryViewModel.chartWindow)
         : all;
   }
+
+  List<ChartSpan> get periodSpans => chartSpansFor(data?.periods ?? const []);
+
+  ChartSpan? get lutealSpan => switch (prediction) {
+    final p? => lutealSpanFor(p),
+    null => null,
+  };
 
   Set<DateTime> get periodStarts =>
       data?.periods.map((p) => p.startDate).toSet() ?? const {};
