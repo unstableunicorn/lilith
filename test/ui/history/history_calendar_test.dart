@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/page_settings.dart';
@@ -113,4 +114,38 @@ void main() {
     expect(find.byType(TemperatureChart), findsNothing);
     expect(find.byKey(HistoryKeys.cycle(d(10))), findsOneWidget);
   });
+
+  final windowCases = [
+    (name: 'both switches off', settings: const PageSettings(), want: false),
+    (
+      name: 'show fertile window',
+      settings: const PageSettings(showFertileWindow: true),
+      want: true,
+    ),
+    (
+      name: 'trying to conceive',
+      settings: const PageSettings(tryingToConceive: true),
+      want: true,
+    ),
+  ];
+  for (final c in windowCases) {
+    testWidgets('a positive test marks the fertile window: ${c.name}', (
+      tester,
+    ) async {
+      await health.apply(
+        (data) => data.withDailyLog(
+          DailyLog(date: d(14), ovulationTest: OvulationTest.positive),
+        ),
+      );
+      await pageSettings.update(c.settings);
+      await pump(tester);
+      CalendarDay day(int n) => tester
+          .widget<CalendarDayCell>(find.byKey(HistoryKeys.calendarDay(d(n))))
+          .day;
+      expect(day(14).positiveTest, isTrue);
+      expect(day(12).fertile, c.want);
+      expect(day(18).fertile, isFalse);
+      await expectAccessible(tester);
+    });
+  }
 }

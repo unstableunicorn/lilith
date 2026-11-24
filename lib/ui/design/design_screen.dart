@@ -4,6 +4,7 @@
 import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -128,6 +129,12 @@ class _Samples extends StatelessWidget {
                 ),
               )
               .withDailyLog(DailyLog(date: DateTime(2026, 6, 12), painLevel: 2))
+              .withDailyLog(
+                DailyLog(
+                  date: DateTime(2026, 6, 16),
+                  ovulationTest: OvulationTest.positive,
+                ),
+              )
               .withReading(
                 TemperatureReading(date: DateTime(2026, 6, 14), celsius: 36.6),
               ),
@@ -140,6 +147,11 @@ class _Samples extends StatelessWidget {
           ),
           year: 2026,
           month: 6,
+          fertileWindow: FertileWindow(
+            start: DateTime(2026, 6, 13),
+            end: DateTime(2026, 6, 18),
+            basis: FertileWindowBasis.shift,
+          ),
         ),
         leadingBlanks: leadingBlanks(year: 2026, month: 6),
         today: DateTime(2026, 6, 20),

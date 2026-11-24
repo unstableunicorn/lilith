@@ -116,7 +116,7 @@ class _HistoryView extends StatelessWidget {
               title: 'Calendar',
               child: MonthCalendar(
                 title: formatMonth(vm.month),
-                days: vm.calendarDays,
+                days: vm.calendarDaysFor(shows.fertileWindowMode),
                 leadingBlanks: vm.calendarLeadingBlanks,
                 today: today,
                 onPrevious: vm.previousMonth,

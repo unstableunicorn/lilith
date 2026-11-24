@@ -8,6 +8,8 @@ import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
@@ -183,11 +185,20 @@ class HistoryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<CalendarDay> get calendarDays => calendarMonth(
+  /// The month's days, with the fertile window marked unless [mode] hides it.
+  List<CalendarDay> calendarDaysFor(FertileWindowMode mode) => calendarMonth(
     _repo.data,
     _repo.data.hasData ? prediction : null,
     year: month.year,
     month: month.month,
+    fertileWindow: mode == FertileWindowMode.hidden ? null : fertileWindow,
+  );
+
+  /// This cycle's fertile window, when a shift or a positive test dates it.
+  FertileWindow? get fertileWindow => fertileWindowFor(
+    prediction,
+    _repo.data.dailyLogs,
+    hormonalContraception: _repo.data.profile.usesHormonalContraception,
   );
 
   int get calendarLeadingBlanks =>
