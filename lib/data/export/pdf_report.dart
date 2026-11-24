@@ -100,6 +100,7 @@ ReportContent reportContent(
     readings: data.readings,
     periods: data.periods,
     today: today,
+    deltas: data.temperatureDeltas,
     usualCycleLength: data.profile.usualCycleLength,
     suppressShift: data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(data.profile.regularity),

@@ -13,6 +13,7 @@ import 'package:lilith/domain/period_linker.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:meta/meta.dart';
 
@@ -30,7 +31,11 @@ class HealthData {
     HealthProfile? profile,
     Iterable<Share> shares = const [],
     Iterable<ReceivedShare> received = const [],
+    Iterable<TemperatureDelta> temperatureDeltas = const [],
   }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
+       temperatureDeltas = List.unmodifiable(
+         temperatureDeltas.sortedBy((d) => d.date),
+       ),
        periods = List.unmodifiable(periods.sortedBy((p) => p.startDate)),
        dailyLogs = List.unmodifiable(dailyLogs.sortedBy((l) => l.date)),
        remedyFeedback = List.unmodifiable(remedyFeedback),
@@ -65,9 +70,15 @@ class HealthData {
   /// Who shares their cycle data with this user.
   final List<ReceivedShare> received;
 
+  /// Nightly changes from a wearable's baseline, oldest first.
+  final List<TemperatureDelta> temperatureDeltas;
+
   /// True once any cycle data has been logged.
   bool get hasData =>
-      readings.isNotEmpty || periods.isNotEmpty || dailyLogs.isNotEmpty;
+      readings.isNotEmpty ||
+      periods.isNotEmpty ||
+      dailyLogs.isNotEmpty ||
+      temperatureDeltas.isNotEmpty;
 
   HealthData copyWith({
     Iterable<TemperatureReading>? readings,
@@ -78,6 +89,7 @@ class HealthData {
     HealthProfile? profile,
     Iterable<Share>? shares,
     Iterable<ReceivedShare>? received,
+    Iterable<TemperatureDelta>? temperatureDeltas,
   }) => HealthData(
     readings: readings ?? this.readings,
     periods: periods ?? this.periods,
@@ -87,6 +99,7 @@ class HealthData {
     profile: profile ?? this.profile,
     shares: shares ?? this.shares,
     received: received ?? this.received,
+    temperatureDeltas: temperatureDeltas ?? this.temperatureDeltas,
   );
 
   HealthData withReading(TemperatureReading reading) => withReadings([reading]);
@@ -98,6 +111,22 @@ class HealthData {
       byDay[r.date] = r;
     }
     return copyWith(readings: byDay.values);
+  }
+
+  /// Adds or replaces the delta for each day in [imported].
+  HealthData withDeltas(Iterable<TemperatureDelta> imported) {
+    final byDay = {for (final d in temperatureDeltas) d.date: d};
+    for (final d in imported) {
+      byDay[d.date] = d;
+    }
+    return copyWith(temperatureDeltas: byDay.values);
+  }
+
+  HealthData withoutDelta(DateTime date) {
+    final day = dateOnly(date);
+    return copyWith(
+      temperatureDeltas: temperatureDeltas.where((d) => d.date != day),
+    );
   }
 
   HealthData withoutReading(DateTime date) {
@@ -231,7 +260,8 @@ class HealthData {
       _list.equals(other.shopping, shopping) &&
       other.profile == profile &&
       _list.equals(other.shares, shares) &&
-      _list.equals(other.received, received);
+      _list.equals(other.received, received) &&
+      _list.equals(other.temperatureDeltas, temperatureDeltas);
 
   @override
   int get hashCode => Object.hash(
@@ -243,5 +273,6 @@ class HealthData {
     profile,
     _list.hash(shares),
     _list.hash(received),
+    _list.hash(temperatureDeltas),
   );
 }

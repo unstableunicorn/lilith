@@ -149,6 +149,7 @@ class HistoryViewModel extends ChangeNotifier {
       readings: _repo.data.readings,
       periods: _repo.data.periods,
       today: today,
+      deltas: _repo.data.temperatureDeltas,
       usualCycleLength: _repo.data.profile.usualCycleLength,
       suppressShift: _repo.data.profile.usesHormonalContraception,
     ),

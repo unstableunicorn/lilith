@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:meta/meta.dart';
 
@@ -39,6 +40,7 @@ class ExportRow {
     this.periodDay = false,
     this.periodEnd = false,
     this.log,
+    this.delta,
   }) : date = dateOnly(date);
 
   final DateTime date;
@@ -54,6 +56,9 @@ class ExportRow {
   final bool periodEnd;
   final DailyLog? log;
 
+  /// The wearable's change from baseline that night, when synced.
+  final TemperatureDelta? delta;
+
   @override
   bool operator ==(Object other) =>
       other is ExportRow &&
@@ -62,11 +67,12 @@ class ExportRow {
       other.periodStart == periodStart &&
       other.periodDay == periodDay &&
       other.periodEnd == periodEnd &&
-      other.log == log;
+      other.log == log &&
+      other.delta == delta;
 
   @override
   int get hashCode =>
-      Object.hash(date, reading, periodStart, periodDay, periodEnd, log);
+      Object.hash(date, reading, periodStart, periodDay, periodEnd, log, delta);
 }
 
 /// One row per day with anything logged from [range]'s start, oldest first.
@@ -86,11 +92,13 @@ List<ExportRow> exportRows(
     ...data.readings.map((r) => r.date),
     ...periodDays,
     ...data.dailyLogs.map((l) => l.date),
+    ...data.temperatureDeltas.map((d) => d.date),
   }.where(included).sorted();
   final readings = {for (final r in data.readings) r.date: r};
   final starts = data.periods.map((p) => p.startDate).toSet();
   final ends = {for (final p in data.periods) ?p.endDate};
   final logs = {for (final l in data.dailyLogs) l.date: l};
+  final deltas = {for (final d in data.temperatureDeltas) d.date: d};
   return [
     for (final day in days)
       ExportRow(
@@ -100,6 +108,7 @@ List<ExportRow> exportRows(
         periodDay: periodDays.contains(day),
         periodEnd: ends.contains(day),
         log: logs[day],
+        delta: deltas[day],
       ),
   ];
 }
