@@ -20,6 +20,7 @@ abstract final class HistoryKeys {
   static const Key error = Key('history.error');
   static const Key dismissError = Key('history.dismissError');
   static const Key empty = Key('history.empty');
+  static const Key deltaChart = Key('history.deltaChart');
   static const Key confirm = Key('history.confirm');
   static const Key cancel = Key('history.cancel');
   static Key cycle(DateTime d) => Key('history.cycle.$d');
@@ -119,6 +120,34 @@ class _HistoryView extends StatelessWidget {
                     periodStarts: vm.periodStarts,
                     periods: vm.periodSpans,
                     luteal: vm.lutealSpan,
+                  ),
+                ],
+              ),
+            ),
+          if (vm.chartDeltas.isNotEmpty)
+            AppCard(
+              key: HistoryKeys.deltaChart,
+              icon: Icons.watch_rounded,
+              title: 'Change from your baseline',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your last ${vm.chartDeltas.length} nights from your '
+                    'wearable, above or below its baseline for you.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  TrendChart(
+                    points: [
+                      for (final d in vm.chartDeltas)
+                        ChartPoint(date: d.date, value: d.deltaCelsius),
+                    ],
+                    unit: '°C',
+                    menstrual: vm.periodSpans,
+                    luteal: vm.lutealSpan,
+                    starts: vm.periodStarts,
+                    zeroLine: true,
+                    subject: 'change from baseline',
                   ),
                 ],
               ),

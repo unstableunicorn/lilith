@@ -23,6 +23,8 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/data/wearable/wearable_repository.dart';
+import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
@@ -54,6 +56,8 @@ void main() {
       notifications: kIsWeb
           ? const NoNotificationService()
           : LocalNotificationService(),
+      // The Android source comes once the Galaxy Watch spike has chosen it.
+      wearable: const NoWearableSource(),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
@@ -74,6 +78,7 @@ class LilithApp extends StatelessWidget {
     required this.shareReader,
     required this.settings,
     required this.notifications,
+    required this.wearable,
     required this.openUrl,
     required this.shareFile,
     required this.pdfReport,
@@ -89,6 +94,7 @@ class LilithApp extends StatelessWidget {
   final ShareReader shareReader;
   final SettingsStore settings;
   final NotificationService notifications;
+  final WearableSource wearable;
   final UrlOpener openUrl;
   final FileSharer shareFile;
   final PdfReport pdfReport;
@@ -106,6 +112,7 @@ class LilithApp extends StatelessWidget {
       Provider<ShareReader>.value(value: shareReader),
       Provider<SettingsStore>.value(value: settings),
       Provider<NotificationService>.value(value: notifications),
+      Provider<WearableSource>.value(value: wearable),
       ChangeNotifierProvider(
         // Not lazy: a reminder lost to a reboot is set again at start.
         lazy: false,
@@ -209,7 +216,14 @@ class _RootState extends State<_Root> {
           ownWebId: current.webId,
           settings: context.read<SettingsStore>(),
         )..loadInviteLater(),
-        child: const AppShell(),
+        child: ChangeNotifierProvider(
+          create: (context) => WearableRepository(
+            context.read<HealthRepository>(),
+            context.read<WearableSource>(),
+            now: DateTime.now,
+          ),
+          child: const AppShell(),
+        ),
       ),
     ),
   );
