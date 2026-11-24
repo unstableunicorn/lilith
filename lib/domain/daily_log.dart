@@ -138,7 +138,7 @@ class DailyLog {
     'symptoms': symptoms.map((s) => s.name).toList(),
     if (painLevel != null) 'painLevel': painLevel,
     if (ovulationTest case final t?) 'ovulationTest': t.name,
-    if (note case final n?) 'note': n,
+    'note': ?note,
   };
 
   @override
