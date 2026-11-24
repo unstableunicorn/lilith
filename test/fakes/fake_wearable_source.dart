@@ -1,11 +1,11 @@
 import 'package:lilith/data/wearable/wearable_source.dart';
-import 'package:lilith/domain/temperature_delta.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 /// Hands back what a test puts in, and records what was asked.
 class FakeWearableSource implements WearableSource {
   bool available = true;
   bool permission = true;
-  List<TemperatureDelta> deltas = [];
+  List<WearableNight> nights = [];
   Exception? failRead;
   final List<(DateTime, DateTime)> windows = [];
 
@@ -16,12 +16,12 @@ class FakeWearableSource implements WearableSource {
   Future<bool> requestPermission() async => permission;
 
   @override
-  Future<List<TemperatureDelta>> readDeltas({
+  Future<List<WearableNight>> readNights({
     required DateTime from,
     required DateTime to,
   }) async {
     windows.add((from, to));
     if (failRead case final e?) throw e;
-    return deltas;
+    return nights;
   }
 }

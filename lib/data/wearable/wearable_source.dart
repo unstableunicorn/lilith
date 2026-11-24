@@ -2,7 +2,7 @@
 // is chosen by the Galaxy Watch spike (Health Connect or Samsung's SDK);
 // until then, and on the web, there is none.
 
-import 'package:lilith/domain/temperature_delta.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 abstract interface class WearableSource {
   /// Whether this device can read a wearable's temperature at all.
@@ -11,8 +11,8 @@ abstract interface class WearableSource {
   /// Asks the system once; true when the data may be read.
   Future<bool> requestPermission();
 
-  /// Nightly changes from baseline with a day in [from]..[to], any order.
-  Future<List<TemperatureDelta>> readDeltas({
+  /// Nightly skin temperatures with a day in [from]..[to], any order.
+  Future<List<WearableNight>> readNights({
     required DateTime from,
     required DateTime to,
   });
@@ -28,7 +28,7 @@ class NoWearableSource implements WearableSource {
   Future<bool> requestPermission() async => false;
 
   @override
-  Future<List<TemperatureDelta>> readDeltas({
+  Future<List<WearableNight>> readNights({
     required DateTime from,
     required DateTime to,
   }) async => const [];

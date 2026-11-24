@@ -8,8 +8,8 @@ import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 
 /// One cycle: when it started and how long it ran, null while it is current.
@@ -141,12 +141,16 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   /// The newest [chartWindow] wearable nights, oldest first.
-  List<TemperatureDelta> get chartDeltas {
-    final all = _repo.data.temperatureDeltas;
+  List<WearableNight> get chartNights {
+    final all = _repo.data.wearableNights;
     return all.length > chartWindow
         ? all.sublist(all.length - chartWindow)
         : all;
   }
+
+  /// [chartNights] relative to their own mean, so the chart sits around zero.
+  List<WearableNight> get nightsFromAverage =>
+      nightsRelativeToMean(chartNights);
 
   /// The known days of each period, for the chart's shading.
   List<ChartSpan> get periodSpans => chartSpansFor(_repo.data.periods);
@@ -158,7 +162,7 @@ class HistoryViewModel extends ChangeNotifier {
       readings: _repo.data.readings,
       periods: _repo.data.periods,
       today: today,
-      deltas: _repo.data.temperatureDeltas,
+      nights: _repo.data.wearableNights,
       usualCycleLength: _repo.data.profile.usualCycleLength,
       suppressShift: _repo.data.profile.usesHormonalContraception,
     ),
@@ -206,4 +210,20 @@ ChartSpan? lutealSpanFor(CyclePrediction p) {
   final next = p.predictedNextPeriod;
   if (ovulation == null || next == null) return null;
   return ChartSpan(start: addDays(ovulation, 1), end: addDays(next, -1));
+}
+
+/// Each night less the mean of them all, rounded to the hundredth; empty in,
+/// empty out.
+List<WearableNight> nightsRelativeToMean(List<WearableNight> nights) {
+  if (nights.isEmpty) return const [];
+  final mean =
+      nights.map((n) => n.celsius).reduce((a, b) => a + b) / nights.length;
+  return [
+    for (final n in nights)
+      WearableNight(
+        date: n.date,
+        celsius: ((n.celsius - mean) * 100).round() / 100,
+        source: n.source,
+      ),
+  ];
 }

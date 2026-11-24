@@ -5,7 +5,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/wearable/wearable_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
-import 'package:lilith/domain/temperature_delta.dart';
+import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -72,16 +72,16 @@ void main() {
   testWidgets('syncing adds the nights and says how many, accessibly', (
     tester,
   ) async {
-    source.deltas = [
-      TemperatureDelta(date: DateTime(2026, 6, 8), deltaCelsius: 0.2),
-      TemperatureDelta(date: DateTime(2026, 6, 9), deltaCelsius: 0.3),
+    source.nights = [
+      WearableNight(date: DateTime(2026, 6, 8), celsius: 0.2),
+      WearableNight(date: DateTime(2026, 6, 9), celsius: 0.3),
     ];
     await pump(tester, with_: wearable);
     expect(find.byKey(HomeKeys.wearableState), findsNothing);
     await tester.tap(find.byKey(HomeKeys.syncWearable));
     await tester.pumpAndSettle();
     expect(find.text('Added 2 nights from your watch.'), findsOneWidget);
-    expect(health.data.temperatureDeltas, hasLength(2));
+    expect(health.data.wearableNights, hasLength(2));
     await expectAccessible(tester);
   });
 

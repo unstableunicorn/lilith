@@ -526,9 +526,8 @@ class _WearableCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Night skin temperature from the last '
-          '${WearableRepository.windowDays} days, as a change from your '
-          'baseline.',
+          'Your night skin temperature from the last '
+          '${WearableRepository.windowDays} days.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: Space.md),

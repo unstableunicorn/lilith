@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/period_event.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 /// [count] readings of [celsius] on consecutive days from [from].
 List<TemperatureReading> flat(DateTime from, int count, double celsius) => [
@@ -18,7 +18,7 @@ List<PeriodEvent> periodsOn(List<DateTime> starts) => [
 ];
 
 void main() {
-  deltaTests();
+  wearableNightTests();
   profileEffectTests();
   usualCycleLengthTests();
   periodSpanPredictorTests();
@@ -439,15 +439,13 @@ void profileEffectTests() {
   });
 }
 
-void deltaTests() {
+void wearableNightTests() {
   DateTime june(int d) => DateTime(2026, 6, d);
   const predictor = CyclePredictor();
 
-  List<TemperatureDelta> deltasWithShift() => [
-    for (var d = 6; d <= 13; d++)
-      TemperatureDelta(date: june(d), deltaCelsius: -0.05),
-    for (var d = 14; d <= 18; d++)
-      TemperatureDelta(date: june(d), deltaCelsius: 0.3),
+  List<WearableNight> deltasWithShift() => [
+    for (var d = 6; d <= 13; d++) WearableNight(date: june(d), celsius: -0.05),
+    for (var d = 14; d <= 18; d++) WearableNight(date: june(d), celsius: 0.3),
   ];
 
   test(
@@ -455,12 +453,12 @@ void deltaTests() {
     () {
       final p = predictor.predict(
         readings: const [],
-        deltas: deltasWithShift(),
+        nights: deltasWithShift(),
         periods: [PeriodEvent(startDate: june(1), endDate: june(5))],
         today: june(18),
       );
       expect(p.method, PredictionMethod.temperatureShift);
-      expect(p.shiftSeries, TemperatureSeries.delta);
+      expect(p.shiftSeries, TemperatureSeries.wearable);
       expect(p.estimatedOvulation, june(13));
     },
   );
@@ -471,11 +469,11 @@ void deltaTests() {
         TemperatureReading(date: june(6), celsius: 36.3),
         TemperatureReading(date: june(7), celsius: 36.3),
       ],
-      deltas: deltasWithShift(),
+      nights: deltasWithShift(),
       periods: [PeriodEvent(startDate: june(1), endDate: june(5))],
       today: june(18),
     );
-    expect(p.shiftSeries, TemperatureSeries.delta);
+    expect(p.shiftSeries, TemperatureSeries.wearable);
   });
 
   test('without any temperature the series is none', () {

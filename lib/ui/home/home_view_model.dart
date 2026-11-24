@@ -66,14 +66,14 @@ class HomeViewModel extends ChangeNotifier {
     readings: _repo.data.readings,
     periods: _repo.data.periods,
     today: today,
-    deltas: _repo.data.temperatureDeltas,
+    nights: _repo.data.wearableNights,
     usualCycleLength: _repo.data.profile.usualCycleLength,
     suppressShift: _repo.data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(_repo.data.profile.regularity),
   );
 
   static String _riseText(CyclePrediction p) =>
-      p.shiftSeries == TemperatureSeries.delta
+      p.shiftSeries == TemperatureSeries.wearable
       ? 'A sustained rise in the night temperature from your wearable'
       : 'A sustained temperature rise';
 

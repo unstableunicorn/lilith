@@ -9,8 +9,8 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
-import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/domain/wearable_night.dart';
 
 /// The document could not be read as a health document.
 class MalformedDocumentException implements Exception {
@@ -35,7 +35,7 @@ class UnsupportedDocumentVersionException implements Exception {
 /// A document without a version is version 1. Version 2 was never written.
 /// Version 4 added the shares, version 5 the shares received, version 6 what
 /// each share holds, version 7 a period's end and flow, version 8 the
-/// wearable temperature deltas.
+/// wearable temperature nights.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -97,7 +97,7 @@ Map<String, dynamic> _v6ToV7(Map<String, dynamic> doc) => {
 Map<String, dynamic> _v7ToV8(Map<String, dynamic> doc) => {
   ...doc,
   'version': 8,
-  'temperatureDeltas': <Object>[],
+  'wearableNights': <Object>[],
 };
 
 /// Encodes and decodes [HealthData] as the pod document.
@@ -116,7 +116,7 @@ class HealthDocumentCodec {
     'profile': data.profile.toJson(),
     'shares': [for (final s in data.shares) s.toJson()],
     'received': [for (final r in data.received) r.toJson()],
-    'temperatureDeltas': [for (final d in data.temperatureDeltas) d.toJson()],
+    'wearableNights': [for (final d in data.wearableNights) d.toJson()],
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -137,11 +137,7 @@ class HealthDocumentCodec {
         shopping: _section(doc, 'shopping', ShoppingItem.fromJson),
         shares: _section(doc, 'shares', Share.fromJson),
         received: _section(doc, 'received', ReceivedShare.fromJson),
-        temperatureDeltas: _section(
-          doc,
-          'temperatureDeltas',
-          TemperatureDelta.fromJson,
-        ),
+        wearableNights: _section(doc, 'wearableNights', WearableNight.fromJson),
         profile: profile is Map<String, dynamic>
             ? HealthProfile.fromJson(profile)
             : null,
