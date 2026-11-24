@@ -1,6 +1,7 @@
 // The History tab: the temperature trend, then cycles, days and readings.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -21,6 +22,10 @@ abstract final class HistoryKeys {
   static const Key dismissError = Key('history.dismissError');
   static const Key empty = Key('history.empty');
   static const Key nightChart = Key('history.nightChart');
+  static const Key calendar = Key('history.calendar');
+  static const Key calendarPrev = Key('history.calendarPrev');
+  static const Key calendarNext = Key('history.calendarNext');
+  static Key calendarDay(DateTime d) => Key('history.calendarDay.$d');
   static const Key confirm = Key('history.confirm');
   static const Key cancel = Key('history.cancel');
   static Key cycle(DateTime d) => Key('history.cycle.$d');
@@ -57,6 +62,7 @@ class _HistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<HistoryViewModel>();
+    final shows = context.watch<PageSettingsRepository>().settings;
     final today = vm.today;
     String date(DateTime d) => formatShortDate(d, today: today);
     return PageScaffold(
@@ -103,7 +109,25 @@ class _HistoryView extends StatelessWidget {
             ),
           )
         else ...[
-          if (vm.chartReadings.isNotEmpty)
+          if (shows.showCalendar)
+            AppCard(
+              key: HistoryKeys.calendar,
+              icon: Icons.calendar_month_rounded,
+              title: 'Calendar',
+              child: MonthCalendar(
+                title: formatMonth(vm.month),
+                days: vm.calendarDays,
+                leadingBlanks: vm.calendarLeadingBlanks,
+                today: today,
+                onPrevious: vm.previousMonth,
+                onNext: vm.nextMonth,
+                onDay: (day) => context.read<ShellTabs>().openLog(day),
+                dayKey: HistoryKeys.calendarDay,
+                previousKey: HistoryKeys.calendarPrev,
+                nextKey: HistoryKeys.calendarNext,
+              ),
+            ),
+          if (shows.showTemperatureChart && vm.chartReadings.isNotEmpty)
             AppCard(
               icon: Icons.thermostat_rounded,
               title: 'Temperature trend',

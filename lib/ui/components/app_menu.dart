@@ -5,11 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
-import 'package:lilith/ui/reminders/reminders_screen.dart';
+import 'package:lilith/ui/settings/settings_screen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-enum AppMenuAction { reminders, androidApp, logout }
+enum AppMenuAction { settings, androidApp, logout }
 
 abstract final class AppMenuKeys {
   static const Key button = Key('appMenu.button');
@@ -28,9 +28,9 @@ class AppMenu extends StatelessWidget {
     tooltip: 'Menu',
     icon: const Icon(Icons.more_vert_rounded),
     onSelected: (action) => switch (action) {
-      AppMenuAction.reminders => Navigator.of(
+      AppMenuAction.settings => Navigator.of(
         context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const RemindersScreen())),
+      ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
       AppMenuAction.androidApp => context.read<UrlOpener>()(
         AppLinks.androidApk,
       ),
@@ -38,11 +38,11 @@ class AppMenu extends StatelessWidget {
     },
     itemBuilder: (context) => [
       PopupMenuItem(
-        key: AppMenuKeys.item(AppMenuAction.reminders),
-        value: AppMenuAction.reminders,
+        key: AppMenuKeys.item(AppMenuAction.settings),
+        value: AppMenuAction.settings,
         child: const ListTile(
-          leading: Icon(Icons.alarm_rounded),
-          title: Text('Reminders'),
+          leading: Icon(Icons.settings_rounded),
+          title: Text('Settings'),
           contentPadding: EdgeInsets.zero,
         ),
       ),

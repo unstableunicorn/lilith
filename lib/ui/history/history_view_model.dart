@@ -4,6 +4,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
@@ -157,16 +158,40 @@ class HistoryViewModel extends ChangeNotifier {
 
   /// From the estimated ovulation to the predicted period, when the
   /// temperature shift gave one.
-  ChartSpan? get lutealSpan => lutealSpanFor(
-    predictor.predict(
-      readings: _repo.data.readings,
-      periods: _repo.data.periods,
-      today: today,
-      nights: _repo.data.wearableNights,
-      usualCycleLength: _repo.data.profile.usualCycleLength,
-      suppressShift: _repo.data.profile.usesHormonalContraception,
-    ),
+  ChartSpan? get lutealSpan => lutealSpanFor(prediction);
+
+  CyclePrediction get prediction => predictor.predict(
+    readings: _repo.data.readings,
+    periods: _repo.data.periods,
+    today: today,
+    nights: _repo.data.wearableNights,
+    usualCycleLength: _repo.data.profile.usualCycleLength,
+    suppressShift: _repo.data.profile.usesHormonalContraception,
   );
+
+  DateTime? _month;
+
+  /// The month the calendar shows: this month until moved.
+  DateTime get month => _month ?? DateTime(today.year, today.month);
+
+  void previousMonth() => _showMonth(DateTime(month.year, month.month - 1));
+
+  void nextMonth() => _showMonth(DateTime(month.year, month.month + 1));
+
+  void _showMonth(DateTime m) {
+    _month = m;
+    notifyListeners();
+  }
+
+  List<CalendarDay> get calendarDays => calendarMonth(
+    _repo.data,
+    _repo.data.hasData ? prediction : null,
+    year: month.year,
+    month: month.month,
+  );
+
+  int get calendarLeadingBlanks =>
+      leadingBlanks(year: month.year, month: month.month);
 
   Set<DateTime> get periodStarts =>
       _repo.data.periods.map((p) => p.startDate).toSet();

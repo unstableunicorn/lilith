@@ -215,7 +215,7 @@ void appMenuTests() {
     await tester.pumpAndSettle();
     expect(find.byKey(AppMenuKeys.item(AppMenuAction.logout)), findsOneWidget);
     expect(
-      find.byKey(AppMenuKeys.item(AppMenuAction.reminders)),
+      find.byKey(AppMenuKeys.item(AppMenuAction.settings)),
       findsOneWidget,
     );
     await expectAccessible(tester);

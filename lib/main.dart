@@ -8,6 +8,7 @@ import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/pod/share_reader.dart';
@@ -113,6 +114,15 @@ class LilithApp extends StatelessWidget {
       Provider<SettingsStore>.value(value: settings),
       Provider<NotificationService>.value(value: notifications),
       Provider<WearableSource>.value(value: wearable),
+      ChangeNotifierProvider(
+        // Not lazy: the tabs read it as soon as they build.
+        lazy: false,
+        create: (_) {
+          final pages = PageSettingsRepository(settings);
+          unawaited(pages.load());
+          return pages;
+        },
+      ),
       ChangeNotifierProvider(
         // Not lazy: a reminder lost to a reboot is set again at start.
         lazy: false,

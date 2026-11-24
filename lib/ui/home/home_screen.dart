@@ -1,6 +1,7 @@
 // The Today tab: the prediction, the key numbers and the two quick logs.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/wearable/wearable_repository.dart';
 import 'package:lilith/domain/share.dart';
@@ -106,6 +107,7 @@ class _HomeViewState extends State<_HomeView> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<HomeViewModel>();
+    final shows = context.watch<PageSettingsRepository>().settings;
     return PageScaffold(
       title: 'Lilith',
       actions: [
@@ -138,7 +140,8 @@ class _HomeViewState extends State<_HomeView> {
           else ...[
             _PredictionCard(vm: vm),
             _StatsRow(vm: vm),
-            if (vm.forecast.hasData) _ForecastCard(vm: vm),
+            if (shows.showForecast && vm.forecast.hasData)
+              _ForecastCard(vm: vm),
           ],
           AppCard(
             icon: Icons.water_drop_rounded,
@@ -202,7 +205,7 @@ class _HomeViewState extends State<_HomeView> {
           if (context.watch<WearableRepository?>() case final w?
               when w.isAvailable)
             _WearableCard(wearable: w),
-          _FactCard(vm: vm),
+          if (shows.showFact) _FactCard(vm: vm),
           AppCard(
             icon: Icons.edit_note_rounded,
             title: 'Your day',

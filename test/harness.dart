@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
@@ -35,6 +36,7 @@ Widget harness({
   ReceivedShareRepository? received,
   ReminderRepository? reminders,
   WearableRepository? wearable,
+  PageSettingsRepository? pageSettings,
   ShellTabs? tabs,
   UrlOpener? openUrl,
   FileSharer? shareFile,
@@ -47,6 +49,9 @@ Widget harness({
     if (shares != null) ChangeNotifierProvider.value(value: shares),
     if (received != null) ChangeNotifierProvider.value(value: received),
     if (wearable != null) ChangeNotifierProvider.value(value: wearable),
+    ChangeNotifierProvider.value(
+      value: pageSettings ?? PageSettingsRepository(FakeSettingsStore()),
+    ),
     ChangeNotifierProvider.value(
       value:
           reminders ??
