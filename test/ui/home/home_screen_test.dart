@@ -188,6 +188,16 @@ void main() {
       expect(find.byKey(HomeKeys.noData), findsNothing);
     });
 
+    testWidgets('the temperature can be for an earlier day', (tester) async {
+      await pump(tester);
+      await tester.tap(find.byKey(HomeKeys.readingDay));
+      await tester.pumpAndSettle();
+      expect(find.text('Which day is the temperature for?'), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.text("Today's temperature (°C)"), findsOneWidget);
+    });
+
     testWidgets('a temperature is logged from the field', (tester) async {
       await pump(tester);
       await tester.enterText(find.byKey(HomeKeys.temperature), '36.5');

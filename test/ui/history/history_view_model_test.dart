@@ -154,4 +154,18 @@ void chartSpanTests() {
     );
     expect(lutealSpanFor(shift), ChartSpan(start: june(15), end: june(27)));
   });
+
+  test('a reading can be added for a past day, within reason', () async {
+    final repo = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await repo.load();
+    final vm = HistoryViewModel(repo, now: () => DateTime(2026, 6, 10));
+    expect(await vm.addReading(DateTime(2026, 6, 8), 36.5), isTrue);
+    expect(repo.data.readings.single.date, DateTime(2026, 6, 8));
+    expect(await vm.addReading(DateTime(2026, 6, 9), 30), isFalse);
+    expect(await vm.addReading(DateTime(2026, 6, 11), 36.5), isFalse);
+    expect(repo.data.readings, hasLength(1));
+  });
 }

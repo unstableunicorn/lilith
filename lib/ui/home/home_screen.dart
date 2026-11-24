@@ -38,6 +38,7 @@ abstract final class HomeKeys {
   static const Key temperature = Key('home.temperature');
   static const Key logTemperature = Key('home.logTemperature');
   static const Key temperatureProblem = Key('home.temperatureProblem');
+  static const Key readingDay = Key('home.readingDay');
   static const Key todaysReading = Key('home.todaysReading');
   static const Key logDay = Key('home.logDay');
   static const Key todaysLog = Key('home.todaysLog');
@@ -75,6 +76,18 @@ class _HomeViewState extends State<_HomeView> {
   void dispose() {
     _temperature.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickReadingDay(BuildContext context, HomeViewModel vm) async {
+    final today = vm.today;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: vm.readingDay,
+      firstDate: DateTime(today.year - 3, today.month, today.day),
+      lastDate: today,
+      helpText: 'Which day is the temperature for?',
+    );
+    if (picked != null) vm.setReadingDay(picked);
   }
 
   Future<void> _logTemperature(HomeViewModel vm) async {
@@ -147,14 +160,19 @@ class _HomeViewState extends State<_HomeView> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: "Today's temperature (°C)",
+                        decoration: InputDecoration(
+                          labelText: vm.readingDayLabel,
                           hintText: '36.4',
                         ),
                         onSubmitted: (_) => _logTemperature(vm),
                       ),
                     ),
-                    const SizedBox(width: Space.sm),
+                    IconButton(
+                      key: HomeKeys.readingDay,
+                      tooltip: 'Choose the day',
+                      icon: const Icon(Icons.event_rounded),
+                      onPressed: () => _pickReadingDay(context, vm),
+                    ),
                     FilledButton.tonal(
                       key: HomeKeys.logTemperature,
                       onPressed: () => _logTemperature(vm),

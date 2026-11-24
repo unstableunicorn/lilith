@@ -11,6 +11,7 @@ import 'package:lilith/ui/home/home_view_model.dart';
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  readingDayTests();
   forecastTests();
   todaysLogTests();
   final today = DateTime(2026, 6, 10, 9, 30);
@@ -193,4 +194,32 @@ void forecastTests() {
     expect(vm.forecastSummary, contains('6 logged days'));
     expect(vm.forecastSummary, contains('6/10'));
   });
+}
+
+void readingDayTests() {
+  final today = DateTime(2026, 6, 10);
+  late HealthRepository repo;
+  late HomeViewModel vm;
+
+  setUp(() async {
+    repo = HealthRepository(FakePodService(), protection: DataProtection.plain);
+    await repo.load();
+    vm = HomeViewModel(repo, now: () => today);
+  });
+
+  test(
+    'a temperature can be logged for an earlier day, then today again',
+    () async {
+      expect(vm.readingDayIsToday, isTrue);
+      expect(vm.readingDayLabel, "Today's temperature (°C)");
+      vm.setReadingDay(DateTime(2026, 6, 8, 15));
+      expect(vm.readingDay, DateTime(2026, 6, 8));
+      expect(vm.readingDayLabel, 'Temperature on 8 Jun (°C)');
+      vm.setReadingDay(DateTime(2026, 6, 20));
+      expect(vm.readingDay, DateTime(2026, 6, 8));
+      expect(await vm.logTemperature(36.5), isTrue);
+      expect(repo.data.readings.single.date, DateTime(2026, 6, 8));
+      expect(vm.readingDayIsToday, isTrue);
+    },
+  );
 }

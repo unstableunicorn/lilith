@@ -121,6 +121,19 @@ class HistoryViewModel extends ChangeNotifier {
   Future<void> removeReading(DateTime date) =>
       _repo.apply((d) => d.withoutReading(date));
 
+  /// Records a reading for a past day. False, recording nothing, when the
+  /// value is not a plausible body temperature or the day is ahead.
+  Future<bool> addReading(DateTime day, double celsius) async {
+    final d = dateOnly(day);
+    if (!TemperatureReading.isPlausible(celsius) || d.isAfter(today)) {
+      return false;
+    }
+    await _repo.apply(
+      (data) => data.withReading(TemperatureReading(date: d, celsius: celsius)),
+    );
+    return true;
+  }
+
   Future<void> removePeriod(DateTime date) =>
       _repo.apply((d) => d.withoutPeriod(date));
 
