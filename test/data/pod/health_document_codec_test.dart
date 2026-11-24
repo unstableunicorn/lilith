@@ -264,4 +264,27 @@ void v8Tests() {
       data.wearableNights,
     );
   });
+
+  test('an ovulation test round-trips at v8 without a version bump', () {
+    const codec = HealthDocumentCodec();
+    final data = HealthData.empty.withDailyLog(
+      DailyLog(
+        date: DateTime(2026, 6, 2),
+        ovulationTest: OvulationTest.positive,
+      ),
+    );
+    final json = jsonDecode(codec.encode(data)) as Map<String, dynamic>;
+    expect(json['version'], 8);
+    expect(codec.decode(codec.encode(data)), data);
+  });
+
+  test('a v8 day log written before ovulation tests loads with none', () {
+    const codec = HealthDocumentCodec();
+    final data = codec.decode(
+      '{"version":8,"dailyLogs":[{"date":"2026-06-02T00:00:00.000",'
+      '"flow":"light","symptoms":[]}]}',
+    );
+    expect(data.dailyLogs.single.flow, FlowIntensity.light);
+    expect(data.dailyLogs.single.ovulationTest, isNull);
+  });
 }
