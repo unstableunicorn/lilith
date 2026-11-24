@@ -156,6 +156,28 @@ void main() {
       expect(log, isNot(log.copyWith(ovulationTest: OvulationTest.negative)));
     });
 
+    test('a note round-trips, counts as logged, and loads absent', () {
+      final log = DailyLog(date: day, note: 'Started new job');
+      expect(log.isEmpty, isFalse);
+      expect(DailyLog.fromJson(log.toJson()), log);
+      expect(log, isNot(log.copyWith(note: 'Other')));
+      expect(DailyLog(date: day).toJson(), isNot(contains('note')));
+      final old = DailyLog.fromJson(const {
+        'date': '2026-05-02T00:00:00.000',
+        'flow': 'none',
+        'symptoms': <String>[],
+      });
+      expect(old.note, isNull);
+    });
+
+    test('a blank note is no note, and copyWith can clear it', () {
+      expect(DailyLog(date: day, note: '   ').note, isNull);
+      expect(DailyLog(date: day, note: ' tired \n').note, 'tired');
+      final log = DailyLog(date: day, note: 'tired');
+      expect(log.copyWith().note, 'tired');
+      expect(log.copyWith(clearNote: true).note, isNull);
+    });
+
     test('omits the ovulation test key when not tested', () {
       expect(DailyLog(date: day).toJson(), isNot(contains('ovulationTest')));
     });

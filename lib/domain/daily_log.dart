@@ -67,9 +67,11 @@ class DailyLog {
     Set<Symptom> symptoms = const {},
     int? painLevel,
     this.ovulationTest,
+    String? note,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
-       painLevel = painLevel?.clamp(0, 10);
+       painLevel = painLevel?.clamp(0, 10),
+       note = (note == null || note.trim().isEmpty) ? null : note.trim();
 
   factory DailyLog.fromJson(Map<String, dynamic> json) => DailyLog(
     date: DateTime.parse(json['date'] as String),
@@ -80,6 +82,7 @@ class DailyLog {
     },
     painLevel: (json['painLevel'] as num?)?.toInt(),
     ovulationTest: OvulationTest.fromName(json['ovulationTest'] as String?),
+    note: json['note'] as String?,
   );
 
   final DateTime date;
@@ -92,15 +95,20 @@ class DailyLog {
   /// The day's ovulation test, or null when none was taken.
   final OvulationTest? ovulationTest;
 
+  /// The person's own words for the day, trimmed; null when blank.
+  final String? note;
+
   /// True when there is nothing worth storing for the day.
   bool get isEmpty =>
       flow == FlowIntensity.none &&
       symptoms.isEmpty &&
       painLevel == null &&
-      ovulationTest == null;
+      ovulationTest == null &&
+      note == null;
 
-  /// A copy with the given fields replaced. [clearPain] and
-  /// [clearOvulationTest] unset a value, since null means "leave it".
+  /// A copy with the given fields replaced. [clearPain],
+  /// [clearOvulationTest] and [clearNote] unset a value, since null means
+  /// "leave it".
   DailyLog copyWith({
     FlowIntensity? flow,
     Set<Symptom>? symptoms,
@@ -108,7 +116,10 @@ class DailyLog {
     bool clearPain = false,
     OvulationTest? ovulationTest,
     bool clearOvulationTest = false,
+    String? note,
+    bool clearNote = false,
   }) => DailyLog(
+    note: clearNote ? null : (note ?? this.note),
     date: date,
     flow: flow ?? this.flow,
     symptoms: symptoms ?? this.symptoms,
@@ -124,6 +135,7 @@ class DailyLog {
     'symptoms': symptoms.map((s) => s.name).toList(),
     if (painLevel != null) 'painLevel': painLevel,
     if (ovulationTest case final t?) 'ovulationTest': t.name,
+    if (note case final n?) 'note': n,
   };
 
   @override
@@ -133,7 +145,8 @@ class DailyLog {
       other.flow == flow &&
       _symptoms.equals(other.symptoms, symptoms) &&
       other.painLevel == painLevel &&
-      other.ovulationTest == ovulationTest;
+      other.ovulationTest == ovulationTest &&
+      other.note == note;
 
   @override
   int get hashCode => Object.hash(
@@ -142,5 +155,6 @@ class DailyLog {
     _symptoms.hash(symptoms),
     painLevel,
     ovulationTest,
+    note,
   );
 }

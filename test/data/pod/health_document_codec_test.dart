@@ -286,6 +286,17 @@ void v8Tests() {
     );
     expect(data.dailyLogs.single.flow, FlowIntensity.light);
     expect(data.dailyLogs.single.ovulationTest, isNull);
+    expect(data.dailyLogs.single.note, isNull);
+  });
+
+  test('a day note round-trips at v8 without a version bump', () {
+    const codec = HealthDocumentCodec();
+    final data = HealthData.empty.withDailyLog(
+      DailyLog(date: DateTime(2026, 6, 2), note: 'Long flight, slept badly'),
+    );
+    final json = jsonDecode(codec.encode(data)) as Map<String, dynamic>;
+    expect(json['version'], 8);
+    expect(codec.decode(codec.encode(data)), data);
   });
 
   test('a period marked ended round-trips at v8; older ones load unmarked', () {
