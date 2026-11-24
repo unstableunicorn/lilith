@@ -46,7 +46,11 @@ void main() {
             ),
           )
           .withDailyLog(
-            DailyLog(date: june(10), symptoms: const {Symptom.bloating}),
+            DailyLog(
+              date: june(10),
+              symptoms: const {Symptom.bloating},
+              note: 'Flew to Perth',
+            ),
           )
           .withReading(TemperatureReading(date: june(12), celsius: 36.5)),
     );
@@ -88,6 +92,11 @@ void main() {
         name: 'search matches the day summary, any case',
         apply: (HistoryViewModel v) => v.setQuery('HEAD'),
         want: [may(15)],
+      ),
+      (
+        name: 'search finds a word in a note',
+        apply: (HistoryViewModel v) => v.setQuery('perth'),
+        want: [june(10)],
       ),
       (
         name: 'search for a symptom word',
