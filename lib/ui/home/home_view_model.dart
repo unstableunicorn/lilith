@@ -24,9 +24,28 @@ class HomeViewModel extends ChangeNotifier {
     _repo.addListener(notifyListeners);
   }
 
-  /// Plausible skin temperatures, in °C; anything else is a typo.
-  static const double minCelsius = 34;
-  static const double maxCelsius = 42;
+  /// Plausible skin temperatures, in °C, from the model.
+  static const double minCelsius = TemperatureReading.minCelsius;
+  static const double maxCelsius = TemperatureReading.maxCelsius;
+
+  DateTime? _readingDay;
+
+  /// The day the next logged temperature is for: today unless changed.
+  DateTime get readingDay => _readingDay ?? today;
+  bool get readingDayIsToday => readingDay == today;
+
+  /// "Today's temperature (°C)" or "Temperature on 8 Jun (°C)".
+  String get readingDayLabel => readingDayIsToday
+      ? "Today's temperature (°C)"
+      : 'Temperature on ${formatShortDate(readingDay, today: today)} (°C)';
+
+  /// A day up to today; later days are ignored.
+  void setReadingDay(DateTime day) {
+    final d = dateOnly(day);
+    if (d.isAfter(today)) return;
+    _readingDay = d == today ? null : d;
+    notifyListeners();
+  }
 
   final HealthRepository _repo;
 
@@ -115,11 +134,17 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Logs today's temperature. Returns false, logging nothing, when the
   /// value is not a plausible body temperature.
+  /// Logs the temperature for [readingDay], then returns to today. Returns
+  /// false, logging nothing, when the value is not a plausible body
+  /// temperature.
   Future<bool> logTemperature(double celsius) async {
-    if (celsius < minCelsius || celsius > maxCelsius) return false;
+    if (!TemperatureReading.isPlausible(celsius)) return false;
+    final day = readingDay;
     await _repo.apply(
-      (d) => d.withReading(TemperatureReading(date: today, celsius: celsius)),
+      (d) => d.withReading(TemperatureReading(date: day, celsius: celsius)),
     );
+    _readingDay = null;
+    notifyListeners();
     return true;
   }
 

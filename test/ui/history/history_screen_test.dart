@@ -66,6 +66,23 @@ void main() {
     expect(find.byType(TemperatureChart), findsNothing);
   });
 
+  testWidgets('a reading can be added for a past day from a dialog', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(HistoryKeys.addReading));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(HistoryKeys.addReadingValue), '30');
+    await tester.tap(find.byKey(HistoryKeys.addReadingSave));
+    await tester.pumpAndSettle();
+    expect(find.byKey(HistoryKeys.addReadingProblem), findsOneWidget);
+    await tester.enterText(find.byKey(HistoryKeys.addReadingValue), '36,5');
+    await tester.tap(find.byKey(HistoryKeys.addReadingSave));
+    await tester.pumpAndSettle();
+    expect(find.byKey(HistoryKeys.addReadingValue), findsNothing);
+    expect(health.data.readings.single.celsius, 36.5);
+  });
+
   testWidgets('a past period can be added, and a cycle opened for editing', (
     tester,
   ) async {

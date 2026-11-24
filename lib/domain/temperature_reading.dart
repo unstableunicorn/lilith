@@ -23,13 +23,19 @@ class TemperatureReading {
     required this.celsius,
     this.source = ReadingSource.manual,
   }) : date = dateOnly(date);
-
   factory TemperatureReading.fromJson(Map<String, dynamic> json) =>
       TemperatureReading(
         date: DateTime.parse(json['date'] as String),
         celsius: (json['celsius'] as num).toDouble(),
         source: ReadingSource.fromName(json['source'] as String?),
       );
+
+  /// Plausible skin temperatures, in °C; anything else is a typo.
+  static const double minCelsius = 34;
+  static const double maxCelsius = 42;
+
+  static bool isPlausible(double celsius) =>
+      celsius >= minCelsius && celsius <= maxCelsius;
 
   final DateTime date;
   final double celsius;

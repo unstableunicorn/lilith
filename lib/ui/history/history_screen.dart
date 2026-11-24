@@ -2,6 +2,7 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
@@ -9,6 +10,7 @@ import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/period/period_form_screen.dart';
 import 'package:lilith/ui/period/period_form_view_model.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
+import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +24,11 @@ abstract final class HistoryKeys {
   static Key cycle(DateTime d) => Key('history.cycle.$d');
   static Key removeCycle(DateTime d) => Key('history.removeCycle.$d');
   static const Key addPeriod = Key('history.addPeriod');
+  static const Key addReading = Key('history.addReading');
+  static const Key addReadingDay = Key('history.addReadingDay');
+  static const Key addReadingValue = Key('history.addReadingValue');
+  static const Key addReadingSave = Key('history.addReadingSave');
+  static const Key addReadingProblem = Key('history.addReadingProblem');
   static Key day(DateTime d) => Key('history.day.$d');
   static Key reading(DateTime d) => Key('history.reading.$d');
   static Key removeReading(DateTime d) => Key('history.removeReading.$d');
@@ -60,6 +67,23 @@ class _HistoryView extends StatelessWidget {
             dismissKey: HistoryKeys.dismissError,
             onDismiss: vm.clearError,
           ),
+        Wrap(
+          spacing: Space.sm,
+          children: [
+            TextButton.icon(
+              key: HistoryKeys.addPeriod,
+              onPressed: () => _openForm(context, PeriodFormMode.pastPeriod),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add a past period'),
+            ),
+            TextButton.icon(
+              key: HistoryKeys.addReading,
+              onPressed: () => _addReading(context, vm),
+              icon: const Icon(Icons.thermostat_rounded),
+              label: const Text('Add a reading'),
+            ),
+          ],
+        ),
         if (!vm.isLoaded)
           const BusyIndicator(
             key: HistoryKeys.loading,
@@ -120,12 +144,6 @@ class _HistoryView extends StatelessWidget {
                 ),
               ),
             ),
-          TextButton.icon(
-            key: HistoryKeys.addPeriod,
-            onPressed: () => _openForm(context, PeriodFormMode.pastPeriod),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add a past period'),
-          ),
           if (vm.days.isNotEmpty) const SectionHeading('Days'),
           for (final log in vm.days)
             ListTile(
@@ -175,6 +193,13 @@ class _HistoryView extends StatelessWidget {
     );
   }
 
+  Future<void> _addReading(BuildContext context, HistoryViewModel vm) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => _AddReadingDialog(vm: vm),
+    );
+  }
+
   Future<void> _confirm(
     BuildContext context,
     String question,
@@ -208,4 +233,94 @@ class _HistoryView extends StatelessWidget {
     RepositoryError.notLoggedIn => 'Your session has ended. Log in again.',
     _ => 'Your data could not be read from your pod.',
   };
+}
+
+/// A day and a temperature, checked before they are kept.
+class _AddReadingDialog extends StatefulWidget {
+  const _AddReadingDialog({required this.vm});
+
+  final HistoryViewModel vm;
+
+  @override
+  State<_AddReadingDialog> createState() => _AddReadingDialogState();
+}
+
+class _AddReadingDialogState extends State<_AddReadingDialog> {
+  late DateTime _day = widget.vm.today;
+  final _value = TextEditingController();
+  bool _refused = false;
+
+  @override
+  void dispose() {
+    _value.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Add a reading'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextButton.icon(
+          key: HistoryKeys.addReadingDay,
+          onPressed: _pickDay,
+          icon: const Icon(Icons.event_rounded),
+          label: Text(formatDay(_day)),
+        ),
+        TextField(
+          key: HistoryKeys.addReadingValue,
+          controller: _value,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Temperature (°C)',
+            hintText: '36.4',
+          ),
+          onSubmitted: (_) => _save(),
+        ),
+        if (_refused)
+          const ProblemText(
+            key: HistoryKeys.addReadingProblem,
+            'Enter a body temperature between '
+            '${TemperatureReading.minCelsius} and '
+            '${TemperatureReading.maxCelsius} °C.',
+          ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(
+        key: HistoryKeys.addReadingSave,
+        onPressed: _save,
+        child: const Text('Save'),
+      ),
+    ],
+  );
+
+  Future<void> _pickDay() async {
+    final today = widget.vm.today;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _day,
+      firstDate: DateTime(today.year - 3, today.month, today.day),
+      lastDate: today,
+    );
+    if (picked != null) setState(() => _day = picked);
+  }
+
+  Future<void> _save() async {
+    final celsius = double.tryParse(_value.text.replaceAll(',', '.'));
+    final saved = celsius != null && await widget.vm.addReading(_day, celsius);
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _refused = true);
+    }
+  }
 }
