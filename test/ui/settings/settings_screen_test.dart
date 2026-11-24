@@ -68,6 +68,23 @@ void main() {
     expect((await store.readPageSettings()).showFact, isTrue);
   });
 
+  testWidgets('the fertile window switches start off and save when turned '
+      'on', (tester) async {
+    await pump(tester);
+    for (final key in [
+      SettingsKeys.tryingToConceive,
+      SettingsKeys.showFertileWindow,
+    ]) {
+      await tester.scrollUntilVisible(find.byKey(key), 100);
+      expect(tester.widget<SwitchListTile>(find.byKey(key)).value, isFalse);
+      await tester.tap(find.byKey(key));
+      await tester.pumpAndSettle();
+    }
+    final saved = await store.readPageSettings();
+    expect(saved.tryingToConceive, isTrue);
+    expect(saved.showFertileWindow, isTrue);
+  });
+
   testWidgets('Reminders opens from Settings', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(SettingsKeys.reminders));
