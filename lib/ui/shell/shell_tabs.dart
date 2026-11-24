@@ -64,4 +64,11 @@ class ShellTabs extends ChangeNotifier {
     _switchTo(tab);
     notifyListeners();
   }
+
+  /// Back to Today with nothing remembered, for the next login.
+  void reset() {
+    _current = ShellTab.today;
+    _visited.clear();
+    notifyListeners();
+  }
 }

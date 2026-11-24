@@ -28,4 +28,17 @@ void backHistoryTests() {
     expect(tabs.goBack(), isTrue);
     expect(tabs.current, ShellTab.history);
   });
+
+  test('reset starts again on Today with nothing to go back to', () {
+    final tabs = ShellTabs()
+      ..show(ShellTab.history)
+      ..show(ShellTab.pod);
+    var told = 0;
+    tabs
+      ..addListener(() => told++)
+      ..reset();
+    expect(tabs.current, ShellTab.today);
+    expect(tabs.canGoBack, isFalse);
+    expect(told, 1);
+  });
 }
