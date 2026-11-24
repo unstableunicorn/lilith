@@ -85,7 +85,10 @@ class MonthCalendar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Space.sm),
-        const _Legend(),
+        _Legend(
+          fertile: days.any((d) => d.fertile),
+          positiveTest: days.any((d) => d.positiveTest),
+        ),
       ],
     );
   }
@@ -111,7 +114,11 @@ class CalendarDayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final style = Theme.of(context).textTheme.bodyMedium;
-    final fill = day.inPeriod ? scheme.primaryContainer : null;
+    final fill = day.inPeriod
+        ? scheme.primaryContainer
+        : day.fertile
+        ? scheme.tertiaryContainer
+        : null;
     final border = day.predictedPeriod
         ? Border.all(color: scheme.primary, width: 2)
         : isToday
@@ -146,6 +153,16 @@ class CalendarDayCell extends StatelessWidget {
                         color: scheme.tertiary,
                       ),
                     ),
+                  if (day.positiveTest)
+                    Positioned(
+                      top: 2,
+                      left: 2,
+                      child: Icon(
+                        Icons.add_circle_rounded,
+                        size: 10,
+                        color: scheme.tertiary,
+                      ),
+                    ),
                   if (day.logged)
                     Positioned(
                       bottom: 3,
@@ -176,13 +193,20 @@ String describeDay(CalendarDay day, {bool isToday = false}) {
     if (day.inPeriod) 'period',
     if (day.predictedPeriod) 'period expected',
     if (day.ovulation) 'estimated ovulation',
+    if (day.fertile) 'likely fertile',
+    if (day.positiveTest) 'positive ovulation test',
     if (day.logged) 'logged',
   ];
   return parts.join(', ');
 }
 
+/// The marks' meanings; the fertile and test marks only when the month has
+/// them.
 class _Legend extends StatelessWidget {
-  const _Legend();
+  const _Legend({required this.fertile, required this.positiveTest});
+
+  final bool fertile;
+  final bool positiveTest;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +239,13 @@ class _Legend extends StatelessWidget {
           Icon(Icons.change_history_rounded, size: 14, color: scheme.tertiary),
           'Ovulation',
         ),
+        if (fertile)
+          item(box(fill: scheme.tertiaryContainer), 'Likely fertile'),
+        if (positiveTest)
+          item(
+            Icon(Icons.add_circle_rounded, size: 14, color: scheme.tertiary),
+            'Positive test',
+          ),
         item(
           Container(
             width: 6,

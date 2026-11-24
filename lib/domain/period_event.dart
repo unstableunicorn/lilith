@@ -5,15 +5,21 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:meta/meta.dart';
 
+/// Bleeding days this close to a period belong to it; further apart they
+/// start a new one.
+const int maxGapDays = 2;
+
 /// A period starting on [startDate], at most one per day. [endDate] is the
 /// last bleeding day as far as is known; null covers both "still going" and
 /// "never said". [flow] is the overall intensity, null when not said.
+/// [ended] is true once the person said it was over.
 @immutable
 class PeriodEvent {
   PeriodEvent({
     required DateTime startDate,
     DateTime? endDate,
     FlowIntensity? flow,
+    this.ended = false,
   }) : startDate = dateOnly(startDate),
        endDate =
            endDate == null || dateOnly(endDate).isBefore(dateOnly(startDate))
@@ -31,11 +37,22 @@ class PeriodEvent {
       final String f => FlowIntensity.fromName(f),
       _ => null,
     },
+    ended: json['ended'] == true,
   );
 
   final DateTime startDate;
   final DateTime? endDate;
   final FlowIntensity? flow;
+  final bool ended;
+
+  /// Still going on [today]: started by then, not marked ended, and
+  /// bleeding known within [maxGapDays].
+  bool inProgressOn(DateTime today) {
+    final d = dateOnly(today);
+    return !ended &&
+        !startDate.isAfter(d) &&
+        daysBetween(lastKnownDay, d) <= maxGapDays;
+  }
 
   /// No end recorded: still going, or never said.
   bool get isOpen => endDate == null;
@@ -59,16 +76,19 @@ class PeriodEvent {
     bool clearEnd = false,
     FlowIntensity? flow,
     bool clearFlow = false,
+    bool? ended,
   }) => PeriodEvent(
     startDate: startDate ?? this.startDate,
     endDate: clearEnd ? null : endDate ?? this.endDate,
     flow: clearFlow ? null : flow ?? this.flow,
+    ended: ended ?? this.ended,
   );
 
   Map<String, dynamic> toJson() => {
     'startDate': startDate.toIso8601String(),
     if (endDate != null) 'endDate': endDate!.toIso8601String(),
     if (flow != null) 'flow': flow!.name,
+    if (ended) 'ended': true,
   };
 
   @override
@@ -76,8 +96,9 @@ class PeriodEvent {
       other is PeriodEvent &&
       other.startDate == startDate &&
       other.endDate == endDate &&
-      other.flow == flow;
+      other.flow == flow &&
+      other.ended == ended;
 
   @override
-  int get hashCode => Object.hash(startDate, endDate, flow);
+  int get hashCode => Object.hash(startDate, endDate, flow, ended);
 }

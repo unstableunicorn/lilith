@@ -30,6 +30,16 @@ void main() {
       ]);
     });
 
+    test('just after a period marked ended reopens it', () {
+      final ended = PeriodEvent(
+        startDate: june(1),
+        endDate: june(5),
+        ended: true,
+      );
+      final logs = [flow(6, FlowIntensity.light)];
+      expect(linkPeriods([ended], logs, june(6)), [period(1, end: 6)]);
+    });
+
     test('just before a period moves its start back', () {
       final logs = [flow(9, FlowIntensity.heavy)];
       expect(linkPeriods([period(10, end: 14)], logs, june(9)), [

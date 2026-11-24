@@ -85,6 +85,11 @@ void main() {
         log: DailyLog(date: day, painLevel: 0),
         want: false,
       ),
+      (
+        name: 'an ovulation test alone is not empty',
+        log: DailyLog(date: day, ovulationTest: OvulationTest.negative),
+        want: false,
+      ),
       (name: 'nothing logged is empty', log: DailyLog(date: day), want: true),
     ];
     for (final c in emptyCases) {
@@ -143,6 +148,35 @@ void main() {
 
     test('omits the pain key when unrated', () {
       expect(DailyLog(date: day).toJson(), isNot(contains('painLevel')));
+    });
+
+    test('round-trips an ovulation test result through JSON', () {
+      final log = DailyLog(date: day, ovulationTest: OvulationTest.positive);
+      expect(DailyLog.fromJson(log.toJson()), log);
+      expect(log, isNot(log.copyWith(ovulationTest: OvulationTest.negative)));
+    });
+
+    test('omits the ovulation test key when not tested', () {
+      expect(DailyLog(date: day).toJson(), isNot(contains('ovulationTest')));
+    });
+
+    test('copyWith can clear the ovulation test', () {
+      final log = DailyLog(date: day, ovulationTest: OvulationTest.positive);
+      expect(log.copyWith().ovulationTest, OvulationTest.positive);
+      expect(log.copyWith(clearOvulationTest: true).ovulationTest, isNull);
+    });
+
+    test('loads with no ovulation test from a log that lacks it or has an '
+        'unknown one', () {
+      for (final value in [null, 'faint']) {
+        final log = DailyLog.fromJson({
+          'date': '2026-05-02T00:00:00.000',
+          'flow': 'none',
+          'symptoms': const <String>[],
+          'ovulationTest': ?value,
+        });
+        expect(log.ovulationTest, isNull);
+      }
     });
 
     test('drops unknown symptoms instead of failing to load', () {

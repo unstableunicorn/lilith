@@ -93,6 +93,24 @@ void main() {
     expect(find.byKey(LogKeys.saved), findsOneWidget);
   });
 
+  testWidgets('an ovulation test result is chosen and saved', (tester) async {
+    await pump(tester);
+    final positive = find.byKey(LogKeys.ovulationTest(OvulationTest.positive));
+    await tester.scrollUntilVisible(positive, 100);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.byKey(LogKeys.ovulationTest(null)))
+          .selected,
+      isTrue,
+    );
+    await tester.tap(positive);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(LogKeys.save));
+    await tester.pumpAndSettle();
+    expect(health.data.logFor(today)?.ovulationTest, OvulationTest.positive);
+    await expectAccessible(tester);
+  });
+
   testWidgets('the pain slider rates and the clear link unrates', (
     tester,
   ) async {

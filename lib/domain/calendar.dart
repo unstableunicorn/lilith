@@ -1,8 +1,11 @@
 // What a calendar month shows per day: the logged period, the predicted one,
-// the estimated ovulation and whether anything was logged.
+// the estimated ovulation, the fertile window when shown, a positive
+// ovulation test and whether anything was logged.
 
 import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:meta/meta.dart';
 
@@ -16,6 +19,8 @@ class CalendarDay {
     this.inPeriod = false,
     this.predictedPeriod = false,
     this.ovulation = false,
+    this.fertile = false,
+    this.positiveTest = false,
     this.logged = false,
   });
 
@@ -23,22 +28,30 @@ class CalendarDay {
   final bool inPeriod;
   final bool predictedPeriod;
   final bool ovulation;
+  final bool fertile;
+  final bool positiveTest;
   final bool logged;
 }
 
 /// One entry per day of the month, oldest first. A day inside a logged
-/// period is never also marked as predicted.
+/// period is never also marked as predicted. [fertileWindow] is marked only
+/// when given, so the caller decides whether it shows.
 List<CalendarDay> calendarMonth(
   HealthData data,
   CyclePrediction? prediction, {
   required int year,
   required int month,
+  FertileWindow? fertileWindow,
 }) {
   final count = DateTime(year, month + 1, 0).day;
   final logged = {
     ...data.dailyLogs.map((l) => l.date),
     ...data.readings.map((r) => r.date),
     ...data.wearableNights.map((n) => n.date),
+  };
+  final positive = {
+    for (final l in data.dailyLogs)
+      if (l.ovulationTest == OvulationTest.positive) l.date,
   };
   final predicted = _predictedDays(prediction, data);
   final ovulation = prediction?.estimatedOvulation;
@@ -52,6 +65,8 @@ List<CalendarDay> calendarMonth(
           inPeriod: inPeriod,
           predictedPeriod: !inPeriod && predicted.contains(date),
           ovulation: ovulation != null && dateOnly(ovulation) == date,
+          fertile: fertileWindow?.contains(date) ?? false,
+          positiveTest: positive.contains(date),
           logged: logged.contains(date),
         );
       }(),

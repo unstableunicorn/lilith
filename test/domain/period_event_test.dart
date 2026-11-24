@@ -73,5 +73,48 @@ void main() {
       PeriodEvent(startDate: may1, flow: FlowIntensity.light),
       isNot(PeriodEvent(startDate: may1, flow: FlowIntensity.heavy)),
     );
+    expect(
+      PeriodEvent(startDate: may1, endDate: may5),
+      isNot(PeriodEvent(startDate: may1, endDate: may5, ended: true)),
+    );
+  });
+
+  test('a period marked ended round-trips; without the key it is not', () {
+    final ended = PeriodEvent(startDate: may1, endDate: may5, ended: true);
+    expect(PeriodEvent.fromJson(ended.toJson()), ended);
+    final unmarked = PeriodEvent(startDate: may1, endDate: may5);
+    expect(unmarked.toJson(), isNot(contains('ended')));
+    expect(PeriodEvent.fromJson(unmarked.toJson()).ended, isFalse);
+    expect(ended.copyWith().ended, isTrue);
+    expect(ended.copyWith(ended: false).ended, isFalse);
+  });
+
+  group('inProgressOn', () {
+    final cases = [
+      (name: 'started today', period: PeriodEvent(startDate: may5), want: true),
+      (
+        name: 'bleeding logged two days ago',
+        period: PeriodEvent(startDate: may1, endDate: DateTime(2026, 5, 3)),
+        want: true,
+      ),
+      (
+        name: 'nothing logged for three days',
+        period: PeriodEvent(startDate: may1, endDate: DateTime(2026, 5, 2)),
+        want: false,
+      ),
+      (
+        name: 'marked ended today',
+        period: PeriodEvent(startDate: may1, endDate: may5, ended: true),
+        want: false,
+      ),
+      (
+        name: 'starting after today',
+        period: PeriodEvent(startDate: DateTime(2026, 5, 6)),
+        want: false,
+      ),
+    ];
+    for (final c in cases) {
+      test(c.name, () => expect(c.period.inProgressOn(may5), c.want));
+    }
   });
 }

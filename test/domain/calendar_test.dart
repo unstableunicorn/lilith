@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -66,6 +67,48 @@ void main() {
             if (d.logged) d.date.day,
         ],
         [10, 12],
+      );
+    });
+
+    test('marks the fertile window only when one is given', () {
+      final window = FertileWindow(
+        start: june(12),
+        end: june(17),
+        basis: FertileWindowBasis.shift,
+      );
+      final days = calendarMonth(
+        data,
+        prediction,
+        year: 2026,
+        month: 6,
+        fertileWindow: window,
+      );
+      expect(
+        [
+          for (final d in days)
+            if (d.fertile) d.date.day,
+        ],
+        [12, 13, 14, 15, 16, 17],
+      );
+      final hidden = calendarMonth(data, prediction, year: 2026, month: 6);
+      expect(hidden.any((d) => d.fertile), isFalse);
+    });
+
+    test('marks a day with a positive ovulation test', () {
+      final tested = data
+          .withDailyLog(
+            DailyLog(date: june(14), ovulationTest: OvulationTest.positive),
+          )
+          .withDailyLog(
+            DailyLog(date: june(13), ovulationTest: OvulationTest.negative),
+          );
+      final days = calendarMonth(tested, prediction, year: 2026, month: 6);
+      expect(
+        [
+          for (final d in days)
+            if (d.positiveTest) d.date.day,
+        ],
+        [14],
       );
     });
 

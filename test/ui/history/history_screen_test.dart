@@ -127,9 +127,16 @@ void main() {
     expect(find.byKey(HistoryKeys.nightChart), findsNothing);
   });
 
+  Future<void> openAll(WidgetTester tester) async {
+    await tester.ensureVisible(find.byKey(HistoryKeys.expandAll));
+    await tester.tap(find.byKey(HistoryKeys.expandAll));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('shows the chart, cycles, days and readings', (tester) async {
     await fill();
     await pump(tester);
+    await openAll(tester);
     expect(find.byType(TemperatureChart), findsOneWidget);
     expect(find.byKey(HistoryKeys.cycle(d(10))), findsOneWidget);
     expect(find.text('28 days'), findsOneWidget);
@@ -151,6 +158,8 @@ void main() {
   testWidgets('removing a reading asks first, then removes', (tester) async {
     await fill();
     await pump(tester);
+    await openAll(tester);
+    await tester.ensureVisible(find.byKey(HistoryKeys.removeReading(d(9))));
     await tester.tap(find.byKey(HistoryKeys.removeReading(d(9))));
     await tester.pumpAndSettle();
     await expectAccessible(tester);

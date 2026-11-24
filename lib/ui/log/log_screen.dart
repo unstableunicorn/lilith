@@ -1,4 +1,5 @@
-// The day's log: flow, pain and symptoms for one date, saved together.
+// The day's log: flow, pain, symptoms and an ovulation test for one date,
+// saved together.
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
@@ -23,6 +24,8 @@ abstract final class LogKeys {
   static const Key periodHint = Key('log.periodHint');
   static Key flow(FlowIntensity f) => Key('log.flow.${f.name}');
   static Key symptom(Symptom s) => Key('log.symptom.${s.name}');
+  static Key ovulationTest(OvulationTest? t) =>
+      Key('log.ovulationTest.${t?.name ?? 'none'}');
 }
 
 class LogScreen extends StatelessWidget {
@@ -146,6 +149,23 @@ class _LogViewState extends State<_LogView> {
                 label: Text(s.label),
                 selected: vm.symptoms.contains(s),
                 onSelected: (_) => vm.toggleSymptom(s),
+              ),
+          ],
+        ),
+        const SectionHeading('Ovulation test'),
+        Wrap(
+          spacing: Space.sm,
+          children: [
+            for (final (t, label) in const [
+              (null, 'Not taken'),
+              (OvulationTest.negative, 'Negative'),
+              (OvulationTest.positive, 'Positive'),
+            ])
+              ChoiceChip(
+                key: LogKeys.ovulationTest(t),
+                label: Text(label),
+                selected: vm.ovulationTest == t,
+                onSelected: (_) => vm.setOvulationTest(t),
               ),
           ],
         ),

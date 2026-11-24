@@ -16,6 +16,8 @@ abstract final class SettingsKeys {
   static const Key showForecast = Key('settings.showForecast');
   static const Key showCalendar = Key('settings.showCalendar');
   static const Key showTemperatureChart = Key('settings.showTemperatureChart');
+  static const Key tryingToConceive = Key('settings.tryingToConceive');
+  static const Key showFertileWindow = Key('settings.showFertileWindow');
   static const Key securityKey = Key('settings.securityKey');
 }
 
@@ -84,6 +86,32 @@ class SettingsScreen extends StatelessWidget {
                 title: const Text('Temperature trend'),
                 value: s.showTemperatureChart,
                 onChanged: (v) => set(s.copyWith(showTemperatureChart: v)),
+              ),
+            ],
+          ),
+        ),
+        AppCard(
+          icon: Icons.favorite_border_rounded,
+          title: 'Fertile window',
+          child: Column(
+            children: [
+              SwitchListTile(
+                key: SettingsKeys.tryingToConceive,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Trying to conceive'),
+                subtitle: const Text('Show your likely fertile days.'),
+                value: s.tryingToConceive,
+                onChanged: (v) => set(s.copyWith(tryingToConceive: v)),
+              ),
+              SwitchListTile(
+                key: SettingsKeys.showFertileWindow,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Show fertile window'),
+                subtitle: const Text(
+                  'As information only. It is not a contraceptive method.',
+                ),
+                value: s.showFertileWindow,
+                onChanged: (v) => set(s.copyWith(showFertileWindow: v)),
               ),
             ],
           ),

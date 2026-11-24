@@ -8,10 +8,13 @@ import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
+import 'package:lilith/ui/log/log_summary.dart';
 
 /// One cycle: when it started and how long it ran, null while it is current.
 class CycleEntry {
@@ -64,9 +67,125 @@ class HistoryViewModel extends ChangeNotifier {
   RepositoryError? get error => _repo.error;
   bool get hasHistory => _repo.data.hasData;
 
+  /// At least one period is logged, so there are cycles to list.
+  bool get hasCycles => _repo.data.periods.isNotEmpty;
+
   /// The cycles newest first, each with the days and readings logged from
-  /// its start up to the next start.
+  /// its start up to the next start. While filtering: only the matching
+  /// days, no readings, and only cycles with a match.
   List<CycleEntry> get cycles {
+    if (!isFiltering) return _allCycles;
+    return [
+      for (final c in _allCycles)
+        if (c.days.where(matches).toList() case final days when days.isNotEmpty)
+          CycleEntry(
+            start: c.start,
+            length: c.length,
+            end: c.end,
+            periodLength: c.periodLength,
+            flow: c.flow,
+            days: days,
+          ),
+    ];
+  }
+
+  String _query = '';
+  bool _bleedingOnly = false;
+  int? _minPain;
+  Set<Symptom> _symptomFilter = const {};
+
+  /// The pain levels a filter can start from.
+  static const List<int> painThresholds = [3, 5, 7];
+
+  String get query => _query;
+  bool get bleedingOnly => _bleedingOnly;
+  int? get minPain => _minPain;
+  Set<Symptom> get symptomFilter => _symptomFilter;
+
+  bool get isFiltering =>
+      _query.trim().isNotEmpty ||
+      _bleedingOnly ||
+      _minPain != null ||
+      _symptomFilter.isNotEmpty;
+
+  void setQuery(String query) => _filter(() => _query = query);
+
+  void setBleedingOnly({required bool on}) => _filter(() => _bleedingOnly = on);
+
+  /// Days with pain at or above [level]; null for any pain or none.
+  void setMinPain(int? level) => _filter(() => _minPain = level);
+
+  /// Adds [s] to the symptoms a day may have, or takes it away.
+  void toggleSymptomFilter(Symptom s) => _filter(
+    () => _symptomFilter = _symptomFilter.contains(s)
+        ? _symptomFilter.difference({s})
+        : _symptomFilter.union({s}),
+  );
+
+  void clearFilters() => _filter(() {
+    _query = '';
+    _bleedingOnly = false;
+    _minPain = null;
+    _symptomFilter = const {};
+  });
+
+  void _filter(void Function() change) {
+    change();
+    _expansionVersion++;
+    notifyListeners();
+  }
+
+  /// True when [log] passes every filter set: the search within its
+  /// summary, bleeding, the pain level, and any one of the symptoms.
+  bool matches(DailyLog log) {
+    final q = _query.trim().toLowerCase();
+    final pain = log.painLevel;
+    return (q.isEmpty || logSummary(log).toLowerCase().contains(q)) &&
+        (!_bleedingOnly || log.flow.isBleeding) &&
+        (_minPain == null || (pain != null && pain >= _minPain!)) &&
+        (_symptomFilter.isEmpty || log.symptoms.any(_symptomFilter.contains));
+  }
+
+  /// Days that match, in cycles and before the first period.
+  int get matchCount =>
+      cycles.fold(0, (n, c) => n + c.days.length) +
+      daysBeforeFirstPeriod.length;
+
+  Set<DateTime>? _expanded;
+  int _expansionVersion = 0;
+
+  /// Changes when every cycle's open state is set at once, so the list can
+  /// rebuild its tiles.
+  int get expansionVersion => _expansionVersion;
+
+  /// Open while filtering; else as set, the newest cycle until anything is.
+  bool isExpanded(DateTime start) =>
+      isFiltering ||
+      (_expanded?.contains(start) ??
+          start == _repo.data.periods.lastOrNull?.startDate);
+
+  bool get allExpanded => _allCycles.every((c) => isExpanded(c.start));
+
+  void setExpanded(DateTime start, {required bool expanded}) {
+    final now = {
+      for (final c in _allCycles)
+        if (isExpanded(c.start)) c.start,
+    };
+    _expanded = expanded ? now.union({start}) : now.difference({start});
+    notifyListeners();
+  }
+
+  void expandAll() => _setAll({for (final c in _allCycles) c.start});
+
+  void collapseAll() => _setAll({});
+
+  void _setAll(Set<DateTime> open) {
+    _expanded = open;
+    _expansionVersion++;
+    notifyListeners();
+  }
+
+  List<CycleEntry> get _allCycles {
     final periods = _repo.data.periods;
     final data = _repo.data;
     bool within(DateTime d, int i) =>
@@ -97,12 +216,15 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   /// Logged before the first period start, newest first, or everything
-  /// when there is no period yet.
-  List<DailyLog> get daysBeforeFirstPeriod =>
-      _before(_repo.data.dailyLogs, (l) => l.date);
+  /// when there is no period yet; only matching days while filtering.
+  List<DailyLog> get daysBeforeFirstPeriod => _before(
+    _repo.data.dailyLogs,
+    (l) => l.date,
+  ).where((l) => !isFiltering || matches(l)).toList();
 
+  /// Readings before the first period start; none while filtering.
   List<TemperatureReading> get readingsBeforeFirstPeriod =>
-      _before(_repo.data.readings, (r) => r.date);
+      isFiltering ? const [] : _before(_repo.data.readings, (r) => r.date);
 
   List<T> _before<T>(List<T> items, DateTime Function(T) dateOf) {
     final first = _repo.data.periods.firstOrNull?.startDate;
@@ -183,11 +305,20 @@ class HistoryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<CalendarDay> get calendarDays => calendarMonth(
+  /// The month's days, with the fertile window marked unless [mode] hides it.
+  List<CalendarDay> calendarDaysFor(FertileWindowMode mode) => calendarMonth(
     _repo.data,
     _repo.data.hasData ? prediction : null,
     year: month.year,
     month: month.month,
+    fertileWindow: mode == FertileWindowMode.hidden ? null : fertileWindow,
+  );
+
+  /// This cycle's fertile window, when a shift or a positive test dates it.
+  FertileWindow? get fertileWindow => fertileWindowFor(
+    prediction,
+    _repo.data.dailyLogs,
+    hormonalContraception: _repo.data.profile.usesHormonalContraception,
   );
 
   int get calendarLeadingBlanks =>

@@ -45,6 +45,17 @@ enum Symptom {
       Symptom.values.firstWhereOrNull((s) => s.name == name);
 }
 
+/// An ovulation (LH) test read as positive or negative; a faint line is
+/// negative.
+enum OvulationTest {
+  negative,
+  positive;
+
+  /// The stored name's value, or null when absent or unknown.
+  static OvulationTest? fromName(String? name) =>
+      OvulationTest.values.firstWhereOrNull((t) => t.name == name);
+}
+
 const _symptoms = SetEquality<Symptom>();
 
 /// What the user logged for [date], at most one per day.
@@ -55,6 +66,7 @@ class DailyLog {
     this.flow = FlowIntensity.none,
     Set<Symptom> symptoms = const {},
     int? painLevel,
+    this.ovulationTest,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
        painLevel = painLevel?.clamp(0, 10);
@@ -67,6 +79,7 @@ class DailyLog {
         ?Symptom.fromName(s as String?),
     },
     painLevel: (json['painLevel'] as num?)?.toInt(),
+    ovulationTest: OvulationTest.fromName(json['ovulationTest'] as String?),
   );
 
   final DateTime date;
@@ -76,22 +89,33 @@ class DailyLog {
   /// Pain on the 0–10 scale, or null when not rated.
   final int? painLevel;
 
+  /// The day's ovulation test, or null when none was taken.
+  final OvulationTest? ovulationTest;
+
   /// True when there is nothing worth storing for the day.
   bool get isEmpty =>
-      flow == FlowIntensity.none && symptoms.isEmpty && painLevel == null;
+      flow == FlowIntensity.none &&
+      symptoms.isEmpty &&
+      painLevel == null &&
+      ovulationTest == null;
 
-  /// A copy with the given fields replaced. [clearPain] unsets the rating,
-  /// since a null [painLevel] means "leave it".
+  /// A copy with the given fields replaced. [clearPain] and
+  /// [clearOvulationTest] unset a value, since null means "leave it".
   DailyLog copyWith({
     FlowIntensity? flow,
     Set<Symptom>? symptoms,
     int? painLevel,
     bool clearPain = false,
+    OvulationTest? ovulationTest,
+    bool clearOvulationTest = false,
   }) => DailyLog(
     date: date,
     flow: flow ?? this.flow,
     symptoms: symptoms ?? this.symptoms,
     painLevel: clearPain ? null : (painLevel ?? this.painLevel),
+    ovulationTest: clearOvulationTest
+        ? null
+        : (ovulationTest ?? this.ovulationTest),
   );
 
   Map<String, dynamic> toJson() => {
@@ -99,6 +123,7 @@ class DailyLog {
     'flow': flow.name,
     'symptoms': symptoms.map((s) => s.name).toList(),
     if (painLevel != null) 'painLevel': painLevel,
+    if (ovulationTest case final t?) 'ovulationTest': t.name,
   };
 
   @override
@@ -107,9 +132,15 @@ class DailyLog {
       other.date == date &&
       other.flow == flow &&
       _symptoms.equals(other.symptoms, symptoms) &&
-      other.painLevel == painLevel;
+      other.painLevel == painLevel &&
+      other.ovulationTest == ovulationTest;
 
   @override
-  int get hashCode =>
-      Object.hash(date, flow, _symptoms.hash(symptoms), painLevel);
+  int get hashCode => Object.hash(
+    date,
+    flow,
+    _symptoms.hash(symptoms),
+    painLevel,
+    ovulationTest,
+  );
 }

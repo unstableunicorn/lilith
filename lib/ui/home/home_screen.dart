@@ -4,6 +4,8 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/wearable/wearable_repository.dart';
+import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -30,6 +32,10 @@ abstract final class HomeKeys {
   static const Key midPeriod = Key('home.midPeriod');
   static const Key notBleeding = Key('home.notBleeding');
   static const Key prediction = Key('home.prediction');
+  static const Key estimateNote = Key('home.estimateNote');
+  static const Key fertileWindow = Key('home.fertileWindow');
+  static const Key disclaimerConceive = Key('home.disclaimerConceive');
+  static const Key disclaimerInformation = Key('home.disclaimerInformation');
   static const Key stats = Key('home.stats');
   static const Key avgPeriod = Key('home.avgPeriod');
   static const Key forecast = Key('home.forecast');
@@ -39,6 +45,13 @@ abstract final class HomeKeys {
   static const Key daysUntil = Key('home.daysUntil');
   static const Key lastPeriod = Key('home.lastPeriod');
   static const Key logPeriod = Key('home.logPeriod');
+  static const Key periodInProgress = Key('home.periodInProgress');
+  static const Key logToday = Key('home.logToday');
+  static const Key periodEnded = Key('home.periodEnded');
+  static const Key endToday = Key('home.endToday');
+  static const Key endYesterday = Key('home.endYesterday');
+  static const Key endOther = Key('home.endOther');
+  static const Key endCancel = Key('home.endCancel');
   static const Key temperature = Key('home.temperature');
   static const Key logTemperature = Key('home.logTemperature');
   static const Key temperatureProblem = Key('home.temperatureProblem');
@@ -139,6 +152,13 @@ class _HomeViewState extends State<_HomeView> {
             _WelcomeCard(vm: vm)
           else ...[
             _PredictionCard(vm: vm),
+            if (vm.fertileWindowShown(shows.fertileWindowMode)
+                case final window?)
+              _FertileWindowCard(
+                vm: vm,
+                window: window,
+                mode: shows.fertileWindowMode,
+              ),
             _StatsRow(vm: vm),
             if (shows.showForecast && vm.forecast.hasData)
               _ForecastCard(vm: vm),
@@ -149,12 +169,7 @@ class _HomeViewState extends State<_HomeView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                FilledButton.icon(
-                  key: HomeKeys.logPeriod,
-                  onPressed: vm.logPeriodStart,
-                  icon: const Icon(Icons.water_drop),
-                  label: const Text('My period started today'),
-                ),
+                _PeriodActions(vm: vm),
                 const SizedBox(height: Space.md),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,6 +346,15 @@ class _PredictionCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
           ],
           Text(vm.howText(p)),
+          if (p.estimatedOvulation != null)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.sm),
+              child: Text(
+                key: HomeKeys.estimateNote,
+                estimateDisclaimer,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
         ],
       ),
     );
@@ -344,6 +368,147 @@ class _PredictionCard extends StatelessWidget {
   };
 
   String _date(DateTime d) => formatShortDate(d, today: vm.today);
+}
+
+/// A new period start, or during a period: its day, log today, or end it.
+class _PeriodActions extends StatelessWidget {
+  const _PeriodActions({required this.vm});
+
+  final HomeViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final day = vm.periodDay;
+    if (day == null) {
+      return FilledButton.icon(
+        key: HomeKeys.logPeriod,
+        onPressed: vm.logPeriodStart,
+        icon: const Icon(Icons.water_drop),
+        label: const Text('My period started today'),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          key: HomeKeys.periodInProgress,
+          'Day $day of your period',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: Space.sm),
+        FilledButton.icon(
+          key: HomeKeys.logToday,
+          onPressed: () => context.read<ShellTabs>().openLog(vm.today),
+          icon: const Icon(Icons.edit_note_rounded),
+          label: const Text("Log today's flow and symptoms"),
+        ),
+        const SizedBox(height: Space.sm),
+        FilledButton.tonalIcon(
+          key: HomeKeys.periodEnded,
+          onPressed: () => _askEnd(context),
+          icon: const Icon(Icons.check_circle_outline_rounded),
+          label: const Text('My period ended'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _askEnd(BuildContext context) async {
+    final start = vm.periodInProgress?.startDate;
+    if (start == null) return;
+    final choice = await showDialog<_EndChoice>(
+      context: context,
+      builder: (context) => _EndDialog(days: vm.quickEndDays, today: vm.today),
+    );
+    if (choice == null || !context.mounted) return;
+    final day =
+        choice.day ??
+        await showDatePicker(
+          context: context,
+          initialDate: vm.today,
+          firstDate: start,
+          lastDate: vm.today,
+          helpText: 'Which was the last day of your period?',
+        );
+    if (day != null) await vm.markPeriodEnded(day);
+  }
+}
+
+/// A day from the dialog, or null for "another day".
+class _EndChoice {
+  const _EndChoice(this.day);
+
+  final DateTime? day;
+}
+
+class _EndDialog extends StatelessWidget {
+  const _EndDialog({required this.days, required this.today});
+
+  final List<DateTime> days;
+  final DateTime today;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('When was the last day?'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final d in days)
+          ListTile(
+            key: d == today ? HomeKeys.endToday : HomeKeys.endYesterday,
+            title: Text(d == today ? 'Today' : 'Yesterday'),
+            onTap: () => Navigator.of(context).pop(_EndChoice(d)),
+          ),
+        ListTile(
+          key: HomeKeys.endOther,
+          title: const Text('Another day'),
+          trailing: const Icon(Icons.event_rounded),
+          onTap: () => Navigator.of(context).pop(const _EndChoice(null)),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        key: HomeKeys.endCancel,
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancel'),
+      ),
+    ],
+  );
+}
+
+/// The likely fertile days, with the sentence the person's settings call for.
+class _FertileWindowCard extends StatelessWidget {
+  const _FertileWindowCard({
+    required this.vm,
+    required this.window,
+    required this.mode,
+  });
+
+  final HomeViewModel vm;
+  final FertileWindow window;
+  final FertileWindowMode mode;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    key: HomeKeys.fertileWindow,
+    icon: Icons.spa_rounded,
+    title: 'Fertile window',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(vm.fertileWindowText(window)),
+        const SizedBox(height: Space.sm),
+        Text(
+          key: mode == FertileWindowMode.conceiving
+              ? HomeKeys.disclaimerConceive
+              : HomeKeys.disclaimerInformation,
+          fertileWindowDisclaimer(mode)!,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    ),
+  );
 }
 
 class _ForecastCard extends StatelessWidget {

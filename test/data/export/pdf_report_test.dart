@@ -4,13 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
   periodLengthRowTests();
+  fertileWindowReportTests();
   TestWidgetsFlutterBinding.ensureInitialized();
   final today = DateTime(2026, 6, 10, 8);
   HealthData threeCycles() {
@@ -254,4 +257,70 @@ void periodLengthRowTests() {
     );
     expect(summary.containsKey('Average period length'), isFalse);
   });
+}
+
+void fertileWindowReportTests() {
+  final today = DateTime(2026, 6, 17);
+  DateTime june(int d) => DateTime(2026, 6, d);
+  final period = HealthData.empty.withPeriod(
+    PeriodEvent(startDate: june(1), endDate: june(5)),
+  );
+  final shifted = period.withReadings([
+    for (var i = 1; i <= 16; i++)
+      TemperatureReading(date: june(i), celsius: i <= 8 ? 36.3 : 36.65),
+  ]);
+  final tested = period.withDailyLog(
+    DailyLog(date: june(12), ovulationTest: OvulationTest.positive),
+  );
+  Map<String, String> summaryOf(ReportContent c) =>
+      Map.fromEntries(c.summary.map((s) => MapEntry(s.$1, s.$2)));
+
+  final cases = [
+    (
+      name: 'an estimate alone carries the estimate sentence',
+      data: shifted,
+      mode: FertileWindowMode.hidden,
+      ovulation: true,
+      window: false,
+      disclaimer: estimateDisclaimer,
+    ),
+    (
+      name: 'a window shown as information carries both sentences',
+      data: tested,
+      mode: FertileWindowMode.information,
+      ovulation: false,
+      window: true,
+      disclaimer: fertileWindowDisclaimer(FertileWindowMode.information),
+    ),
+    (
+      name: 'a window when conceiving carries the estimate sentence only',
+      data: shifted,
+      mode: FertileWindowMode.conceiving,
+      ovulation: true,
+      window: true,
+      disclaimer: fertileWindowDisclaimer(FertileWindowMode.conceiving),
+    ),
+    (
+      name: 'a hidden window leaves a positive test out',
+      data: tested,
+      mode: FertileWindowMode.hidden,
+      ovulation: false,
+      window: false,
+      disclaimer: null,
+    ),
+  ];
+  for (final c in cases) {
+    test('reportContent: ${c.name}', () {
+      final content = reportContent(
+        c.data,
+        range: ExportRange.all,
+        today: today,
+        fertileWindowMode: c.mode,
+      );
+      final summary = summaryOf(content);
+      expect(summary.containsKey('Estimated ovulation'), c.ovulation);
+      expect(summary.containsKey('Likely fertile'), c.window);
+      expect(content.disclaimer, c.disclaimer);
+    });
+  }
 }

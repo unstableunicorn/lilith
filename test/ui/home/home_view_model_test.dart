@@ -12,6 +12,7 @@ import '../../fakes/fake_pod_service.dart';
 
 void main() {
   readingDayTests();
+  periodInProgressTests();
   forecastTests();
   todaysLogTests();
   final today = DateTime(2026, 6, 10, 9, 30);
@@ -222,4 +223,70 @@ void readingDayTests() {
       expect(vm.readingDayIsToday, isTrue);
     },
   );
+}
+
+void periodInProgressTests() {
+  final today = DateTime(2026, 6, 10, 9);
+  DateTime june(int d) => DateTime(2026, 6, d);
+  late HealthRepository repo;
+  late HomeViewModel vm;
+
+  setUp(() async {
+    repo = HealthRepository(FakePodService(), protection: DataProtection.plain);
+    await repo.load();
+    vm = HomeViewModel(repo, now: () => today);
+  });
+
+  Future<void> started(int day, {int? end}) => repo.apply(
+    (d) => d.withPeriod(
+      PeriodEvent(
+        startDate: june(day),
+        endDate: end == null ? null : june(end),
+      ),
+    ),
+  );
+
+  test('no period means none in progress', () {
+    expect(vm.periodInProgress, isNull);
+    expect(vm.periodDay, isNull);
+  });
+
+  final cases = [
+    (name: 'started today', start: 10, end: null, day: 1),
+    (name: 'started two days ago', start: 8, end: null, day: 3),
+    (name: 'bleeding logged yesterday', start: 6, end: 9, day: 5),
+    (name: 'nothing logged for three days', start: 5, end: 7, day: null),
+  ];
+  for (final c in cases) {
+    test('in progress: ${c.name}', () async {
+      await started(c.start, end: c.end);
+      expect(vm.periodDay, c.day);
+      expect(vm.periodInProgress != null, c.day != null);
+    });
+  }
+
+  test('marking it ended records the day and ends it', () async {
+    await started(8);
+    expect(await vm.markPeriodEnded(june(9)), isTrue);
+    final p = repo.data.periods.single;
+    expect(p.endDate, june(9));
+    expect(p.ended, isTrue);
+    expect(vm.periodInProgress, isNull);
+  });
+
+  test('an end before the start or after today is refused', () async {
+    await started(8);
+    expect(await vm.markPeriodEnded(june(7)), isFalse);
+    expect(await vm.markPeriodEnded(june(11)), isFalse);
+    expect(repo.data.periods.single.ended, isFalse);
+  });
+
+  test('yesterday is offered as an end day only when the period began '
+      'before today', () async {
+    await started(10);
+    expect(vm.quickEndDays, [june(10)]);
+    await repo.apply((d) => d.withoutPeriod(june(10)));
+    await started(8);
+    expect(vm.quickEndDays, [june(10), june(9)]);
+  });
 }

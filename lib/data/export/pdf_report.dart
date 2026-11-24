@@ -10,8 +10,10 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_file.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/home/home_view_model.dart' show confidenceCapFor;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -70,9 +72,14 @@ class ReportContent {
     required this.cycles,
     required this.chart,
     required this.rows,
+    this.disclaimer,
   });
 
   String get title => 'Lilith cycle report';
+
+  /// Said under the summary when it gives an ovulation estimate or a
+  /// fertile window: the same sentence the screen shows.
+  final String? disclaimer;
 
   /// The day it was made, ISO.
   final String generated;
@@ -88,12 +95,14 @@ class ReportContent {
   final List<ExportRow> rows;
 }
 
-/// What the report says for [data] over [range], as of [today].
+/// What the report says for [data] over [range], as of [today]. The fertile
+/// window is included as [fertileWindowMode] says, as on the screen.
 ReportContent reportContent(
   HealthData data, {
   required ExportRange range,
   required DateTime today,
   CyclePredictor predictor = const CyclePredictor(),
+  FertileWindowMode fertileWindowMode = FertileWindowMode.hidden,
 }) {
   final rows = exportRows(data, range: range, today: today);
   final prediction = predictor.predict(
@@ -105,14 +114,32 @@ ReportContent reportContent(
     suppressShift: data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(data.profile.regularity),
   );
+  final window = fertileWindowMode == FertileWindowMode.hidden
+      ? null
+      : fertileWindowFor(
+          prediction,
+          data.dailyLogs,
+          hormonalContraception: data.profile.usesHormonalContraception,
+        );
+  final ovulation = prediction.estimatedOvulation;
   return ReportContent(
     generated: isoDay(dateOnly(today)),
     rangeLabel: range.label,
-    summary: _summary(data, prediction, rows),
+    summary: [
+      ..._summary(data, prediction, rows),
+      if (ovulation != null) ('Estimated ovulation', isoDay(ovulation)),
+      if (window != null)
+        ('Likely fertile', '${isoDay(window.start)} to ${isoDay(window.end)}'),
+    ],
     profile: _profile(data.profile),
     cycles: _cycles(data, rows),
     chart: _chart(rows),
     rows: rows,
+    disclaimer: window != null
+        ? fertileWindowDisclaimer(fertileWindowMode)
+        : ovulation != null
+        ? estimateDisclaimer
+        : null,
   );
 }
 
@@ -303,6 +330,11 @@ class PdfReport {
           ),
           pw.Header(level: 1, text: 'Summary'),
           _pairs(content.summary),
+          if (content.disclaimer case final note?)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 6),
+              child: pw.Text(note),
+            ),
           if (content.profile.isNotEmpty) ...[
             pw.Header(level: 1, text: 'Health profile'),
             _pairs(content.profile),
