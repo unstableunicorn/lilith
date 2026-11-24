@@ -5,7 +5,24 @@ import 'package:collection/collection.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:meta/meta.dart';
+
+/// Said wherever an ovulation estimate or a fertile window appears.
+const String estimateDisclaimer = 'Lilith estimates, it does not confirm.';
+
+/// Added when the window is shown to someone not trying to conceive.
+const String contraceptionDisclaimer =
+    'It is not a contraceptive method and cannot tell you when it is safe '
+    'to have unprotected sex.';
+
+/// The sentence that goes with the window in [mode]; null when hidden.
+String? fertileWindowDisclaimer(FertileWindowMode mode) => switch (mode) {
+  FertileWindowMode.hidden => null,
+  FertileWindowMode.conceiving => estimateDisclaimer,
+  FertileWindowMode.information =>
+    '$estimateDisclaimer $contraceptionDisclaimer',
+};
 
 /// What dated the ovulation the window is built around.
 enum FertileWindowBasis { shift, test }

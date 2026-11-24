@@ -3,6 +3,7 @@
 
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
@@ -35,6 +36,10 @@ class ExportScreen extends StatelessWidget {
       now: now,
       share: context.read<FileSharer>(),
       pdf: context.read<PdfReport>(),
+      fertileWindowMode: context
+          .read<PageSettingsRepository>()
+          .settings
+          .fertileWindowMode,
     ),
     child: const _ExportView(),
   );

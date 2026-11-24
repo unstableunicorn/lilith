@@ -8,6 +8,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_file.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 
 enum ExportFormat { pdf, csv }
@@ -21,11 +22,15 @@ class ExportViewModel extends ChangeNotifier {
     required this._share,
     this._pdf = const PdfReport(),
     this._csv = const CsvExport(),
+    this.fertileWindowMode = FertileWindowMode.hidden,
   }) {
     _repo.addListener(notifyListeners);
   }
 
   final HealthRepository _repo;
+
+  /// Whether the PDF includes the fertile window, as Settings has it.
+  final FertileWindowMode fertileWindowMode;
 
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
@@ -82,7 +87,12 @@ class ExportViewModel extends ChangeNotifier {
   Future<ExportFile> _build(ExportFormat format) => switch (format) {
     ExportFormat.csv => Future.value(_csv.build(_rows, today: today)),
     ExportFormat.pdf => _pdf.build(
-      reportContent(_repo.data, range: _range, today: today),
+      reportContent(
+        _repo.data,
+        range: _range,
+        today: today,
+        fertileWindowMode: fertileWindowMode,
+      ),
     ),
   };
 

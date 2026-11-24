@@ -7,7 +7,9 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -95,6 +97,28 @@ class HomeViewModel extends ChangeNotifier {
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
   }.withSuppressionNote(p);
+
+  /// This cycle's fertile window when [mode] shows it and something
+  /// supports it; null otherwise.
+  FertileWindow? fertileWindowShown(FertileWindowMode mode) =>
+      mode == FertileWindowMode.hidden
+      ? null
+      : fertileWindowFor(
+          prediction,
+          _repo.data.dailyLogs,
+          hormonalContraception: _repo.data.profile.usesHormonalContraception,
+        );
+
+  /// E.g. "Likely fertile 9 Jun to 14 Jun, dated from your positive
+  /// ovulation test."
+  String fertileWindowText(FertileWindow w) {
+    final from = switch (w.basis) {
+      FertileWindowBasis.shift => 'temperature rise',
+      FertileWindowBasis.test => 'positive ovulation test',
+    };
+    return 'Likely fertile ${formatShortDate(w.start, today: today)} to '
+        '${formatShortDate(w.end, today: today)}, dated from your $from.';
+  }
 
   PeriodFact get fact => factOfTheDay(today);
 

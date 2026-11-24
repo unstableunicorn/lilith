@@ -4,6 +4,8 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/wearable/wearable_repository.dart';
+import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -30,6 +32,10 @@ abstract final class HomeKeys {
   static const Key midPeriod = Key('home.midPeriod');
   static const Key notBleeding = Key('home.notBleeding');
   static const Key prediction = Key('home.prediction');
+  static const Key estimateNote = Key('home.estimateNote');
+  static const Key fertileWindow = Key('home.fertileWindow');
+  static const Key disclaimerConceive = Key('home.disclaimerConceive');
+  static const Key disclaimerInformation = Key('home.disclaimerInformation');
   static const Key stats = Key('home.stats');
   static const Key avgPeriod = Key('home.avgPeriod');
   static const Key forecast = Key('home.forecast');
@@ -139,6 +145,13 @@ class _HomeViewState extends State<_HomeView> {
             _WelcomeCard(vm: vm)
           else ...[
             _PredictionCard(vm: vm),
+            if (vm.fertileWindowShown(shows.fertileWindowMode)
+                case final window?)
+              _FertileWindowCard(
+                vm: vm,
+                window: window,
+                mode: shows.fertileWindowMode,
+              ),
             _StatsRow(vm: vm),
             if (shows.showForecast && vm.forecast.hasData)
               _ForecastCard(vm: vm),
@@ -331,6 +344,15 @@ class _PredictionCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
           ],
           Text(vm.howText(p)),
+          if (p.estimatedOvulation != null)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.sm),
+              child: Text(
+                key: HomeKeys.estimateNote,
+                estimateDisclaimer,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
         ],
       ),
     );
@@ -344,6 +366,40 @@ class _PredictionCard extends StatelessWidget {
   };
 
   String _date(DateTime d) => formatShortDate(d, today: vm.today);
+}
+
+/// The likely fertile days, with the sentence the person's settings call for.
+class _FertileWindowCard extends StatelessWidget {
+  const _FertileWindowCard({
+    required this.vm,
+    required this.window,
+    required this.mode,
+  });
+
+  final HomeViewModel vm;
+  final FertileWindow window;
+  final FertileWindowMode mode;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    key: HomeKeys.fertileWindow,
+    icon: Icons.spa_rounded,
+    title: 'Fertile window',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(vm.fertileWindowText(window)),
+        const SizedBox(height: Space.sm),
+        Text(
+          key: mode == FertileWindowMode.conceiving
+              ? HomeKeys.disclaimerConceive
+              : HomeKeys.disclaimerInformation,
+          fertileWindowDisclaimer(mode)!,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    ),
+  );
 }
 
 class _ForecastCard extends StatelessWidget {

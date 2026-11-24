@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/export_file.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/export/export_view_model.dart';
@@ -70,6 +75,31 @@ void main() {
     expect(vm.lastShared, ExportFormat.pdf);
   });
 
+  test('the PDF follows the fertile window setting it was given', () async {
+    final pdf = _RecordingPdf();
+    vm = ExportViewModel(
+      repo,
+      now: () => today,
+      share: sharer.call,
+      pdf: pdf,
+      fertileWindowMode: FertileWindowMode.information,
+    );
+    await logSome();
+    await repo.apply(
+      (d) => d.withDailyLog(
+        DailyLog(
+          date: DateTime(2026, 6, 1),
+          ovulationTest: OvulationTest.positive,
+        ),
+      ),
+    );
+    await vm.share(ExportFormat.pdf);
+    expect(
+      pdf.last?.disclaimer,
+      fertileWindowDisclaimer(FertileWindowMode.information),
+    );
+  });
+
   test('is busy while a share is in flight and only one runs', () async {
     await logSome();
     sharer.hold = true;
@@ -118,4 +148,14 @@ void main() {
     await vm.share(ExportFormat.csv);
     expect(notified, greaterThanOrEqualTo(3));
   });
+}
+
+class _RecordingPdf extends PdfReport {
+  ReportContent? last;
+
+  @override
+  Future<ExportFile> build(ReportContent content) {
+    last = content;
+    return super.build(content);
+  }
 }
