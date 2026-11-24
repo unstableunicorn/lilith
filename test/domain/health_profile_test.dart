@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/health_profile.dart';
 
 void main() {
+  historyTests();
   usualLengthTests();
   group('HealthProfile', () {
     test('defaults to empty', () {
@@ -116,5 +117,70 @@ void usualLengthTests() {
     expect(p.copyWith(clearUsualCycleLength: true).usualCycleLength, isNull);
     expect(p.copyWith(usualPeriodLength: 6).usualPeriodLength, 6);
     expect(HealthProfile(usualCycleLength: 30), isNot(HealthProfile()));
+  });
+}
+
+void historyTests() {
+  test('history, contraception, regularity and birth year round-trip', () {
+    final p = HealthProfile(
+      birthYear: 1990,
+      contraception: Contraception.hormonalIud,
+      regularity: CycleRegularity.somewhatIrregular,
+      history: const ObstetricHistory(
+        pregnancies: 2,
+        births: 1,
+        miscarriages: 1,
+        lastPregnancyYear: 2022,
+      ),
+    );
+    expect(p.isEmpty, isFalse);
+    expect(HealthProfile.fromJson(p.toJson()), p);
+    expect(p.toJson()['history'], {
+      'pregnancies': 2,
+      'births': 1,
+      'miscarriages': 1,
+      'lastPregnancyYear': 2022,
+    });
+    expect(HealthProfile().toJson().containsKey('history'), isFalse);
+    expect(HealthProfile.fromJson(const {}).history, const ObstetricHistory());
+  });
+
+  test('hormonal contraception is read from either field', () {
+    expect(HealthProfile().usesHormonalContraception, isFalse);
+    expect(
+      HealthProfile(contraception: Contraception.copperIud)
+          .usesHormonalContraception,
+      isFalse,
+    );
+    expect(
+      HealthProfile(contraception: Contraception.combinedPill)
+          .usesHormonalContraception,
+      isTrue,
+    );
+    expect(
+      HealthProfile(treatments: const {FertilityTreatment.contraceptive})
+          .usesHormonalContraception,
+      isTrue,
+    );
+  });
+
+  test('copyWith clears named optional fields with unset', () {
+    final p = HealthProfile(
+      birthYear: 1990,
+      contraception: Contraception.implant,
+      regularity: CycleRegularity.regular,
+    );
+    final cleared = p.copyWith(
+      unset: const {'birthYear', 'contraception', 'regularity'},
+    );
+    expect(cleared.isEmpty, isTrue);
+    expect(p.copyWith(birthYear: 1991).birthYear, 1991);
+    const h = ObstetricHistory(pregnancies: 1, births: 1);
+    expect(
+      h.copyWith(unset: const {'births'}),
+      const ObstetricHistory(pregnancies: 1),
+    );
+    expect(h.copyWith(miscarriages: 0).miscarriages, 0);
+    expect(const ObstetricHistory().isEmpty, isTrue);
   });
 }

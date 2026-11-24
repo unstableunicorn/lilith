@@ -17,6 +17,7 @@ List<PeriodEvent> periodsOn(List<DateTime> starts) => [
 ];
 
 void main() {
+  profileEffectTests();
   usualCycleLengthTests();
   periodSpanPredictorTests();
   const predictor = CyclePredictor();
@@ -377,5 +378,61 @@ void usualCycleLengthTests() {
     );
     expect(p.method, PredictionMethod.cycleAverage);
     expect(p.cycleCount, 0);
+  });
+}
+
+void profileEffectTests() {
+  const predictor = CyclePredictor();
+  DateTime june(int d) => DateTime(2026, 6, d);
+  final readings = [
+    for (var d = 1; d <= 5; d++)
+      TemperatureReading(date: june(d), celsius: 36.3),
+    for (var d = 6; d <= 9; d++)
+      TemperatureReading(date: june(d), celsius: 36.6),
+  ];
+  final periods = [
+    PeriodEvent(startDate: DateTime(2026, 4, 6)),
+    PeriodEvent(startDate: DateTime(2026, 5, 4)),
+    PeriodEvent(startDate: june(1)),
+  ];
+
+  test(
+    'hormonal contraception suppresses the temperature route and says so',
+    () {
+      final free = predictor.predict(
+        readings: readings,
+        periods: periods,
+        today: june(9),
+      );
+      expect(free.method, PredictionMethod.temperatureShift);
+      final onPill = predictor.predict(
+        readings: readings,
+        periods: periods,
+        today: june(9),
+        suppressShift: true,
+      );
+      expect(onPill.method, PredictionMethod.cycleAverage);
+      expect(onPill.shiftSuppressed, isTrue);
+      expect(free.shiftSuppressed, isFalse);
+    },
+  );
+
+  test('a confidence cap lowers, never raises', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: periods,
+      today: june(9),
+      maxConfidence: PredictionConfidence.low,
+    );
+    expect(p.method, PredictionMethod.cycleAverage);
+    expect(p.confidence, PredictionConfidence.low);
+    expect(p.predictedNextPeriod, isNotNull);
+    final single = predictor.predict(
+      readings: const [],
+      periods: [PeriodEvent(startDate: june(1))],
+      today: june(9),
+      maxConfidence: PredictionConfidence.high,
+    );
+    expect(single.confidence, PredictionConfidence.low);
   });
 }

@@ -19,6 +19,12 @@ abstract final class ProfileKeys {
       Key('profile.condition.${c.name}');
   static Key treatment(FertilityTreatment t) =>
       Key('profile.treatment.${t.name}');
+  static Key contraception(Contraception c) =>
+      Key('profile.contraception.${c.name}');
+  static Key regularity(CycleRegularity r) =>
+      Key('profile.regularity.${r.name}');
+  static const Key birthYear = Key('profile.birthYear');
+  static Key history(String field) => Key('profile.history.$field');
 }
 
 class ProfileScreen extends StatelessWidget {
@@ -40,19 +46,38 @@ class _ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<_ProfileView> {
   late final TextEditingController _notes;
+  late final TextEditingController _birthYear;
+  late final Map<String, TextEditingController> _history;
   bool _savedHere = false;
 
   @override
   void initState() {
     super.initState();
-    _notes = TextEditingController(
-      text: context.read<ProfileViewModel>().notes,
-    );
+    final vm = context.read<ProfileViewModel>();
+    _notes = TextEditingController(text: vm.notes);
+    _birthYear = TextEditingController(text: vm.birthYear?.toString() ?? '');
+    final h = vm.history;
+    _history = {
+      'pregnancies': TextEditingController(
+        text: h.pregnancies?.toString() ?? '',
+      ),
+      'births': TextEditingController(text: h.births?.toString() ?? ''),
+      'miscarriages': TextEditingController(
+        text: h.miscarriages?.toString() ?? '',
+      ),
+      'lastPregnancyYear': TextEditingController(
+        text: h.lastPregnancyYear?.toString() ?? '',
+      ),
+    };
   }
 
   @override
   void dispose() {
     _notes.dispose();
+    _birthYear.dispose();
+    for (final c in _history.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -107,6 +132,59 @@ class _ProfileViewState extends State<_ProfileView> {
               ),
           ],
         ),
+        const SectionHeading('Contraception'),
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xs,
+          children: [
+            for (final c in Contraception.values)
+              ChoiceChip(
+                key: ProfileKeys.contraception(c),
+                label: Text(c.label),
+                selected: vm.contraception == c,
+                onSelected: (_) => vm.setContraception(c),
+              ),
+          ],
+        ),
+        const SectionHeading('How regular are your cycles?'),
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xs,
+          children: [
+            for (final r in CycleRegularity.values)
+              ChoiceChip(
+                key: ProfileKeys.regularity(r),
+                label: Text(r.label),
+                selected: vm.regularity == r,
+                onSelected: (_) => vm.setRegularity(r),
+              ),
+          ],
+        ),
+        const SectionHeading('About you (optional)'),
+        TextField(
+          key: ProfileKeys.birthYear,
+          controller: _birthYear,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Year of birth'),
+          onChanged: vm.setBirthYear,
+        ),
+        const SectionHeading('Pregnancies (optional)'),
+        for (final (field, label) in const [
+          ('pregnancies', 'Pregnancies in all'),
+          ('births', 'Births'),
+          ('miscarriages', 'Miscarriages'),
+          ('lastPregnancyYear', 'Year of the last pregnancy'),
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.sm),
+            child: TextField(
+              key: ProfileKeys.history(field),
+              controller: _history[field],
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: label),
+              onChanged: (text) => vm.setHistory(field, text),
+            ),
+          ),
         const SectionHeading('Notes'),
         TextField(
           key: ProfileKeys.notes,

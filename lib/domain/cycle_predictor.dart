@@ -36,6 +36,7 @@ class CyclePrediction {
     this.lutealLength,
     this.averagePeriodLength,
     this.periodCount = 0,
+    this.shiftSuppressed = false,
   });
 
   final PredictionMethod method;
@@ -64,6 +65,10 @@ class CyclePrediction {
 
   /// How many periods went into [averagePeriodLength].
   final int periodCount;
+
+  /// True when the temperature route was not tried, under hormonal
+  /// contraception.
+  final bool shiftSuppressed;
 
   /// Calendar days from [today] to [predictedNextPeriod]; negative when
   /// overdue.
@@ -99,6 +104,42 @@ class CyclePredictor {
     required List<PeriodEvent> periods,
     required DateTime today,
     int? usualCycleLength,
+    bool suppressShift = false,
+    PredictionConfidence? maxConfidence,
+  }) {
+    final result = _predict(
+      readings: readings,
+      periods: periods,
+      today: today,
+      usualCycleLength: usualCycleLength,
+      suppressShift: suppressShift,
+    );
+    if (maxConfidence == null ||
+        result.confidence.index <= maxConfidence.index) {
+      return result;
+    }
+    return CyclePrediction(
+      method: result.method,
+      confidence: maxConfidence,
+      predictedNextPeriod: result.predictedNextPeriod,
+      lastPeriodStart: result.lastPeriodStart,
+      currentCycleDay: result.currentCycleDay,
+      estimatedOvulation: result.estimatedOvulation,
+      averageCycleLength: result.averageCycleLength,
+      cycleCount: result.cycleCount,
+      lutealLength: result.lutealLength,
+      averagePeriodLength: result.averagePeriodLength,
+      periodCount: result.periodCount,
+      shiftSuppressed: result.shiftSuppressed,
+    );
+  }
+
+  CyclePrediction _predict({
+    required List<TemperatureReading> readings,
+    required List<PeriodEvent> periods,
+    required DateTime today,
+    required int? usualCycleLength,
+    required bool suppressShift,
   }) {
     final now = dateOnly(today);
     final sorted = [...periods]
@@ -129,7 +170,9 @@ class CyclePredictor {
         ? null
         : periodLengths.reduce((a, b) => a + b) / periodLengths.length;
 
-    final ovulation = _detectOvulation(readings, sorted.last, now);
+    final ovulation = suppressShift
+        ? null
+        : _detectOvulation(readings, sorted.last, now);
     if (ovulation != null) {
       final luteal =
           _historicalLutealLength(readings, sorted) ?? defaultLutealLength;
@@ -147,6 +190,7 @@ class CyclePredictor {
         lutealLength: luteal,
         averagePeriodLength: averagePeriod,
         periodCount: periodLengths.length,
+        shiftSuppressed: suppressShift,
       );
     }
 
@@ -159,6 +203,7 @@ class CyclePredictor {
         currentCycleDay: currentCycleDay,
         averagePeriodLength: averagePeriod,
         periodCount: periodLengths.length,
+        shiftSuppressed: suppressShift,
       );
     }
 
@@ -179,6 +224,7 @@ class CyclePredictor {
       cycleCount: cycleLengths.length,
       averagePeriodLength: averagePeriod,
       periodCount: periodLengths.length,
+      shiftSuppressed: suppressShift,
     );
   }
 
