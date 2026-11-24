@@ -40,6 +40,15 @@ abstract final class HistoryKeys {
   static Key day(DateTime d) => Key('history.day.$d');
   static Key reading(DateTime d) => Key('history.reading.$d');
   static Key removeReading(DateTime d) => Key('history.removeReading.$d');
+  static const Key expandAll = Key('history.expandAll');
+  static const Key search = Key('history.search');
+  static const Key filters = Key('history.filters');
+  static const Key filterBleeding = Key('history.filterBleeding');
+  static Key filterPain(int level) => Key('history.filterPain.$level');
+  static Key filterSymptom(Symptom s) => Key('history.filterSymptom.${s.name}');
+  static const Key clearFilters = Key('history.clearFilters');
+  static const Key matchCount = Key('history.matchCount');
+  static const Key noMatches = Key('history.noMatches');
 }
 
 class HistoryScreen extends StatelessWidget {
@@ -176,11 +185,22 @@ class _HistoryView extends StatelessWidget {
                 ],
               ),
             ),
-          if (vm.cycles.isNotEmpty) const SectionHeading('Cycles'),
+          const SectionHeading('Your days'),
+          _SearchAndFilters(vm: vm),
+          if (vm.isFiltering && vm.matchCount == 0)
+            const Padding(
+              key: HistoryKeys.noMatches,
+              padding: EdgeInsets.symmetric(vertical: Space.md),
+              child: Text('No days match. Try fewer filters.'),
+            ),
           for (final c in vm.cycles)
             _CycleTile(
+              key: ValueKey('${c.start}.${vm.expansionVersion}'),
               cycle: c,
               date: date,
+              expanded: vm.isExpanded(c.start),
+              onExpansionChanged: (open) =>
+                  vm.setExpanded(c.start, expanded: open),
               onEdit: () => _openForm(
                 context,
                 PeriodFormMode.edit,
@@ -200,7 +220,7 @@ class _HistoryView extends StatelessWidget {
           if (vm.daysBeforeFirstPeriod.isNotEmpty ||
               vm.readingsBeforeFirstPeriod.isNotEmpty) ...[
             SectionHeading(
-              vm.cycles.isEmpty ? 'Logged so far' : 'Before your first period',
+              vm.hasCycles ? 'Before your first period' : 'Logged so far',
             ),
             for (final log in vm.daysBeforeFirstPeriod) _DayTile(log: log),
             for (final r in vm.readingsBeforeFirstPeriod)
@@ -366,18 +386,146 @@ class _AddReadingDialogState extends State<_AddReadingDialog> {
   }
 }
 
-/// One cycle, open by default: its period, then the days and readings in it.
+/// The search box and filters over the days, with the match count or, when
+/// not filtering, expand and collapse all.
+class _SearchAndFilters extends StatefulWidget {
+  const _SearchAndFilters({required this.vm});
+
+  final HistoryViewModel vm;
+
+  @override
+  State<_SearchAndFilters> createState() => _SearchAndFiltersState();
+}
+
+class _SearchAndFiltersState extends State<_SearchAndFilters> {
+  late final _search = TextEditingController(text: widget.vm.query);
+  bool _showFilters = false;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _search.clear();
+    widget.vm.clearFilters();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = widget.vm;
+    final matches = vm.matchCount;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: HistoryKeys.search,
+                controller: _search,
+                onChanged: vm.setQuery,
+                decoration: const InputDecoration(
+                  labelText: 'Search your days',
+                  hintText: 'cramps, heavy flow, headache',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
+              ),
+            ),
+            IconButton(
+              key: HistoryKeys.filters,
+              tooltip: _showFilters ? 'Hide filters' : 'Show filters',
+              isSelected: _showFilters,
+              icon: const Icon(Icons.filter_list_rounded),
+              onPressed: () => setState(() => _showFilters = !_showFilters),
+            ),
+          ],
+        ),
+        if (_showFilters) ...[
+          const SizedBox(height: Space.sm),
+          Wrap(
+            spacing: Space.sm,
+            runSpacing: Space.xs,
+            children: [
+              FilterChip(
+                key: HistoryKeys.filterBleeding,
+                label: const Text('Bleeding days'),
+                selected: vm.bleedingOnly,
+                onSelected: (on) => vm.setBleedingOnly(on: on),
+              ),
+              for (final level in HistoryViewModel.painThresholds)
+                ChoiceChip(
+                  key: HistoryKeys.filterPain(level),
+                  label: Text('Pain $level+'),
+                  selected: vm.minPain == level,
+                  onSelected: (on) => vm.setMinPain(on ? level : null),
+                ),
+              for (final s in Symptom.values)
+                FilterChip(
+                  key: HistoryKeys.filterSymptom(s),
+                  label: Text(s.label),
+                  selected: vm.symptomFilter.contains(s),
+                  onSelected: (_) => vm.toggleSymptomFilter(s),
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: Space.sm),
+        if (vm.isFiltering)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  key: HistoryKeys.matchCount,
+                  '$matches ${matches == 1 ? 'day matches' : 'days match'}',
+                ),
+              ),
+              TextButton.icon(
+                key: HistoryKeys.clearFilters,
+                onPressed: _clear,
+                icon: const Icon(Icons.clear_rounded),
+                label: const Text('Clear'),
+              ),
+            ],
+          )
+        else if (vm.hasCycles)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: HistoryKeys.expandAll,
+              onPressed: vm.allExpanded ? vm.collapseAll : vm.expandAll,
+              icon: Icon(
+                vm.allExpanded
+                    ? Icons.unfold_less_rounded
+                    : Icons.unfold_more_rounded,
+              ),
+              label: Text(vm.allExpanded ? 'Collapse all' : 'Expand all'),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// One cycle, open as [expanded] says: its period, then the days and
+/// readings in it.
 class _CycleTile extends StatelessWidget {
   const _CycleTile({
     required this.cycle,
     required this.date,
+    required this.expanded,
+    required this.onExpansionChanged,
     required this.onEdit,
     required this.onRemove,
     required this.onRemoveReading,
+    super.key,
   });
 
   final CycleEntry cycle;
   final String Function(DateTime) date;
+  final bool expanded;
+  final ValueChanged<bool> onExpansionChanged;
   final VoidCallback onEdit;
   final VoidCallback onRemove;
   final void Function(TemperatureReading) onRemoveReading;
@@ -385,7 +533,8 @@ class _CycleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ExpansionTile(
     key: HistoryKeys.cycle(cycle.start),
-    initiallyExpanded: true,
+    initiallyExpanded: expanded,
+    onExpansionChanged: onExpansionChanged,
     leading: const Icon(Icons.water_drop_rounded),
     title: Text('Started ${date(cycle.start)}'),
     subtitle: Text(HistoryViewModel.cycleText(cycle)),
