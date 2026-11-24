@@ -22,7 +22,7 @@ void main() {
       csv.text(const []),
       'date,temperature_c,temperature_source,period_start,period_end,flow,'
       'pain_0_10,'
-      'symptoms,skin_temp_c,skin_temp_source\r\n',
+      'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes\r\n',
     );
   });
 
@@ -37,11 +37,16 @@ void main() {
           flow: FlowIntensity.medium,
           symptoms: const {Symptom.fatigue, Symptom.cramps},
           painLevel: 5,
+          ovulationTest: OvulationTest.negative,
         ),
       ),
       ExportRow(
         date: DateTime(2026, 6, 2),
-        log: DailyLog(date: DateTime(2026, 6, 2), painLevel: 2),
+        log: DailyLog(
+          date: DateTime(2026, 6, 2),
+          painLevel: 2,
+          note: 'Tired, "very"',
+        ),
         night: WearableNight(date: DateTime(2026, 6, 2), celsius: 0.3),
       ),
       ExportRow(
@@ -57,12 +62,12 @@ void main() {
     const header =
         'date,temperature_c,temperature_source,period_start,period_end,flow,'
         'pain_0_10,'
-        'symptoms,skin_temp_c,skin_temp_source';
+        'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes';
     expect(lines, [
       header,
-      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,',
-      '2026-06-02,,,,,,2,,0.30,watch',
-      '2026-06-03,37.0,ring,,,,,,,',
+      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,',
+      '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very"""',
+      '2026-06-03,37.0,ring,,,,,,,,,',
       '',
     ]);
   });

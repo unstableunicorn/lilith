@@ -143,6 +143,44 @@ ReportContent reportContent(
   );
 }
 
+/// The columns of the report's logged-days table.
+const List<String> reportDayHeaders = [
+  'Date',
+  '°C',
+  'Period',
+  'Flow',
+  'Pain',
+  'Symptoms and tests',
+  'Notes',
+];
+
+/// One row of the logged-days table, matching [reportDayHeaders].
+List<String> reportDayCells(ExportRow r) {
+  final log = r.log;
+  return [
+    isoDay(r.date),
+    if (r.reading == null) '' else formatCelsius(r.reading!.celsius),
+    if (r.periodStart)
+      'start'
+    else if (r.periodEnd)
+      'end'
+    else if (r.periodDay)
+      'day'
+    else
+      '',
+    if (log == null || !log.flow.isBleeding) '' else log.flow.name,
+    log?.painLevel?.toString() ?? '',
+    if (log == null)
+      ''
+    else
+      [
+        for (final s in Symptom.values.where(log.symptoms.contains)) s.label,
+        if (log.ovulationTest case final t?) 'Ovulation test ${t.name}',
+      ].join(', '),
+    log?.note ?? '',
+  ];
+}
+
 List<(String, String)> _summary(
   HealthData data,
   CyclePrediction p,
@@ -357,10 +395,9 @@ class PdfReport {
           if (content.chart case final chart?) _chartWidget(chart),
           if (content.rows.isNotEmpty) ...[
             pw.Header(level: 1, text: 'Logged days'),
-            _table(
-              ['Date', '°C', 'Period', 'Flow', 'Pain', 'Symptoms'],
-              [for (final r in content.rows) _dayCells(r)],
-            ),
+            _table(reportDayHeaders, [
+              for (final r in content.rows) reportDayCells(r),
+            ]),
           ],
         ],
       ),
@@ -403,31 +440,6 @@ class PdfReport {
         headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
         cellAlignment: pw.Alignment.centerLeft,
       );
-
-  List<String> _dayCells(ExportRow r) {
-    final log = r.log;
-    return [
-      isoDay(r.date),
-      if (r.reading == null) '' else formatCelsius(r.reading!.celsius),
-      if (r.periodStart)
-        'start'
-      else if (r.periodEnd)
-        'end'
-      else if (r.periodDay)
-        'day'
-      else
-        '',
-      if (log == null || !log.flow.isBleeding) '' else log.flow.name,
-      log?.painLevel?.toString() ?? '',
-      if (log == null)
-        ''
-      else
-        Symptom.values
-            .where(log.symptoms.contains)
-            .map((s) => s.label)
-            .join(', '),
-    ];
-  }
 
   // The heading is the chart's own title, so a page break never parts them.
   pw.Widget _chartWidget(ReportChart chart) => pw.SizedBox(

@@ -14,6 +14,7 @@ import 'package:lilith/domain/temperature_reading.dart';
 void main() {
   periodLengthRowTests();
   fertileWindowReportTests();
+  dayCellTests();
   TestWidgetsFlutterBinding.ensureInitialized();
   final today = DateTime(2026, 6, 10, 8);
   HealthData threeCycles() {
@@ -256,6 +257,36 @@ void periodLengthRowTests() {
       content.summary.map((s) => MapEntry(s.$1, s.$2)),
     );
     expect(summary.containsKey('Average period length'), isFalse);
+  });
+}
+
+void dayCellTests() {
+  test('a day row carries the symptoms, the ovulation test and the note', () {
+    final cells = reportDayCells(
+      ExportRow(
+        date: DateTime(2026, 6, 2),
+        log: DailyLog(
+          date: DateTime(2026, 6, 2),
+          symptoms: const {Symptom.cramps},
+          ovulationTest: OvulationTest.positive,
+          note: 'Flew to Perth',
+        ),
+      ),
+    );
+    expect(cells, hasLength(reportDayHeaders.length));
+    expect(cells[5], 'Cramps, Ovulation test positive');
+    expect(cells.last, 'Flew to Perth');
+  });
+
+  test('a day with only a reading leaves the note blank', () {
+    final cells = reportDayCells(
+      ExportRow(
+        date: DateTime(2026, 6, 2),
+        reading: TemperatureReading(date: DateTime(2026, 6, 2), celsius: 36.4),
+      ),
+    );
+    expect(cells, hasLength(reportDayHeaders.length));
+    expect(cells.last, isEmpty);
   });
 }
 
