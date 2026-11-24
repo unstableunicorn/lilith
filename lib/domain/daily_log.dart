@@ -98,6 +98,9 @@ class DailyLog {
   /// The person's own words for the day, trimmed; null when blank.
   final String? note;
 
+  /// The longest note the Log tab takes.
+  static const int maxNoteLength = 1000;
+
   /// True when there is nothing worth storing for the day.
   bool get isEmpty =>
       flow == FlowIntensity.none &&

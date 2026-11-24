@@ -29,6 +29,7 @@ class LogViewModel extends ChangeNotifier {
   Set<Symptom> get symptoms => _draft.symptoms;
   int? get pain => _draft.painLevel;
   OvulationTest? get ovulationTest => _draft.ovulationTest;
+  String? get note => _draft.note;
   bool get isEmpty => _draft.isEmpty;
   bool get isSaving => _saving;
   RepositoryError? get error => _repo.error;
@@ -77,6 +78,13 @@ class LogViewModel extends ChangeNotifier {
     result == null
         ? _draft.copyWith(clearOvulationTest: true)
         : _draft.copyWith(ovulationTest: result),
+  );
+
+  /// The day's note as typed; blank removes it.
+  void setNote(String text) => _edit(
+    text.trim().isEmpty
+        ? _draft.copyWith(clearNote: true)
+        : _draft.copyWith(note: text),
   );
 
   void clear() => _edit(DailyLog(date: _date));

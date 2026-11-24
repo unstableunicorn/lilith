@@ -24,6 +24,7 @@ abstract final class LogKeys {
   static const Key periodHint = Key('log.periodHint');
   static Key flow(FlowIntensity f) => Key('log.flow.${f.name}');
   static Key symptom(Symptom s) => Key('log.symptom.${s.name}');
+  static const Key note = Key('log.note');
   static Key ovulationTest(OvulationTest? t) =>
       Key('log.ovulationTest.${t?.name ?? 'none'}');
 }
@@ -54,6 +55,19 @@ class _LogView extends StatefulWidget {
 
 class _LogViewState extends State<_LogView> {
   int _seenRequest = 0;
+  final _note = TextEditingController();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  // Typing keeps the two equal; a new day or a cleared draft does not.
+  void _syncNote(LogViewModel vm) {
+    final want = vm.note ?? '';
+    if (_note.text.trim() != want) _note.text = want;
+  }
 
   // Another tab asked for a day: move there once this frame is done.
   void _follow(ShellTabs tabs, LogViewModel vm) {
@@ -70,6 +84,7 @@ class _LogViewState extends State<_LogView> {
   Widget build(BuildContext context) {
     final vm = context.watch<LogViewModel>();
     _follow(context.watch<ShellTabs>(), vm);
+    _syncNote(vm);
     final theme = Theme.of(context);
     return PageScaffold(
       title: 'Your day',
@@ -168,6 +183,20 @@ class _LogViewState extends State<_LogView> {
                 onSelected: (_) => vm.setOvulationTest(t),
               ),
           ],
+        ),
+        const SectionHeading('Note'),
+        TextField(
+          key: LogKeys.note,
+          controller: _note,
+          onChanged: vm.setNote,
+          minLines: 2,
+          maxLines: 6,
+          maxLength: DailyLog.maxNoteLength,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'Anything else about today',
+            hintText: 'Travel, stress, a new medicine…',
+          ),
         ),
         const SizedBox(height: Space.xl),
         FilledButton(
