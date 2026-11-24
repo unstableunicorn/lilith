@@ -115,11 +115,19 @@ class _LoginView extends StatelessWidget {
           ),
         if (offerAndroidApp) ...[
           const SizedBox(height: Space.lg),
-          TextButton.icon(
+          FilledButton.tonalIcon(
             key: LoginKeys.androidApp,
             onPressed: () => openUrl(AppLinks.androidApk),
             icon: const Icon(Icons.android_rounded),
             label: const Text('Get the Android app'),
+          ),
+          const SizedBox(height: Space.xs),
+          Text(
+            'Reminders and the camera for scanning a share need the app.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ],
