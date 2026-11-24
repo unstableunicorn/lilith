@@ -114,4 +114,12 @@ void main() {
       expect(vm.error, isNull);
     },
   );
+
+  test('saving a bleeding day makes it part of a period', () async {
+    vm.setFlow(FlowIntensity.medium);
+    await vm.save();
+    expect(repo.data.periods, hasLength(1));
+    expect(repo.data.periods.single.startDate, vm.date);
+    expect(repo.data.periods.single.endDate, vm.date);
+  });
 }

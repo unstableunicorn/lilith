@@ -79,11 +79,7 @@ class LogViewModel extends ChangeNotifier {
     _saving = true;
     notifyListeners();
     try {
-      await _repo.apply(
-        (d) => draft.isEmpty
-            ? d.withoutDailyLog(draft.date)
-            : d.withDailyLog(draft),
-      );
+      await _repo.apply((d) => d.withLoggedDay(draft));
     } finally {
       _saving = false;
       notifyListeners();

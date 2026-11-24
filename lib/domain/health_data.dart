@@ -9,6 +9,7 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/period_linker.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
@@ -133,6 +134,15 @@ class HealthData {
       if (!log.isEmpty) log,
     ],
   );
+
+  /// Records the day's log and lets its flow join, start or shorten a
+  /// period (see [linkPeriods]). An empty [log] clears the day.
+  HealthData withLoggedDay(DailyLog log) {
+    final next = log.isEmpty ? withoutDailyLog(log.date) : withDailyLog(log);
+    return next.copyWith(
+      periods: linkPeriods(next.periods, next.dailyLogs, log.date),
+    );
+  }
 
   HealthData withoutDailyLog(DateTime date) {
     final day = dateOnly(date);
