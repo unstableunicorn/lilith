@@ -58,3 +58,9 @@ CLAUDE.md
 
 # Wrangler state
 .wrangler/
+
+# Private planning records (see .claude/rules/docs-records.md)
+docs/decisions/
+docs/issues/
+docs/deferred/
+docs/artifacts/
