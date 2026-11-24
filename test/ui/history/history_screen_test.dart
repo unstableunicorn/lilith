@@ -7,6 +7,7 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/history/history_screen.dart';
+import 'package:lilith/ui/period/period_form_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -63,6 +64,24 @@ void main() {
     await pump(tester);
     expect(find.byKey(HistoryKeys.empty), findsOneWidget);
     expect(find.byType(TemperatureChart), findsNothing);
+  });
+
+  testWidgets('a past period can be added, and a cycle opened for editing', (
+    tester,
+  ) async {
+    await fill();
+    await pump(tester);
+    await tester.tap(find.byKey(HistoryKeys.addPeriod));
+    await tester.pumpAndSettle();
+    expect(find.byKey(PeriodFormKeys.save), findsOneWidget);
+    expect(find.byKey(PeriodFormKeys.cycleLength), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(HistoryKeys.cycle(d(10))));
+    await tester.pumpAndSettle();
+    expect(find.byKey(PeriodFormKeys.save), findsOneWidget);
+    expect(find.byKey(PeriodFormKeys.cycleLength), findsNothing);
+    expect(find.textContaining('10 Jun'), findsWidgets);
   });
 
   testWidgets('shows the chart, cycles, days and readings', (tester) async {

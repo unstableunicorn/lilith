@@ -11,6 +11,7 @@ import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
+import 'package:lilith/ui/period/period_form_screen.dart';
 import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
@@ -147,6 +148,24 @@ void main() {
       );
       await tester.tap(find.byKey(HomeKeys.logDay));
       expect(tabs.current, ShellTab.log);
+    });
+
+    testWidgets('with nothing logged it offers three ways to begin', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(find.byKey(HomeKeys.startedToday), findsOneWidget);
+      expect(find.byKey(HomeKeys.midPeriod), findsOneWidget);
+      expect(find.byKey(HomeKeys.notBleeding), findsOneWidget);
+      await tester.tap(find.byKey(HomeKeys.notBleeding));
+      await tester.pumpAndSettle();
+      expect(find.byKey(PeriodFormKeys.save), findsOneWidget);
+      expect(find.byKey(PeriodFormKeys.lastDay), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeKeys.midPeriod));
+      await tester.pumpAndSettle();
+      expect(find.byKey(PeriodFormKeys.lastDay), findsNothing);
     });
 
     testWidgets('with nothing logged it invites the first period start', (

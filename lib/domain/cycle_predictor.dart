@@ -10,7 +10,15 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 /// How a prediction was derived.
-enum PredictionMethod { insufficientData, cycleAverage, temperatureShift }
+enum PredictionMethod {
+  insufficientData,
+
+  /// No real cycle yet; the next period is the user's usual cycle length
+  /// after the last start.
+  usualCycleLength,
+  cycleAverage,
+  temperatureShift,
+}
 
 enum PredictionConfidence { none, low, medium, high }
 
@@ -90,6 +98,7 @@ class CyclePredictor {
     required List<TemperatureReading> readings,
     required List<PeriodEvent> periods,
     required DateTime today,
+    int? usualCycleLength,
   }) {
     final now = dateOnly(today);
     final sorted = [...periods]
@@ -136,6 +145,18 @@ class CyclePredictor {
         averageCycleLength: average,
         cycleCount: cycleLengths.length,
         lutealLength: luteal,
+        averagePeriodLength: averagePeriod,
+        periodCount: periodLengths.length,
+      );
+    }
+
+    if (cycleLengths.isEmpty && usualCycleLength != null) {
+      return CyclePrediction(
+        method: PredictionMethod.usualCycleLength,
+        confidence: PredictionConfidence.low,
+        predictedNextPeriod: addDays(lastStart, usualCycleLength),
+        lastPeriodStart: lastStart,
+        currentCycleDay: currentCycleDay,
         averagePeriodLength: averagePeriod,
         periodCount: periodLengths.length,
       );

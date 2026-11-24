@@ -17,6 +17,7 @@ List<PeriodEvent> periodsOn(List<DateTime> starts) => [
 ];
 
 void main() {
+  usualCycleLengthTests();
   periodSpanPredictorTests();
   const predictor = CyclePredictor();
 
@@ -335,4 +336,46 @@ void periodSpanPredictorTests() {
       expect(closed.estimatedOvulation, june(12));
     },
   );
+}
+
+void usualCycleLengthTests() {
+  const predictor = CyclePredictor();
+  DateTime june(int d) => DateTime(2026, 6, d);
+
+  test('one period and a usual length give a low-confidence seeded date', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [PeriodEvent(startDate: june(1))],
+      today: june(10),
+      usualCycleLength: 30,
+    );
+    expect(p.method, PredictionMethod.usualCycleLength);
+    expect(p.confidence, PredictionConfidence.low);
+    expect(p.predictedNextPeriod, DateTime(2026, 7, 1));
+    expect(p.currentCycleDay, 10);
+  });
+
+  test('the usual length is ignored once a real cycle exists', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [
+        PeriodEvent(startDate: DateTime(2026, 5, 4)),
+        PeriodEvent(startDate: june(1)),
+      ],
+      today: june(10),
+      usualCycleLength: 45,
+    );
+    expect(p.method, PredictionMethod.cycleAverage);
+    expect(p.predictedNextPeriod, DateTime(2026, 6, 29));
+  });
+
+  test('without a usual length one period falls back to 28 days', () {
+    final p = predictor.predict(
+      readings: const [],
+      periods: [PeriodEvent(startDate: june(1))],
+      today: june(10),
+    );
+    expect(p.method, PredictionMethod.cycleAverage);
+    expect(p.cycleCount, 0);
+  });
 }

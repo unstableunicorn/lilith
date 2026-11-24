@@ -142,6 +142,7 @@ List<(String, String)> _summary(
         'Predicted next period',
         '${isoDay(next)} (${switch (p.method) {
           PredictionMethod.temperatureShift => 'from the temperature shift',
+          PredictionMethod.usualCycleLength => 'from your usual cycle length',
           PredictionMethod.cycleAverage => 'from the average cycle length',
           PredictionMethod.insufficientData => 'no basis',
         }})',

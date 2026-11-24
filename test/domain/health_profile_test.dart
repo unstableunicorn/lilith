@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/domain/health_profile.dart';
 
 void main() {
+  usualLengthTests();
   group('HealthProfile', () {
     test('defaults to empty', () {
       final p = HealthProfile();
@@ -102,5 +103,18 @@ void main() {
     expect(ReproductiveCondition.fromName('x'), isNull);
     expect(FertilityTreatment.fromName('ivf'), FertilityTreatment.ivf);
     expect(FertilityTreatment.fromName(null), isNull);
+  });
+}
+
+void usualLengthTests() {
+  test('usual lengths are optional, stored, cleared, and count as content', () {
+    final p = HealthProfile(usualCycleLength: 28, usualPeriodLength: 5);
+    expect(p.isEmpty, isFalse);
+    expect(HealthProfile.fromJson(p.toJson()), p);
+    expect(p.toJson()['usualCycleLength'], 28);
+    expect(HealthProfile().toJson().containsKey('usualCycleLength'), isFalse);
+    expect(p.copyWith(clearUsualCycleLength: true).usualCycleLength, isNull);
+    expect(p.copyWith(usualPeriodLength: 6).usualPeriodLength, 6);
+    expect(HealthProfile(usualCycleLength: 30), isNot(HealthProfile()));
   });
 }

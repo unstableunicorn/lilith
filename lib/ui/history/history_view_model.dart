@@ -1,10 +1,12 @@
 // What the history screen decides: the cycles, days and readings, newest
 // first, and the slice of readings the chart draws.
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 /// One cycle: when it started and how long it ran, null while it is current.
@@ -68,6 +70,10 @@ class HistoryViewModel extends ChangeNotifier {
     ];
     return parts.isEmpty ? cycle : '$cycle · ${parts.join(', ')}';
   }
+
+  /// The period starting on [start], for editing.
+  PeriodEvent? periodStarting(DateTime start) =>
+      _repo.data.periods.firstWhereOrNull((p) => p.startDate == start);
 
   List<TemperatureReading> get readings =>
       _repo.data.readings.reversed.toList();

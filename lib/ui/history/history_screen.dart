@@ -1,10 +1,13 @@
 // The History tab: the temperature trend, then cycles, days and readings.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 import 'package:lilith/ui/log/log_summary.dart';
+import 'package:lilith/ui/period/period_form_screen.dart';
+import 'package:lilith/ui/period/period_form_view_model.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +21,7 @@ abstract final class HistoryKeys {
   static const Key cancel = Key('history.cancel');
   static Key cycle(DateTime d) => Key('history.cycle.$d');
   static Key removeCycle(DateTime d) => Key('history.removeCycle.$d');
+  static const Key addPeriod = Key('history.addPeriod');
   static Key day(DateTime d) => Key('history.day.$d');
   static Key reading(DateTime d) => Key('history.reading.$d');
   static Key removeReading(DateTime d) => Key('history.removeReading.$d');
@@ -94,6 +98,11 @@ class _HistoryView extends StatelessWidget {
               leading: const Icon(Icons.water_drop_rounded),
               title: Text('Started ${date(c.start)}'),
               subtitle: Text(HistoryViewModel.cycleText(c)),
+              onTap: () => _openForm(
+                context,
+                PeriodFormMode.edit,
+                editing: vm.periodStarting(c.start),
+              ),
               trailing: IconButton(
                 key: HistoryKeys.removeCycle(c.start),
                 tooltip: 'Remove this period start',
@@ -105,6 +114,12 @@ class _HistoryView extends StatelessWidget {
                 ),
               ),
             ),
+          TextButton.icon(
+            key: HistoryKeys.addPeriod,
+            onPressed: () => _openForm(context, PeriodFormMode.pastPeriod),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add a past period'),
+          ),
           if (vm.days.isNotEmpty) const SectionHeading('Days'),
           for (final log in vm.days)
             ListTile(
@@ -135,6 +150,22 @@ class _HistoryView extends StatelessWidget {
             ),
         ],
       ],
+    );
+  }
+
+  void _openForm(
+    BuildContext context,
+    PeriodFormMode mode, {
+    PeriodEvent? editing,
+  }) {
+    final repo = context.read<HealthRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: repo,
+          child: PeriodFormScreen(mode: mode, editing: editing),
+        ),
+      ),
     );
   }
 
