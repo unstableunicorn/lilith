@@ -67,7 +67,8 @@
         return;
       }
       // Back to the app: where it left from, or its root when that is unknown.
-      window.location.assign(parsedStateString.original_uri || '/');
+      // replace, not assign: this page leaves no entry for back to land on.
+      window.location.replace(parsedStateString.original_uri || '/');
     }
 
     function handleFrontChannelLogout() {

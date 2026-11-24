@@ -20,22 +20,13 @@ class AppShell extends StatelessWidget {
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
 
-  @override
-  Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (_) => ShellTabs(),
-    child: _ShellView(now: now),
-  );
-}
-
-class _ShellView extends StatelessWidget {
-  const _ShellView({required this.now});
-
-  final DateTime Function() now;
-
+  /// The tabs come from above, where the router keeps the browser history
+  /// in step with them.
   @override
   Widget build(BuildContext context) {
     final tabs = context.watch<ShellTabs>();
-    // The back button retraces the tabs; only with none left does it leave.
+    // Android's back button retraces the tabs; only with none left does it
+    // leave. On the web the browser history does this instead.
     return PopScope(
       canPop: !tabs.canGoBack,
       onPopInvokedWithResult: (didPop, _) {

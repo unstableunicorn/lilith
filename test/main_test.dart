@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -13,8 +14,12 @@ import 'package:lilith/main.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
+import 'package:lilith/ui/shell/app_shell.dart';
+import 'package:lilith/ui/shell/shell_tabs.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import 'fakes/fake_browser_history.dart';
 import 'fakes/fake_notification_service.dart';
 import 'fakes/fake_pod_service.dart';
 import 'fakes/fake_pod_session_service.dart';
@@ -50,7 +55,79 @@ void main() {
     openUrl: (_) async {},
     shareFile: (_) async {},
     pdfReport: const PdfReport(),
+    browserHistory: FakeBrowserHistory(),
   );
+
+  /// The browser history entries the app adds, by address.
+  List<String> recordEntries(WidgetTester tester) {
+    final entries = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.navigation,
+      (call) async {
+        final args = call.arguments;
+        if (call.method == 'routeInformationUpdated' &&
+            args is Map &&
+            args['replace'] == false) {
+          entries.add(args['uri'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.navigation,
+        null,
+      ),
+    );
+    return entries;
+  }
+
+  Future<void> openHome(WidgetTester tester) async {
+    auth.restored = PodSession(
+      webId: auth.webId,
+      provider: PodProvider.unstableUnicorn,
+    );
+    podSetup.inspection = const PodInspection(
+      plainDocumentExists: true,
+      keysOnPod: false,
+      keyOnDevice: false,
+    );
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(app());
+    await session.restore();
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a tab switch at home is a browser history entry', (
+    tester,
+  ) async {
+    final entries = recordEntries(tester);
+    await openHome(tester);
+    entries.clear();
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
+    await tester.pumpAndSettle();
+    expect(entries, ['/history']);
+  });
+
+  testWidgets('logging in again starts on Today', (tester) async {
+    await openHome(tester);
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
+    await tester.pumpAndSettle();
+    await session.logout();
+    await tester.pumpAndSettle();
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(LoginScreen)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      ShellTab.today.index,
+    );
+  });
 
   testWidgets('shows the login screen when nobody is logged in', (
     tester,

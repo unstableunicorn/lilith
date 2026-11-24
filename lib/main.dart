@@ -29,11 +29,14 @@ import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/ui/core/browser_history.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
+import 'package:lilith/ui/shell/app_router.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
+import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +65,7 @@ void main() {
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
+      browserHistory: platformBrowserHistory(),
     ),
   );
 }
@@ -83,6 +87,7 @@ class LilithApp extends StatelessWidget {
     required this.openUrl,
     required this.shareFile,
     required this.pdfReport,
+    required this.browserHistory,
     super.key,
   });
 
@@ -99,6 +104,7 @@ class LilithApp extends StatelessWidget {
   final UrlOpener openUrl;
   final FileSharer shareFile;
   final PdfReport pdfReport;
+  final BrowserHistory browserHistory;
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -129,11 +135,46 @@ class LilithApp extends StatelessWidget {
         create: (_) => ReminderRepository(settings, notifications)..loadLater(),
       ),
     ],
-    child: MaterialApp(
+    child: _RoutedApp(browserHistory: browserHistory),
+  );
+}
+
+/// The app inside a Router, so each tab and page is a browser history entry
+/// on the web.
+class _RoutedApp extends StatefulWidget {
+  const _RoutedApp({required this.browserHistory});
+
+  final BrowserHistory browserHistory;
+
+  @override
+  State<_RoutedApp> createState() => _RoutedAppState();
+}
+
+class _RoutedAppState extends State<_RoutedApp> {
+  final ShellTabs _tabs = ShellTabs();
+  late final AppRouterDelegate _router = AppRouterDelegate(
+    tabs: _tabs,
+    history: widget.browserHistory,
+    child: const _Root(),
+  );
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ChangeNotifierProvider.value(
+    value: _tabs,
+    child: MaterialApp.router(
       title: 'Lilith',
       theme: lilithTheme(Brightness.light),
       darkTheme: lilithTheme(Brightness.dark),
-      home: const _Root(),
+      routerDelegate: _router,
+      routeInformationParser: const AppLocationParser(),
+      backButtonDispatcher: RootBackButtonDispatcher(),
     ),
   );
 }
@@ -180,6 +221,7 @@ class _RootState extends State<_Root> {
       if (!mounted) return;
       if (current == null) {
         setup.reset();
+        context.read<ShellTabs>().reset();
       } else {
         unawaited(setup.inspect());
       }
