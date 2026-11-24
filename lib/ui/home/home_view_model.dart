@@ -7,6 +7,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -47,6 +48,8 @@ class HomeViewModel extends ChangeNotifier {
     periods: _repo.data.periods,
     today: today,
     usualCycleLength: _repo.data.profile.usualCycleLength,
+    suppressShift: _repo.data.profile.usesHormonalContraception,
+    maxConfidence: confidenceCapFor(_repo.data.profile.regularity),
   );
 
   /// How the prediction was arrived at, for the person reading it.
@@ -66,7 +69,7 @@ class HomeViewModel extends ChangeNotifier {
           '${p.averageCycleLength!.toStringAsFixed(1)} days over '
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
-  };
+  }.withSuppressionNote(p);
 
   PeriodFact get fact => factOfTheDay(today);
 
@@ -127,4 +130,19 @@ class HomeViewModel extends ChangeNotifier {
     _repo.removeListener(notifyListeners);
     super.dispose();
   }
+}
+
+/// Irregular cycles cap how sure a prediction may claim to be.
+PredictionConfidence? confidenceCapFor(CycleRegularity? regularity) =>
+    switch (regularity) {
+      CycleRegularity.irregular => PredictionConfidence.low,
+      CycleRegularity.somewhatIrregular => PredictionConfidence.medium,
+      CycleRegularity.regular || null => null,
+    };
+
+extension on String {
+  String withSuppressionNote(CyclePrediction p) => p.shiftSuppressed
+      ? '$this Temperature is not used while you are on hormonal '
+            'contraception.'
+      : this;
 }

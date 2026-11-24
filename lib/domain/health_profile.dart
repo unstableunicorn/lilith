@@ -45,6 +45,111 @@ const _conditions = SetEquality<ReproductiveCondition>();
 const _treatments = SetEquality<FertilityTreatment>();
 
 /// Conditions, treatments and free-text notes kept beside the cycle data.
+/// The contraception in use, if any. Hormonal methods stop ovulation or
+/// mask the temperature shift, so the predictor stops looking for one.
+enum Contraception {
+  none('None', isHormonal: false),
+  combinedPill('Combined pill', isHormonal: true),
+  progestogenOnlyPill('Progestogen-only pill', isHormonal: true),
+  hormonalIud('Hormonal IUD', isHormonal: true),
+  copperIud('Copper IUD', isHormonal: false),
+  implant('Implant', isHormonal: true),
+  injection('Injection', isHormonal: true),
+  patchOrRing('Patch or vaginal ring', isHormonal: true),
+  other('Other', isHormonal: false);
+
+  Contraception(this.label, {required this.isHormonal});
+
+  final String label;
+  final bool isHormonal;
+
+  static Contraception? fromName(String? name) =>
+      Contraception.values.firstWhereOrNull((c) => c.name == name);
+}
+
+/// How regular the cycles are, as the user sees them.
+enum CycleRegularity {
+  regular('Regular'),
+  somewhatIrregular('Somewhat irregular'),
+  irregular('Irregular');
+
+  CycleRegularity(this.label);
+
+  final String label;
+
+  static CycleRegularity? fromName(String? name) =>
+      CycleRegularity.values.firstWhereOrNull((r) => r.name == name);
+}
+
+/// Pregnancies so far, all optional, for the doctor's report.
+@immutable
+class ObstetricHistory {
+  const ObstetricHistory({
+    this.pregnancies,
+    this.births,
+    this.miscarriages,
+    this.lastPregnancyYear,
+  });
+
+  factory ObstetricHistory.fromJson(Map<String, dynamic> json) =>
+      ObstetricHistory(
+        pregnancies: (json['pregnancies'] as num?)?.toInt(),
+        births: (json['births'] as num?)?.toInt(),
+        miscarriages: (json['miscarriages'] as num?)?.toInt(),
+        lastPregnancyYear: (json['lastPregnancyYear'] as num?)?.toInt(),
+      );
+
+  final int? pregnancies;
+  final int? births;
+  final int? miscarriages;
+  final int? lastPregnancyYear;
+
+  bool get isEmpty =>
+      pregnancies == null &&
+      births == null &&
+      miscarriages == null &&
+      lastPregnancyYear == null;
+
+  /// A null argument means "unchanged"; [unset] names the fields to clear.
+  ObstetricHistory copyWith({
+    int? pregnancies,
+    int? births,
+    int? miscarriages,
+    int? lastPregnancyYear,
+    Set<String> unset = const {},
+  }) => ObstetricHistory(
+    pregnancies: unset.contains('pregnancies')
+        ? null
+        : pregnancies ?? this.pregnancies,
+    births: unset.contains('births') ? null : births ?? this.births,
+    miscarriages: unset.contains('miscarriages')
+        ? null
+        : miscarriages ?? this.miscarriages,
+    lastPregnancyYear: unset.contains('lastPregnancyYear')
+        ? null
+        : lastPregnancyYear ?? this.lastPregnancyYear,
+  );
+
+  Map<String, dynamic> toJson() => {
+    if (pregnancies != null) 'pregnancies': pregnancies,
+    if (births != null) 'births': births,
+    if (miscarriages != null) 'miscarriages': miscarriages,
+    if (lastPregnancyYear != null) 'lastPregnancyYear': lastPregnancyYear,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ObstetricHistory &&
+      other.pregnancies == pregnancies &&
+      other.births == births &&
+      other.miscarriages == miscarriages &&
+      other.lastPregnancyYear == lastPregnancyYear;
+
+  @override
+  int get hashCode =>
+      Object.hash(pregnancies, births, miscarriages, lastPregnancyYear);
+}
+
 @immutable
 class HealthProfile {
   HealthProfile({
@@ -53,6 +158,10 @@ class HealthProfile {
     this.notes = '',
     this.usualCycleLength,
     this.usualPeriodLength,
+    this.birthYear,
+    this.contraception,
+    this.regularity,
+    this.history = const ObstetricHistory(),
   }) : conditions = Set.unmodifiable(conditions),
        treatments = Set.unmodifiable(treatments);
 
@@ -68,6 +177,13 @@ class HealthProfile {
     notes: json['notes'] as String? ?? '',
     usualCycleLength: (json['usualCycleLength'] as num?)?.toInt(),
     usualPeriodLength: (json['usualPeriodLength'] as num?)?.toInt(),
+    birthYear: (json['birthYear'] as num?)?.toInt(),
+    contraception: Contraception.fromName(json['contraception'] as String?),
+    regularity: CycleRegularity.fromName(json['regularity'] as String?),
+    history: switch (json['history']) {
+      final Map<String, dynamic> h => ObstetricHistory.fromJson(h),
+      _ => const ObstetricHistory(),
+    },
   );
 
   /// What the app accepts as a usual cycle length, in days.
@@ -87,14 +203,33 @@ class HealthProfile {
   final int? usualCycleLength;
   final int? usualPeriodLength;
 
+  final int? birthYear;
+  final Contraception? contraception;
+  final CycleRegularity? regularity;
+  final ObstetricHistory history;
+
+  /// Hormonal contraception, said either way: through [contraception] or
+  /// the older treatment flag.
+  bool get usesHormonalContraception =>
+      contraception?.isHormonal == true ||
+      treatments.contains(FertilityTreatment.contraceptive);
+
   /// True when there is nothing worth storing.
   bool get isEmpty =>
       conditions.isEmpty &&
       treatments.isEmpty &&
       notes.trim().isEmpty &&
       usualCycleLength == null &&
-      usualPeriodLength == null;
+      usualPeriodLength == null &&
+      birthYear == null &&
+      contraception == null &&
+      regularity == null &&
+      history.isEmpty;
 
+  /// A null argument means "unchanged"; [unset] names the optional fields
+  /// to clear: `usualCycleLength`, `usualPeriodLength`, `birthYear`,
+  /// `contraception`, `regularity`. The clear flags for the usual lengths
+  /// stay for the callers that use them.
   HealthProfile copyWith({
     Set<ReproductiveCondition>? conditions,
     Set<FertilityTreatment>? treatments,
@@ -103,16 +238,31 @@ class HealthProfile {
     bool clearUsualCycleLength = false,
     int? usualPeriodLength,
     bool clearUsualPeriodLength = false,
+    int? birthYear,
+    Contraception? contraception,
+    CycleRegularity? regularity,
+    ObstetricHistory? history,
+    Set<String> unset = const {},
   }) => HealthProfile(
     conditions: conditions ?? this.conditions,
     treatments: treatments ?? this.treatments,
     notes: notes ?? this.notes,
-    usualCycleLength: clearUsualCycleLength
+    usualCycleLength:
+        clearUsualCycleLength || unset.contains('usualCycleLength')
         ? null
         : usualCycleLength ?? this.usualCycleLength,
-    usualPeriodLength: clearUsualPeriodLength
+    usualPeriodLength:
+        clearUsualPeriodLength || unset.contains('usualPeriodLength')
         ? null
         : usualPeriodLength ?? this.usualPeriodLength,
+    birthYear: unset.contains('birthYear') ? null : birthYear ?? this.birthYear,
+    contraception: unset.contains('contraception')
+        ? null
+        : contraception ?? this.contraception,
+    regularity: unset.contains('regularity')
+        ? null
+        : regularity ?? this.regularity,
+    history: history ?? this.history,
   );
 
   Map<String, dynamic> toJson() => {
@@ -121,6 +271,10 @@ class HealthProfile {
     'notes': notes,
     if (usualCycleLength != null) 'usualCycleLength': usualCycleLength,
     if (usualPeriodLength != null) 'usualPeriodLength': usualPeriodLength,
+    if (birthYear != null) 'birthYear': birthYear,
+    if (contraception != null) 'contraception': contraception!.name,
+    if (regularity != null) 'regularity': regularity!.name,
+    if (!history.isEmpty) 'history': history.toJson(),
   };
 
   @override
@@ -130,7 +284,11 @@ class HealthProfile {
       _treatments.equals(other.treatments, treatments) &&
       other.notes == notes &&
       other.usualCycleLength == usualCycleLength &&
-      other.usualPeriodLength == usualPeriodLength;
+      other.usualPeriodLength == usualPeriodLength &&
+      other.birthYear == birthYear &&
+      other.contraception == contraception &&
+      other.regularity == regularity &&
+      other.history == history;
 
   @override
   int get hashCode => Object.hash(
@@ -139,5 +297,9 @@ class HealthProfile {
     notes,
     usualCycleLength,
     usualPeriodLength,
+    birthYear,
+    contraception,
+    regularity,
+    history,
   );
 }

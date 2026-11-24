@@ -39,6 +39,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('offers contraception, regularity, birth year and pregnancies', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(
+      find.byKey(ProfileKeys.contraception(Contraception.implant)),
+    );
+    await tester.tap(
+      find.byKey(ProfileKeys.regularity(CycleRegularity.regular)),
+    );
+    await tester.enterText(find.byKey(ProfileKeys.birthYear), '1992');
+    await tester.enterText(find.byKey(ProfileKeys.history('pregnancies')), '1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ProfileKeys.save));
+    await tester.pumpAndSettle();
+    final p = health.data.profile;
+    expect(p.contraception, Contraception.implant);
+    expect(p.regularity, CycleRegularity.regular);
+    expect(p.birthYear, 1992);
+    expect(p.history.pregnancies, 1);
+    await expectAccessible(tester);
+  });
+
   testWidgets('offers every condition and treatment, and notes', (
     tester,
   ) async {

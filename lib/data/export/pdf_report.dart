@@ -12,6 +12,7 @@ import 'package:lilith/domain/export_file.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/ui/home/home_view_model.dart' show confidenceCapFor;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -99,6 +100,9 @@ ReportContent reportContent(
     readings: data.readings,
     periods: data.periods,
     today: today,
+    usualCycleLength: data.profile.usualCycleLength,
+    suppressShift: data.profile.usesHormonalContraception,
+    maxConfidence: confidenceCapFor(data.profile.regularity),
   );
   return ReportContent(
     generated: isoDay(dateOnly(today)),
@@ -176,6 +180,25 @@ List<(String, String)> _profile(HealthProfile profile) {
             .map((t) => t.label),
       ),
     ),
+    if (profile.birthYear case final y?) ('Year of birth', '$y'),
+    if (profile.contraception case final c?) ('Contraception', c.label),
+    if (profile.regularity case final r?) ('Cycle regularity', r.label),
+    if (profile.usualCycleLength case final n?)
+      ('Usual cycle length', '$n days'),
+    if (profile.usualPeriodLength case final n?)
+      ('Usual period length', '$n days'),
+    if (!profile.history.isEmpty)
+      (
+        'Pregnancies',
+        [
+          if (profile.history.pregnancies case final n?) '$n in all',
+          if (profile.history.births case final n?)
+            '$n ${n == 1 ? 'birth' : 'births'}',
+          if (profile.history.miscarriages case final n?)
+            '$n ${n == 1 ? 'miscarriage' : 'miscarriages'}',
+          if (profile.history.lastPregnancyYear case final y?) 'last in $y',
+        ].join(', '),
+      ),
     if (profile.notes.trim().isNotEmpty) ('Notes', profile.notes.trim()),
   ];
 }

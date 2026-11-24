@@ -44,6 +44,51 @@ class ProfileViewModel extends ChangeNotifier {
 
   void setNotes(String text) => _edit(_draft.copyWith(notes: text));
 
+  Contraception? get contraception => _draft.contraception;
+  CycleRegularity? get regularity => _draft.regularity;
+  int? get birthYear => _draft.birthYear;
+  ObstetricHistory get history => _draft.history;
+
+  /// Choosing the chosen one again clears it.
+  void setContraception(Contraception? c) => _edit(
+    c == null || c == _draft.contraception
+        ? _draft.copyWith(unset: const {'contraception'})
+        : _draft.copyWith(contraception: c),
+  );
+
+  void setRegularity(CycleRegularity? r) => _edit(
+    r == null || r == _draft.regularity
+        ? _draft.copyWith(unset: const {'regularity'})
+        : _draft.copyWith(regularity: r),
+  );
+
+  /// Blank or not a number means not said.
+  void setBirthYear(String text) {
+    final year = int.tryParse(text.trim());
+    _edit(
+      year == null
+          ? _draft.copyWith(unset: const {'birthYear'})
+          : _draft.copyWith(birthYear: year),
+    );
+  }
+
+  void setHistory(String field, String text) {
+    final n = int.tryParse(text.trim());
+    final h = _draft.history;
+    _edit(
+      _draft.copyWith(
+        history: n == null
+            ? h.copyWith(unset: {field})
+            : switch (field) {
+                'pregnancies' => h.copyWith(pregnancies: n),
+                'births' => h.copyWith(births: n),
+                'miscarriages' => h.copyWith(miscarriages: n),
+                _ => h.copyWith(lastPregnancyYear: n),
+              },
+      ),
+    );
+  }
+
   Future<void> save() async {
     final profile = _trimmed;
     _saving = true;
@@ -82,6 +127,11 @@ String profileSummary(HealthProfile p) {
   final parts = [
     count(p.conditions.length, 'condition'),
     count(p.treatments.length, 'treatment'),
+    if (p.contraception != null ||
+        p.regularity != null ||
+        p.birthYear != null ||
+        !p.history.isEmpty)
+      'history',
     if (p.notes.trim().isNotEmpty) 'notes',
   ];
   final text = parts.join(', ');
