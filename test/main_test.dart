@@ -6,6 +6,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/main.dart';
@@ -45,6 +46,7 @@ void main() {
     shareReader: FakeShareReader(),
     settings: FakeSettingsStore(),
     notifications: FakeNotificationService(),
+    wearable: const NoWearableSource(),
     openUrl: (_) async {},
     shareFile: (_) async {},
     pdfReport: const PdfReport(),

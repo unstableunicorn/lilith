@@ -8,6 +8,7 @@ import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 
@@ -134,6 +135,14 @@ class HistoryViewModel extends ChangeNotifier {
   /// The newest [chartWindow] readings, oldest first.
   List<TemperatureReading> get chartReadings {
     final all = _repo.data.readings;
+    return all.length > chartWindow
+        ? all.sublist(all.length - chartWindow)
+        : all;
+  }
+
+  /// The newest [chartWindow] wearable nights, oldest first.
+  List<TemperatureDelta> get chartDeltas {
+    final all = _repo.data.temperatureDeltas;
     return all.length > chartWindow
         ? all.sublist(all.length - chartWindow)
         : all;

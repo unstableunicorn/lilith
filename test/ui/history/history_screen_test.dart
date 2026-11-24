@@ -4,6 +4,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
+import 'package:lilith/domain/temperature_delta.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/history/history_screen.dart';
@@ -100,6 +101,30 @@ void main() {
     expect(find.byKey(PeriodFormKeys.save), findsOneWidget);
     expect(find.byKey(PeriodFormKeys.cycleLength), findsNothing);
     expect(find.textContaining('10 Jun'), findsWidgets);
+  });
+
+  testWidgets('wearable nights get their own chart, accessibly', (
+    tester,
+  ) async {
+    await fill();
+    await health.apply(
+      (data) => data.withDeltas([
+        for (var i = 1; i <= 8; i++)
+          TemperatureDelta(date: d(i), deltaCelsius: i < 5 ? -0.1 : 0.3),
+      ]),
+    );
+    await pump(tester);
+    expect(find.byKey(HistoryKeys.deltaChart), findsOneWidget);
+    expect(find.textContaining('Your last 8 nights'), findsOneWidget);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('without wearable nights there is no second chart', (
+    tester,
+  ) async {
+    await fill();
+    await pump(tester);
+    expect(find.byKey(HistoryKeys.deltaChart), findsNothing);
   });
 
   testWidgets('shows the chart, cycles, days and readings', (tester) async {

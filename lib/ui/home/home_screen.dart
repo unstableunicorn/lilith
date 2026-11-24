@@ -2,6 +2,7 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/data/wearable/wearable_repository.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -19,6 +20,8 @@ import 'package:provider/provider.dart';
 
 abstract final class HomeKeys {
   static const Key loading = Key('home.loading');
+  static const Key syncWearable = Key('home.syncWearable');
+  static const Key wearableState = Key('home.wearableState');
   static const Key error = Key('home.error');
   static const Key dismissError = Key('home.dismissError');
   static const Key noData = Key('home.noData');
@@ -196,6 +199,9 @@ class _HomeViewState extends State<_HomeView> {
               ],
             ),
           ),
+          if (context.watch<WearableRepository?>() case final w?
+              when w.isAvailable)
+            _WearableCard(wearable: w),
           _FactCard(vm: vm),
           AppCard(
             icon: Icons.edit_note_rounded,
@@ -504,4 +510,53 @@ class _WelcomeCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Sync from a watch or ring, with where the last sync got to.
+class _WearableCard extends StatelessWidget {
+  const _WearableCard({required this.wearable});
+
+  final WearableRepository wearable;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    icon: Icons.watch_rounded,
+    title: 'Your wearable',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Night skin temperature from the last '
+          '${WearableRepository.windowDays} days, as a change from your '
+          'baseline.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: Space.md),
+        FilledButton.tonalIcon(
+          key: HomeKeys.syncWearable,
+          onPressed: wearable.isSyncing ? null : wearable.sync,
+          icon: const Icon(Icons.sync_rounded),
+          label: const Text('Sync from your watch'),
+        ),
+        if (_stateText(wearable.state) case final text?)
+          Padding(
+            key: HomeKeys.wearableState,
+            padding: const EdgeInsets.only(top: Space.sm),
+            child: Text(text),
+          ),
+      ],
+    ),
+  );
+
+  static String? _stateText(WearableSync state) => switch (state) {
+    WearableIdle() => null,
+    WearableSyncing() => 'Reading your watch...',
+    WearableSynced(nights: 0) => 'Your watch had no nights to add.',
+    WearableSynced(:final nights) =>
+      'Added $nights night${nights == 1 ? '' : 's'} from your watch.',
+    WearableRefused() =>
+      'Lilith was not allowed to read your watch. You can allow it in '
+          'your phone settings.',
+    WearableFailed() => 'Your watch could not be read. Try again later.',
+  };
 }

@@ -6,6 +6,7 @@ import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/data/wearable/wearable_repository.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
@@ -33,6 +34,7 @@ Widget harness({
   ShareRepository? shares,
   ReceivedShareRepository? received,
   ReminderRepository? reminders,
+  WearableRepository? wearable,
   ShellTabs? tabs,
   UrlOpener? openUrl,
   FileSharer? shareFile,
@@ -44,6 +46,7 @@ Widget harness({
     if (setup != null) ChangeNotifierProvider.value(value: setup),
     if (shares != null) ChangeNotifierProvider.value(value: shares),
     if (received != null) ChangeNotifierProvider.value(value: received),
+    if (wearable != null) ChangeNotifierProvider.value(value: wearable),
     ChangeNotifierProvider.value(
       value:
           reminders ??
