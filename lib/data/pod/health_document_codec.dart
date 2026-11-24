@@ -33,7 +33,7 @@ class UnsupportedDocumentVersionException implements Exception {
 ///
 /// A document without a version is version 1. Version 2 was never written.
 /// Version 4 added the shares, version 5 the shares received, version 6 what
-/// each share holds.
+/// each share holds, version 7 a period's end and flow.
 Map<String, dynamic> migrate(Map<String, dynamic> doc) {
   var version = (doc['version'] as num?)?.toInt() ?? 1;
   var current = doc;
@@ -46,6 +46,7 @@ Map<String, dynamic> migrate(Map<String, dynamic> doc) {
       3 => _v3ToV4(current),
       4 => _v4ToV5(current),
       5 => _v5ToV6(current),
+      6 => _v6ToV7(current),
       _ => throw UnsupportedDocumentVersionException(version),
     };
     version = current['version'] as int;
@@ -83,11 +84,18 @@ Map<String, dynamic> _v5ToV6(Map<String, dynamic> doc) => {
   ],
 };
 
+/// Periods gained optional `endDate` and `flow`. Nothing is rewritten; the
+/// bump stops an older app from dropping them on its next save.
+Map<String, dynamic> _v6ToV7(Map<String, dynamic> doc) => {
+  ...doc,
+  'version': 7,
+};
+
 /// Encodes and decodes [HealthData] as the pod document.
 class HealthDocumentCodec {
   const HealthDocumentCodec();
 
-  static const int currentVersion = 6;
+  static const int currentVersion = 7;
 
   String encode(HealthData data) => jsonEncode({
     'version': currentVersion,

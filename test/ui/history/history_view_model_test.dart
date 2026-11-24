@@ -9,6 +9,7 @@ import 'package:lilith/ui/history/history_view_model.dart';
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  cycleTextTests();
   late HealthRepository repo;
   late HistoryViewModel vm;
 
@@ -89,5 +90,34 @@ void main() {
     await vm.removePeriod(d(1));
     expect(repo.data.readings, isEmpty);
     expect(repo.data.periods, isEmpty);
+  });
+}
+
+void cycleTextTests() {
+  test('describes a cycle with what is known of its period', () {
+    final start = DateTime(2026, 5, 1);
+    expect(
+      HistoryViewModel.cycleText(CycleEntry(start: start)),
+      'Current cycle',
+    );
+    expect(
+      HistoryViewModel.cycleText(CycleEntry(start: start, length: 28)),
+      '28 days',
+    );
+    expect(
+      HistoryViewModel.cycleText(
+        CycleEntry(
+          start: start,
+          length: 28,
+          periodLength: 5,
+          flow: FlowIntensity.medium,
+        ),
+      ),
+      '28 days · period 5 days, medium',
+    );
+    expect(
+      HistoryViewModel.cycleText(CycleEntry(start: start, periodLength: 1)),
+      'Current cycle · period 1 day',
+    );
   });
 }

@@ -104,8 +104,21 @@ class HealthData {
     return copyWith(readings: readings.where((r) => r.date != day));
   }
 
+  /// Adds or replaces the period starting on [event]'s first day. Periods
+  /// never overlap: a period that would start inside the new one goes, and
+  /// an earlier one that reaches into it ends the day before it starts.
   HealthData withPeriod(PeriodEvent event) => copyWith(
-    periods: [...periods.where((p) => p.startDate != event.startDate), event],
+    periods: [
+      for (final p in periods)
+        if (p.startDate.isBefore(event.startDate))
+          if (p.lastKnownDay.isBefore(event.startDate))
+            p
+          else
+            p.copyWith(endDate: addDays(event.startDate, -1))
+        else if (p.startDate.isAfter(event.lastKnownDay))
+          p,
+      event,
+    ],
   );
 
   HealthData withoutPeriod(DateTime date) {

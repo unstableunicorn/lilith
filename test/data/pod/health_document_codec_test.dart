@@ -149,7 +149,7 @@ void main() {
     test('steps version 3 up by adding empty shares and received only', () {
       final got = migrate({'version': 3, 'shopping': <Object>[]});
       expect(got, {
-        'version': 6,
+        'version': 7,
         'shopping': <Object>[],
         'shares': <Object>[],
         'received': <Object>[],
@@ -158,7 +158,41 @@ void main() {
 
     test('steps version 4 up by adding empty received only', () {
       final got = migrate({'version': 4, 'shares': <Object>[]});
-      expect(got, {'version': 6, 'shares': <Object>[], 'received': <Object>[]});
+      expect(got, {'version': 7, 'shares': <Object>[], 'received': <Object>[]});
+    });
+
+    test('steps version 6 up by bumping only', () {
+      final got = migrate({
+        'version': 6,
+        'periods': [
+          {'startDate': '2026-05-01T00:00:00.000'},
+        ],
+      });
+      expect(got, {
+        'version': 7,
+        'periods': [
+          {'startDate': '2026-05-01T00:00:00.000'},
+        ],
+      });
+    });
+
+    test('a version 6 period without an end or flow still loads', () {
+      final data = codec.decode(
+        '{"version":6,"periods":[{"startDate":"2026-05-01T00:00:00.000"}]}',
+      );
+      expect(data.periods.single.startDate, DateTime(2026, 5, 1));
+      expect(data.periods.single.isOpen, isTrue);
+    });
+
+    test('round-trips a period with an end and flow', () {
+      final data = HealthData.empty.withPeriod(
+        PeriodEvent(
+          startDate: DateTime(2026, 5, 1),
+          endDate: DateTime(2026, 5, 5),
+          flow: FlowIntensity.heavy,
+        ),
+      );
+      expect(codec.decode(codec.encode(data)), data);
     });
 
     test('steps version 5 up by naming what each share holds', () {
@@ -169,7 +203,7 @@ void main() {
         ],
       });
       expect(got, {
-        'version': 6,
+        'version': 7,
         'shares': [
           {
             'recipient': 'https://x.example/a#me',

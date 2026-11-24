@@ -93,9 +93,7 @@ class _HistoryView extends StatelessWidget {
               key: HistoryKeys.cycle(c.start),
               leading: const Icon(Icons.water_drop_rounded),
               title: Text('Started ${date(c.start)}'),
-              subtitle: Text(
-                c.length == null ? 'Current cycle' : '${c.length} days',
-              ),
+              subtitle: Text(HistoryViewModel.cycleText(c)),
               trailing: IconButton(
                 key: HistoryKeys.removeCycle(c.start),
                 tooltip: 'Remove this period start',

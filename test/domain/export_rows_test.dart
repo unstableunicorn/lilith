@@ -6,6 +6,7 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  periodSpanRowTests();
   final today = DateTime(2026, 6, 10, 14, 5);
 
   group('ExportRange.since', () {
@@ -102,5 +103,37 @@ void main() {
         isNot(ExportRow(date: DateTime(2026, 6, 1), periodStart: true)),
       );
     });
+  });
+}
+
+void periodSpanRowTests() {
+  final today = DateTime(2026, 6, 10);
+
+  test('every known day of a period is a row, marked start, day or end', () {
+    final data = HealthData.empty.withPeriod(
+      PeriodEvent(
+        startDate: DateTime(2026, 6, 1),
+        endDate: DateTime(2026, 6, 3),
+      ),
+    );
+    final rows = exportRows(data, range: ExportRange.all, today: today);
+    expect(rows.map((r) => r.date.day), [1, 2, 3]);
+    expect(rows[0].periodStart, isTrue);
+    expect(rows[0].periodDay, isTrue);
+    expect(rows[0].periodEnd, isFalse);
+    expect(rows[1].periodStart, isFalse);
+    expect(rows[1].periodDay, isTrue);
+    expect(rows[2].periodEnd, isTrue);
+    expect(rows[2].periodDay, isTrue);
+  });
+
+  test('an open period is one day, start and day but no end', () {
+    final data = HealthData.empty.withPeriod(
+      PeriodEvent(startDate: DateTime(2026, 6, 1)),
+    );
+    final row = exportRows(data, range: ExportRange.all, today: today).single;
+    expect(row.periodStart, isTrue);
+    expect(row.periodDay, isTrue);
+    expect(row.periodEnd, isFalse);
   });
 }

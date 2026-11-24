@@ -8,6 +8,7 @@ import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 
 void main() {
+  periodSpanTests();
   withoutDailyLogTests();
   final may1 = DateTime(2026, 5, 1);
   final may2 = DateTime(2026, 5, 2);
@@ -195,5 +196,49 @@ void withoutDailyLogTests() {
     final data = HealthData().withDailyLog(a).withDailyLog(b);
     expect(data.withoutDailyLog(DateTime(2026, 6, 10, 15)).dailyLogs, [a]);
     expect(data.withoutDailyLog(DateTime(2026, 1, 1)), data);
+  });
+}
+
+void periodSpanTests() {
+  final may1 = DateTime(2026, 5, 1);
+  PeriodEvent period(int start, {int? end}) => PeriodEvent(
+    startDate: DateTime(2026, 5, start),
+    endDate: end == null ? null : DateTime(2026, 5, end),
+  );
+
+  test('a new period replaces one with the same start', () {
+    final d = HealthData.empty
+        .withPeriod(period(1))
+        .withPeriod(period(1, end: 5));
+    expect(d.periods, [period(1, end: 5)]);
+  });
+
+  test('an earlier period reaching into the new one ends the day before', () {
+    final d = HealthData.empty
+        .withPeriod(period(1, end: 10))
+        .withPeriod(period(6, end: 9));
+    expect(d.periods, [period(1, end: 5), period(6, end: 9)]);
+  });
+
+  test('a period starting inside the new span goes', () {
+    final d = HealthData.empty
+        .withPeriod(period(8))
+        .withPeriod(period(20))
+        .withPeriod(period(6, end: 9));
+    expect(d.periods, [period(6, end: 9), period(20)]);
+  });
+
+  test('periods apart from the new one are untouched', () {
+    final d = HealthData.empty
+        .withPeriod(period(1, end: 4))
+        .withPeriod(period(10, end: 14));
+    expect(d.periods, [period(1, end: 4), period(10, end: 14)]);
+    expect(d.withPeriod(period(20)).periods, hasLength(3));
+  });
+
+  test('without the end an earlier open period is left alone', () {
+    final d = HealthData.empty.withPeriod(period(1)).withPeriod(period(3));
+    expect(d.periods, [period(1), period(3)]);
+    expect(may1, period(1).startDate);
   });
 }
