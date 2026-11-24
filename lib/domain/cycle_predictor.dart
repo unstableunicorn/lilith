@@ -26,6 +26,8 @@ class CyclePrediction {
     this.averageCycleLength,
     this.cycleCount = 0,
     this.lutealLength,
+    this.averagePeriodLength,
+    this.periodCount = 0,
   });
 
   final PredictionMethod method;
@@ -47,6 +49,13 @@ class CyclePrediction {
 
   /// The luteal length added to [estimatedOvulation], when a shift was used.
   final int? lutealLength;
+
+  /// Mean length in days of the periods whose end is known, leaving out one
+  /// that ended in the last few days and may still be going.
+  final double? averagePeriodLength;
+
+  /// How many periods went into [averagePeriodLength].
+  final int periodCount;
 
   /// Calendar days from [today] to [predictedNextPeriod]; negative when
   /// overdue.
@@ -72,6 +81,10 @@ class CyclePredictor {
   /// Consecutive elevated readings needed to confirm a shift.
   static const int sustainedDays = 3;
 
+  /// A period that ended this recently may still be going, so its length
+  /// is left out of the average.
+  static const int settlingDays = 3;
+
   /// Predict relative to [today]; readings after it are ignored.
   CyclePrediction predict({
     required List<TemperatureReading> readings,
@@ -79,13 +92,15 @@ class CyclePredictor {
     required DateTime today,
   }) {
     final now = dateOnly(today);
-    final starts = periods.map((p) => p.startDate).toList()..sort();
-    if (starts.isEmpty) {
+    final sorted = [...periods]
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
+    if (sorted.isEmpty) {
       return const CyclePrediction(
         method: PredictionMethod.insufficientData,
         confidence: PredictionConfidence.none,
       );
     }
+    final starts = sorted.map((p) => p.startDate).toList();
 
     final lastStart = starts.last;
     final currentCycleDay = daysBetween(lastStart, now) + 1;
@@ -96,11 +111,19 @@ class CyclePredictor {
     final average = cycleLengths.isEmpty
         ? null
         : cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;
+    final periodLengths = [
+      for (final p in sorted)
+        if (p.lengthDays case final n?)
+          if (daysBetween(p.endDate!, now) > settlingDays) n,
+    ];
+    final averagePeriod = periodLengths.isEmpty
+        ? null
+        : periodLengths.reduce((a, b) => a + b) / periodLengths.length;
 
-    final ovulation = _detectOvulation(readings, lastStart, now);
+    final ovulation = _detectOvulation(readings, sorted.last, now);
     if (ovulation != null) {
       final luteal =
-          _historicalLutealLength(readings, starts) ?? defaultLutealLength;
+          _historicalLutealLength(readings, sorted) ?? defaultLutealLength;
       return CyclePrediction(
         method: PredictionMethod.temperatureShift,
         confidence: cycleLengths.length >= 2
@@ -113,6 +136,8 @@ class CyclePredictor {
         averageCycleLength: average,
         cycleCount: cycleLengths.length,
         lutealLength: luteal,
+        averagePeriodLength: averagePeriod,
+        periodCount: periodLengths.length,
       );
     }
 
@@ -131,21 +156,25 @@ class CyclePredictor {
       currentCycleDay: currentCycleDay,
       averageCycleLength: average,
       cycleCount: cycleLengths.length,
+      averagePeriodLength: averagePeriod,
+      periodCount: periodLengths.length,
     );
   }
 
   /// The day before the first [sustainedDays] consecutive readings at least
   /// [shiftThreshold] above the follicular baseline, or null without one.
+  /// Readings on the period's known days are left out: they run warm.
   DateTime? _detectOvulation(
     List<TemperatureReading> readings,
-    DateTime cycleStart,
+    PeriodEvent period,
     DateTime until,
   ) {
+    final from = period.endDate == null
+        ? period.startDate
+        : addDays(period.endDate!, 1);
     final cycle =
         readings
-            .where(
-              (r) => !r.date.isBefore(cycleStart) && !r.date.isAfter(until),
-            )
+            .where((r) => !r.date.isBefore(from) && !r.date.isAfter(until))
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
     if (cycle.length < 4 + sustainedDays) return null;
@@ -172,14 +201,14 @@ class CyclePredictor {
   /// Mean ovulation-to-period gap over past cycles with a visible shift.
   int? _historicalLutealLength(
     List<TemperatureReading> readings,
-    List<DateTime> starts,
+    List<PeriodEvent> periods,
   ) {
     final lengths = <int>[];
-    for (var i = 0; i < starts.length - 1; i++) {
-      final next = starts[i + 1];
+    for (var i = 0; i < periods.length - 1; i++) {
+      final next = periods[i + 1].startDate;
       final ovulation = _detectOvulation(
         readings,
-        starts[i],
+        periods[i],
         addDays(next, -1),
       );
       if (ovulation == null) continue;
