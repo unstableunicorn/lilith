@@ -1,14 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  chartSpanTests();
   cycleTextTests();
   late HealthRepository repo;
   late HistoryViewModel vm;
@@ -119,5 +122,36 @@ void cycleTextTests() {
       HistoryViewModel.cycleText(CycleEntry(start: start, periodLength: 1)),
       'Current cycle · period 1 day',
     );
+  });
+}
+
+void chartSpanTests() {
+  DateTime june(int d) => DateTime(2026, 6, d);
+
+  test('every period becomes a span of its known days', () {
+    final spans = chartSpansFor([
+      PeriodEvent(startDate: june(1), endDate: june(4)),
+      PeriodEvent(startDate: june(29)),
+    ]);
+    expect(spans, [
+      ChartSpan(start: june(1), end: june(4)),
+      ChartSpan(start: june(29), end: june(29)),
+    ]);
+  });
+
+  test('the luteal span runs from after ovulation to before the period', () {
+    const none = CyclePrediction(
+      method: PredictionMethod.cycleAverage,
+      confidence: PredictionConfidence.low,
+      predictedNextPeriod: null,
+    );
+    expect(lutealSpanFor(none), isNull);
+    final shift = CyclePrediction(
+      method: PredictionMethod.temperatureShift,
+      confidence: PredictionConfidence.medium,
+      estimatedOvulation: june(14),
+      predictedNextPeriod: june(28),
+    );
+    expect(lutealSpanFor(shift), ChartSpan(start: june(15), end: june(27)));
   });
 }

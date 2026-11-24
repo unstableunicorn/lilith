@@ -28,11 +28,15 @@ abstract final class HistoryKeys {
 }
 
 class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({this.now = DateTime.now, super.key});
+
+  /// The clock, injected so tests pick the day.
+  final DateTime Function() now;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (context) => HistoryViewModel(context.read<HealthRepository>()),
+    create: (context) =>
+        HistoryViewModel(context.read<HealthRepository>(), now: now),
     child: const _HistoryView(),
   );
 }
@@ -43,7 +47,7 @@ class _HistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<HistoryViewModel>();
-    final today = DateTime.now();
+    final today = vm.today;
     String date(DateTime d) => formatShortDate(d, today: today);
     return PageScaffold(
       title: 'History',
@@ -80,13 +84,15 @@ class _HistoryView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Last ${vm.chartReadings.length} readings. Red lines mark '
-                    'period starts.',
+                    'Your last ${vm.chartReadings.length} readings, with '
+                    'your periods and the days after ovulation shaded.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   TemperatureChart(
                     readings: vm.chartReadings,
                     periodStarts: vm.periodStarts,
+                    periods: vm.periodSpans,
+                    luteal: vm.lutealSpan,
                   ),
                 ],
               ),

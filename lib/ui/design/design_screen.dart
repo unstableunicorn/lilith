@@ -103,6 +103,13 @@ class _Samples extends StatelessWidget {
             ),
         ],
         periodStarts: {DateTime(2026, 6, 3)},
+        periods: [
+          ChartSpan(start: DateTime(2026, 6, 3), end: DateTime(2026, 6, 7)),
+        ],
+        luteal: ChartSpan(
+          start: DateTime(2026, 6, 11),
+          end: DateTime(2026, 6, 14),
+        ),
       ),
       const SectionHeading('QR code'),
       const QrCodeBox(

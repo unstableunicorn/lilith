@@ -41,7 +41,7 @@ class _ShellView extends StatelessWidget {
         children: [
           HomeScreen(now: now),
           LogScreen(now: now),
-          const HistoryScreen(),
+          HistoryScreen(now: now),
           ReliefScreen(now: now),
           PodScreen(now: now),
         ],

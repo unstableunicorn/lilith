@@ -133,7 +133,7 @@ void temperatureChartTests() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.bySemanticsLabel(RegExp(r'10 readings.*36\.0.*36\.9')),
+      find.bySemanticsLabel(RegExp(r'10 temperature readings.*36\.0.*36\.9')),
       findsOneWidget,
     );
     await expectAccessible(tester);

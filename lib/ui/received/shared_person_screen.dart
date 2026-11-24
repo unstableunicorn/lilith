@@ -183,6 +183,8 @@ class _Data extends StatelessWidget {
             child: TemperatureChart(
               readings: vm.chartReadings,
               periodStarts: vm.periodStarts,
+              periods: vm.periodSpans,
+              luteal: vm.lutealSpan,
             ),
           ),
         if (vm.cycles.isNotEmpty) const SectionHeading('Cycles'),

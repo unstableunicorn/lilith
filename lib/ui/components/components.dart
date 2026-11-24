@@ -13,3 +13,4 @@ export 'section_heading.dart';
 export 'stat_tile.dart';
 export 'strikeable_text.dart';
 export 'temperature_chart.dart';
+export 'trend_chart.dart';
