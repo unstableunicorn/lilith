@@ -35,6 +35,25 @@ class _ShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = context.watch<ShellTabs>();
+    // The back button retraces the tabs; only with none left does it leave.
+    return PopScope(
+      canPop: !tabs.canGoBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) tabs.goBack();
+      },
+      child: _Tabs(tabs: tabs, now: now),
+    );
+  }
+}
+
+class _Tabs extends StatelessWidget {
+  const _Tabs({required this.tabs, required this.now});
+
+  final ShellTabs tabs;
+  final DateTime Function() now;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: tabs.current.index,

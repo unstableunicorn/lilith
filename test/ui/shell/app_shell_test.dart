@@ -127,6 +127,51 @@ void appMenuTests() {
     await health.load();
   });
 
+  testWidgets('the back button returns to the previous tab before leaving', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox());
+    await session.login(
+      PodProvider.unstableUnicorn,
+      tester.element(find.byType(SizedBox)),
+    );
+    final tabs = ShellTabs();
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        health: health,
+        tabs: tabs,
+        setup: SetupRepository(FakePodSetupService()),
+        shares: ShareRepository(
+          health,
+          FakeShareService(),
+          protection: DataProtection.encrypted,
+        ),
+        received: ReceivedShareRepository(
+          health,
+          FakeShareReader(),
+          ownWebId: 'https://pod.example.org/me/profile/card#me',
+        ),
+        child: AppShell(now: () => today),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
+    await tester.pumpAndSettle();
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(handled, isTrue);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      ShellTab.today.index,
+    );
+    final left = await tester.binding.handlePopRoute();
+    expect(left, isFalse);
+  });
+
   testWidgets('every tab has the menu, and Log out ends the session', (
     tester,
   ) async {
