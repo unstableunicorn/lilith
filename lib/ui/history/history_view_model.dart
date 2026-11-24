@@ -19,6 +19,8 @@ class CycleEntry {
     this.end,
     this.periodLength,
     this.flow,
+    this.days = const [],
+    this.readings = const [],
   });
 
   final DateTime start;
@@ -30,6 +32,10 @@ class CycleEntry {
   final DateTime? end;
   final int? periodLength;
   final FlowIntensity? flow;
+
+  /// What was logged in this cycle, newest first.
+  final List<DailyLog> days;
+  final List<TemperatureReading> readings;
 }
 
 class HistoryViewModel extends ChangeNotifier {
@@ -56,8 +62,14 @@ class HistoryViewModel extends ChangeNotifier {
   RepositoryError? get error => _repo.error;
   bool get hasHistory => _repo.data.hasData;
 
+  /// The cycles newest first, each with the days and readings logged from
+  /// its start up to the next start.
   List<CycleEntry> get cycles {
     final periods = _repo.data.periods;
+    final data = _repo.data;
+    bool within(DateTime d, int i) =>
+        !d.isBefore(periods[i].startDate) &&
+        (i + 1 >= periods.length || d.isBefore(periods[i + 1].startDate));
     return [
       for (var i = periods.length - 1; i >= 0; i--)
         CycleEntry(
@@ -68,8 +80,35 @@ class HistoryViewModel extends ChangeNotifier {
           end: periods[i].endDate,
           periodLength: periods[i].lengthDays,
           flow: periods[i].flow,
+          days: data.dailyLogs
+              .where((l) => within(l.date, i))
+              .toList()
+              .reversed
+              .toList(),
+          readings: data.readings
+              .where((r) => within(r.date, i))
+              .toList()
+              .reversed
+              .toList(),
         ),
     ];
+  }
+
+  /// Logged before the first period start, newest first, or everything
+  /// when there is no period yet.
+  List<DailyLog> get daysBeforeFirstPeriod =>
+      _before(_repo.data.dailyLogs, (l) => l.date);
+
+  List<TemperatureReading> get readingsBeforeFirstPeriod =>
+      _before(_repo.data.readings, (r) => r.date);
+
+  List<T> _before<T>(List<T> items, DateTime Function(T) dateOf) {
+    final first = _repo.data.periods.firstOrNull?.startDate;
+    return items
+        .where((x) => first == null || dateOf(x).isBefore(first))
+        .toList()
+        .reversed
+        .toList();
   }
 
   /// "Current cycle" or "28 days", then the period's span and flow when known:
