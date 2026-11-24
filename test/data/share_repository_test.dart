@@ -6,6 +6,7 @@ import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_cipher.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
@@ -115,6 +116,39 @@ void main() {
       );
       expect(seen.readings, hasLength(1));
     });
+
+    final noteCases = [
+      (name: 'leaves day notes out by default', include: false, want: null),
+      (name: 'carries day notes when asked', include: true, want: 'tired'),
+    ];
+    for (final c in noteCases) {
+      test('the copy ${c.name}, after a later save too', () async {
+        await health.apply(
+          (d) =>
+              d.withDailyLog(DailyLog(date: may1, painLevel: 2, note: 'tired')),
+        );
+        final share = (await repo.create(
+          recipientWebId: wife,
+          label: 'A',
+          duration: ShareDuration.untilRevoked,
+          today: may1,
+          includeNotes: c.include,
+        ))!;
+        expect(share.includeNotes, c.include);
+        HealthData seen() => codec.decode(
+          cipher.decrypt(
+            shares.folders['shares/${share.id}']!,
+            ShareKey.fromCode(share.code!)!,
+          ),
+        );
+        expect(seen().dailyLogs.single.note, c.want);
+        await health.apply(
+          (d) => d.withReading(TemperatureReading(date: may1, celsius: 36.5)),
+        );
+        expect(seen().dailyLogs.single.note, c.want);
+        expect(seen().dailyLogs.single.painLevel, 2);
+      });
+    }
 
     test(
       'a save that changes only private data leaves the copies alone',

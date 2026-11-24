@@ -72,6 +72,19 @@ void main() {
     test('empty stays empty', () {
       expect(sharedView(HealthData.empty), HealthData.empty);
     });
+
+    test('leaves notes out unless asked, dropping a day that held only a '
+        'note', () {
+      final noted = HealthData(
+        dailyLogs: [
+          DailyLog(date: may1, painLevel: 3, note: 'private words'),
+          DailyLog(date: DateTime(2026, 5, 2), note: 'only a note'),
+        ],
+      );
+      final without = sharedView(noted);
+      expect(without.dailyLogs, [DailyLog(date: may1, painLevel: 3)]);
+      expect(sharedView(noted, includeNotes: true).dailyLogs, noted.dailyLogs);
+    });
   });
 
   group('ShareDuration', () {
@@ -146,6 +159,20 @@ void main() {
       expect(json.containsKey('expiresOn'), isFalse);
       expect(json.containsKey('code'), isFalse);
       expect(Share.fromJson(json), open);
+    });
+
+    test('leaves notes out by default; the choice round-trips', () {
+      final open = Share(recipientWebId: wife, label: 'A', createdOn: may1);
+      expect(open.includeNotes, isFalse);
+      expect(open.toJson().containsKey('includeNotes'), isFalse);
+      final withNotes = Share(
+        recipientWebId: wife,
+        label: 'A',
+        createdOn: may1,
+        includeNotes: true,
+      );
+      expect(Share.fromJson(withNotes.toJson()), withNotes);
+      expect(withNotes, isNot(open));
     });
   });
 

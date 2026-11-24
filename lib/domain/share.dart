@@ -18,13 +18,22 @@ String shareId(String recipientWebId) => sha256
     .substring(0, 16);
 
 /// The part of [data] a recipient sees: the cycle data only. The health
-/// profile, remedy verdicts, shopping list and the shares stay with the owner.
-HealthData sharedView(HealthData data) => HealthData(
-  readings: data.readings,
-  periods: data.periods,
-  dailyLogs: data.dailyLogs,
-  wearableNights: data.wearableNights,
-);
+/// profile, remedy verdicts, shopping list and the shares stay with the owner,
+/// and so do day notes unless [includeNotes].
+HealthData sharedView(HealthData data, {bool includeNotes = false}) =>
+    HealthData(
+      readings: data.readings,
+      periods: data.periods,
+      dailyLogs: [
+        for (final l in data.dailyLogs)
+          if (includeNotes)
+            l
+          else if (l.copyWith(clearNote: true) case final bare
+              when !bare.isEmpty)
+            bare,
+      ],
+      wearableNights: data.wearableNights,
+    );
 
 /// How long a share lasts, as offered on the share screen.
 enum ShareDuration {
@@ -90,6 +99,7 @@ class Share {
     this.code,
     this.content = ShareContent.cycleData,
     ExportRange? range,
+    this.includeNotes = false,
   }) : createdOn = dateOnly(createdOn),
        expiresOn = expiresOn == null ? null : dateOnly(expiresOn),
        range = content == ShareContent.report
@@ -110,6 +120,7 @@ class Share {
       final String r => ExportRange.values.firstWhere((e) => e.name == r),
       _ => null,
     },
+    includeNotes: json['includeNotes'] == true,
   );
 
   final String recipientWebId;
@@ -131,6 +142,9 @@ class Share {
   /// How far back a report reaches; null for the app view.
   final ExportRange? range;
 
+  /// Whether the recipient also sees the day notes; off unless chosen.
+  final bool includeNotes;
+
   String get id => shareId(recipientWebId);
   bool get isEncrypted => code != null;
   bool get isReport => content == ShareContent.report;
@@ -147,6 +161,7 @@ class Share {
     if (code != null) 'code': code,
     'content': content.name,
     if (range != null) 'range': range!.name,
+    if (includeNotes) 'includeNotes': true,
   };
 
   @override
@@ -158,7 +173,8 @@ class Share {
       other.expiresOn == expiresOn &&
       other.code == code &&
       other.content == content &&
-      other.range == range;
+      other.range == range &&
+      other.includeNotes == includeNotes;
 
   @override
   int get hashCode => Object.hash(
@@ -169,6 +185,7 @@ class Share {
     code,
     content,
     range,
+    includeNotes,
   );
 }
 
