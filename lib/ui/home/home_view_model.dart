@@ -162,8 +162,39 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> removePeriodStart(DateTime day) =>
       _repo.apply((d) => d.withoutPeriod(day));
 
-  /// Logs today's temperature. Returns false, logging nothing, when the
-  /// value is not a plausible body temperature.
+  /// The latest period when it is still going today, else null.
+  PeriodEvent? get periodInProgress {
+    final latest = _repo.data.periods.lastOrNull;
+    return latest != null && latest.inProgressOn(today) ? latest : null;
+  }
+
+  /// Day of the period in progress, the start being day 1.
+  int? get periodDay => switch (periodInProgress) {
+    final p? => daysBetween(p.startDate, today) + 1,
+    null => null,
+  };
+
+  /// Today, then yesterday when the period had begun by then.
+  List<DateTime> get quickEndDays {
+    final start = periodInProgress?.startDate;
+    final yesterday = addDays(today, -1);
+    return [today, if (start != null && !start.isAfter(yesterday)) yesterday];
+  }
+
+  /// Marks the period in progress as over on [day]. False, changing
+  /// nothing, when none is in progress or [day] is before it or after today.
+  Future<bool> markPeriodEnded(DateTime day) async {
+    final p = periodInProgress;
+    final d = dateOnly(day);
+    if (p == null || d.isBefore(p.startDate) || d.isAfter(today)) {
+      return false;
+    }
+    await _repo.apply(
+      (data) => data.withPeriod(p.copyWith(endDate: d, ended: true)),
+    );
+    return true;
+  }
+
   /// Logs the temperature for [readingDay], then returns to today. Returns
   /// false, logging nothing, when the value is not a plausible body
   /// temperature.
