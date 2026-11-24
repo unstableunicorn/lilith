@@ -1,12 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../fakes/fake_pod_session_service.dart';
+import '../../fakes/fake_settings_store.dart';
 import '../../harness.dart';
 
 void main() {
+  appMenuDownloadTests();
   temperatureChartTests();
   for (final brightness in Brightness.values) {
     group('in the ${brightness.name} theme', () {
@@ -155,5 +160,46 @@ void temperatureChartTests() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(TemperatureChart), findsOneWidget);
+  });
+}
+
+void appMenuDownloadTests() {
+  testWidgets('the menu offers the Android app on the web only', (
+    tester,
+  ) async {
+    final urls = RecordingUrlOpener();
+    final session = SessionRepository(
+      FakePodSessionService(),
+      FakeSettingsStore(),
+    );
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        openUrl: urls.call,
+        child: Scaffold(
+          appBar: AppBar(actions: const [AppMenu(offerAndroidApp: true)]),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.androidApp)));
+    await tester.pumpAndSettle();
+    expect(urls.opened, [AppLinks.androidApk]);
+    await tester.pumpWidget(
+      harness(
+        session: session,
+        openUrl: urls.call,
+        child: Scaffold(
+          appBar: AppBar(actions: const [AppMenu(offerAndroidApp: false)]),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(AppMenuKeys.item(AppMenuAction.androidApp)),
+      findsNothing,
+    );
   });
 }

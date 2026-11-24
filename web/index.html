@@ -18,7 +18,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Private cycle tracking from skin temperature, stored on your own Solid pod.">
 
   <!--
     Uncomment the tag below to lay the app out underneath the parts of the
@@ -34,15 +34,22 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#9B72CF">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="lilith">
+  <meta name="apple-mobile-web-app-title" content="Lilith">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>lilith</title>
+  <title>Lilith</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* The browser's pull-to-reload must not fire on the app: a pull down is
+       the app's own gesture where it has one, and a reload mid-gesture
+       starts the app at the wrong size. */
+    html, body { overscroll-behavior-y: none; }
+  </style>
 </head>
 <body>
   <!--
