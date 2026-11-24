@@ -117,6 +117,46 @@ void main() {
     });
   });
 
+  group('changeKey', () {
+    setUp(() async {
+      await repo.inspect();
+      await repo.chooseEncrypted('old key 1');
+    });
+
+    test('only an encrypted pod can change its key', () async {
+      expect(repo.canChangeKey, isTrue);
+      final plain = SetupRepository(FakePodSetupService());
+      await plain.inspect();
+      await plain.choosePlain();
+      expect(plain.canChangeKey, isFalse);
+      expect(SetupRepository(FakePodSetupService()).canChangeKey, isFalse);
+    });
+
+    final cases = <(String, PodException?, KeyChangeOutcome)>[
+      ('works', null, KeyChangeOutcome.changed),
+      ('wrong current key', const PodWrongKeyException(), .wrongKey),
+      (
+        'failed and restored',
+        const PodKeyChangeException('x', restored: true),
+        .unchanged,
+      ),
+      (
+        'failed, not restored',
+        const PodKeyChangeException('x', restored: false),
+        .broken,
+      ),
+      ('pod unreachable', const PodUnavailableException('x'), .unchanged),
+    ];
+    for (final (name, failure, outcome) in cases) {
+      test(name, () async {
+        pod.failChangeKey = failure;
+        expect(await repo.changeKey('old key 1', 'new key 2'), outcome);
+        expect(pod.podKey, failure == null ? 'new key 2' : 'old key 1');
+        expect(repo.state, const SetupState.ready(DataProtection.encrypted));
+      });
+    }
+  });
+
   test('reset forgets everything for the next login', () async {
     await repo.inspect();
     await repo.choosePlain();

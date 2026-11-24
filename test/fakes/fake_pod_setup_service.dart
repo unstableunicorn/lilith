@@ -12,7 +12,15 @@ class FakePodSetupService implements PodSetupService {
   String? podKey;
   PodException? failInspect;
   PodException? failSetUp;
+  PodException? failChangeKey;
   int inspections = 0;
+
+  @override
+  Future<void> changeKey(String currentKey, String newKey) async {
+    if (failChangeKey case final e?) throw e;
+    if (currentKey != podKey) throw const PodWrongKeyException();
+    podKey = newKey;
+  }
 
   @override
   Future<PodInspection> inspect() async {

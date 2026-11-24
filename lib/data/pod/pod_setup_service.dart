@@ -19,4 +19,9 @@ abstract interface class PodSetupService {
 
   /// Drops the key from this device; the pod is untouched.
   Future<void> forgetKey();
+
+  /// Re-encrypts the pod's keys under [newKey] and keeps it on this device.
+  /// Throws a PodWrongKeyException when [currentKey] does not match, and a
+  /// PodKeyChangeException when the change failed after it started.
+  Future<void> changeKey(String currentKey, String newKey);
 }

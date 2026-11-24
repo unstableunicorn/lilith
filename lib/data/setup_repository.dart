@@ -7,6 +7,10 @@ import 'package:lilith/domain/data_protection.dart';
 
 enum SetupError { unreachable, wrongKey, failed }
 
+/// How a security key change ended. [unchanged]: it failed and the old key
+/// still works. [broken]: it failed and the key files could not be put back.
+enum KeyChangeOutcome { changed, wrongKey, unchanged, broken }
+
 class SetupRepository extends ChangeNotifier {
   SetupRepository(this._pod);
 
@@ -43,6 +47,25 @@ class SetupRepository extends ChangeNotifier {
     await _pod.unlock(securityKey);
     _state = const SetupState.ready(DataProtection.encrypted);
   });
+
+  /// Whether this pod has a security key to change.
+  bool get canChangeKey =>
+      _state == const SetupState.ready(DataProtection.encrypted);
+
+  /// Changes the security key. Set-up state, busy and error are untouched:
+  /// the caller shows its own progress.
+  Future<KeyChangeOutcome> changeKey(String currentKey, String newKey) async {
+    try {
+      await _pod.changeKey(currentKey, newKey);
+      return KeyChangeOutcome.changed;
+    } on PodWrongKeyException {
+      return KeyChangeOutcome.wrongKey;
+    } on PodKeyChangeException catch (e) {
+      return e.restored ? KeyChangeOutcome.unchanged : KeyChangeOutcome.broken;
+    } on PodException {
+      return KeyChangeOutcome.unchanged;
+    }
+  }
 
   /// Back to unknown, for the next login.
   void reset() {

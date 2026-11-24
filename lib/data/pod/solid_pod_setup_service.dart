@@ -1,5 +1,8 @@
 // PodSetupService on a real Solid pod through solidpod.
 
+import 'dart:convert';
+
+import 'package:lilith/data/pod/key_change.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_setup_plan.dart';
 import 'package:lilith/data/pod/pod_setup_service.dart';
@@ -93,4 +96,45 @@ class SolidPodSetupService implements PodSetupService {
     await solidPodReady;
     await solid.KeyManager.forgetSecurityKey();
   }
+
+  /// solidpod writes enc-keys.ttl, then ind-keys.ttl; a failure between the
+  /// two leaves neither key working, so both are copied first. After a
+  /// failure solidpod's cached keys are dropped and reloaded from the pod.
+  @override
+  Future<void> changeKey(String currentKey, String newKey) async {
+    await solidPodReady;
+    final encPath = await solid.getEncKeyPath();
+    final indPath =
+        '${encPath.substring(0, encPath.lastIndexOf('/') + 1)}'
+        '${solid.SolidConstants.files.individualKeys}';
+    await changeWithBackup(
+      store: const _SolidKeyFiles(),
+      urls: [await solid.getFileUrl(encPath), await solid.getFileUrl(indPath)],
+      change: () async {
+        try {
+          await solid.KeyManager.changeSecurityKey(currentKey, newKey);
+        } on solid.SecurityKeyVerificationException {
+          throw const PodWrongKeyException();
+        }
+      },
+      afterFailure: () => solid.KeyManager.clear(keepStoredSecurityKey: true),
+    );
+  }
+}
+
+class _SolidKeyFiles implements KeyFileStore {
+  const _SolidKeyFiles();
+
+  @override
+  Future<String> read(String url) async {
+    try {
+      return utf8.decode(await solid.getResource(url));
+    } catch (e) {
+      throw toPodException(e);
+    }
+  }
+
+  @override
+  Future<void> write(String url, String content) =>
+      solid.createResource(url, content: content);
 }

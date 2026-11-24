@@ -54,3 +54,10 @@ class PodLoginFailedException extends PodException {
 class PodWrongKeyException extends PodException {
   const PodWrongKeyException() : super('wrong security key');
 }
+
+/// Changing the security key failed. When [restored], the key files were
+/// put back and the old key still works.
+class PodKeyChangeException extends PodException {
+  const PodKeyChangeException(super.message, {required this.restored});
+  final bool restored;
+}
