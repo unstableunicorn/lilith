@@ -7,10 +7,6 @@ import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
 
-/// Bleeding days this close to a period belong to it; further apart they
-/// start a new one.
-const int maxGapDays = 2;
-
 /// Spotting never starts or extends a period; light flow and up does.
 bool bleeds(DailyLog? log) =>
     log != null && log.flow.level >= FlowIntensity.light.level;
@@ -38,7 +34,7 @@ List<PeriodEvent> _withBleeding(List<PeriodEvent> periods, DateTime d) {
         daysBetween(p.lastKnownDay, d) <= maxGapDays,
   );
   if (before != null) {
-    return _replace(periods, before, before.copyWith(endDate: d));
+    return _replace(periods, before, before.copyWith(endDate: d, ended: false));
   }
   final after = periods.firstWhereOrNull(
     (p) => p.startDate.isAfter(d) && daysBetween(d, p.startDate) <= maxGapDays,

@@ -287,4 +287,21 @@ void v8Tests() {
     expect(data.dailyLogs.single.flow, FlowIntensity.light);
     expect(data.dailyLogs.single.ovulationTest, isNull);
   });
+
+  test('a period marked ended round-trips at v8; older ones load unmarked', () {
+    const codec = HealthDocumentCodec();
+    final data = HealthData.empty.withPeriod(
+      PeriodEvent(
+        startDate: DateTime(2026, 6, 1),
+        endDate: DateTime(2026, 6, 5),
+        ended: true,
+      ),
+    );
+    expect(codec.decode(codec.encode(data)), data);
+    final old = codec.decode(
+      '{"version":8,"periods":[{"startDate":"2026-06-01T00:00:00.000",'
+      '"endDate":"2026-06-05T00:00:00.000"}]}',
+    );
+    expect(old.periods.single.ended, isFalse);
+  });
 }
