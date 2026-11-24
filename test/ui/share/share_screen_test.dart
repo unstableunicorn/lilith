@@ -82,6 +82,24 @@ void main() {
       await expectAccessible(tester);
     });
 
+    testWidgets('notes are off by default and go with the share when on', (
+      tester,
+    ) async {
+      await pump(tester);
+      await fillIn(tester);
+      final notes = find.byKey(ShareKeys.includeNotes);
+      await tester.ensureVisible(notes);
+      expect(tester.widget<SwitchListTile>(notes).value, isFalse);
+      await tester.tap(notes);
+      await tester.pumpAndSettle();
+      await expectAccessible(tester);
+      await tester.ensureVisible(find.byKey(ShareKeys.submit));
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      expect(shares.shares.single.includeNotes, isTrue);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
     testWidgets('points out a bad WebID and accepts a good one', (
       tester,
     ) async {
