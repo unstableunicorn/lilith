@@ -1,6 +1,7 @@
 // The History tab: the temperature trend, then cycles, days and readings.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
@@ -23,6 +24,7 @@ abstract final class HistoryKeys {
   static const Key cancel = Key('history.cancel');
   static Key cycle(DateTime d) => Key('history.cycle.$d');
   static Key removeCycle(DateTime d) => Key('history.removeCycle.$d');
+  static Key editCycle(DateTime d) => Key('history.editCycle.$d');
   static const Key addPeriod = Key('history.addPeriod');
   static const Key addReading = Key('history.addReading');
   static const Key addReadingDay = Key('history.addReadingDay');
@@ -123,55 +125,41 @@ class _HistoryView extends StatelessWidget {
             ),
           if (vm.cycles.isNotEmpty) const SectionHeading('Cycles'),
           for (final c in vm.cycles)
-            ListTile(
-              key: HistoryKeys.cycle(c.start),
-              leading: const Icon(Icons.water_drop_rounded),
-              title: Text('Started ${date(c.start)}'),
-              subtitle: Text(HistoryViewModel.cycleText(c)),
-              onTap: () => _openForm(
+            _CycleTile(
+              cycle: c,
+              date: date,
+              onEdit: () => _openForm(
                 context,
                 PeriodFormMode.edit,
                 editing: vm.periodStarting(c.start),
               ),
-              trailing: IconButton(
-                key: HistoryKeys.removeCycle(c.start),
-                tooltip: 'Remove this period start',
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => _confirm(
-                  context,
-                  'Remove the period start on ${date(c.start)}?',
-                  () => vm.removePeriod(c.start),
-                ),
+              onRemove: () => _confirm(
+                context,
+                'Remove the period start on ${date(c.start)}?',
+                () => vm.removePeriod(c.start),
+              ),
+              onRemoveReading: (r) => _confirm(
+                context,
+                'Remove the reading from ${date(r.date)}?',
+                () => vm.removeReading(r.date),
               ),
             ),
-          if (vm.days.isNotEmpty) const SectionHeading('Days'),
-          for (final log in vm.days)
-            ListTile(
-              key: HistoryKeys.day(log.date),
-              leading: const Icon(Icons.edit_note_rounded),
-              title: Text(formatDay(log.date)),
-              subtitle: Text(logSummary(log)),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.read<ShellTabs>().openLog(log.date),
+          if (vm.daysBeforeFirstPeriod.isNotEmpty ||
+              vm.readingsBeforeFirstPeriod.isNotEmpty) ...[
+            SectionHeading(
+              vm.cycles.isEmpty ? 'Logged so far' : 'Before your first period',
             ),
-          if (vm.readings.isNotEmpty) const SectionHeading('Readings'),
-          for (final r in vm.readings)
-            ListTile(
-              key: HistoryKeys.reading(r.date),
-              leading: const Icon(Icons.thermostat_rounded),
-              title: Text('${r.celsius} °C'),
-              subtitle: Text(formatDay(r.date)),
-              trailing: IconButton(
-                key: HistoryKeys.removeReading(r.date),
-                tooltip: 'Remove this reading',
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => _confirm(
+            for (final log in vm.daysBeforeFirstPeriod) _DayTile(log: log),
+            for (final r in vm.readingsBeforeFirstPeriod)
+              _ReadingTile(
+                reading: r,
+                onRemove: () => _confirm(
                   context,
                   'Remove the reading from ${date(r.date)}?',
                   () => vm.removeReading(r.date),
                 ),
               ),
-            ),
+          ],
         ],
       ],
     );
@@ -323,4 +311,94 @@ class _AddReadingDialogState extends State<_AddReadingDialog> {
       setState(() => _refused = true);
     }
   }
+}
+
+/// One cycle, open by default: its period, then the days and readings in it.
+class _CycleTile extends StatelessWidget {
+  const _CycleTile({
+    required this.cycle,
+    required this.date,
+    required this.onEdit,
+    required this.onRemove,
+    required this.onRemoveReading,
+  });
+
+  final CycleEntry cycle;
+  final String Function(DateTime) date;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+  final void Function(TemperatureReading) onRemoveReading;
+
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    key: HistoryKeys.cycle(cycle.start),
+    initiallyExpanded: true,
+    leading: const Icon(Icons.water_drop_rounded),
+    title: Text('Started ${date(cycle.start)}'),
+    subtitle: Text(HistoryViewModel.cycleText(cycle)),
+    children: [
+      Wrap(
+        spacing: Space.sm,
+        children: [
+          TextButton.icon(
+            key: HistoryKeys.editCycle(cycle.start),
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_rounded),
+            label: const Text('Edit period'),
+          ),
+          TextButton.icon(
+            key: HistoryKeys.removeCycle(cycle.start),
+            onPressed: onRemove,
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Remove period'),
+          ),
+        ],
+      ),
+      for (final log in cycle.days) _DayTile(log: log),
+      for (final r in cycle.readings)
+        _ReadingTile(reading: r, onRemove: () => onRemoveReading(r)),
+      if (cycle.days.isEmpty && cycle.readings.isEmpty)
+        const ListTile(
+          dense: true,
+          title: Text('Nothing else logged in this cycle.'),
+        ),
+    ],
+  );
+}
+
+class _DayTile extends StatelessWidget {
+  const _DayTile({required this.log});
+
+  final DailyLog log;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    key: HistoryKeys.day(log.date),
+    leading: const Icon(Icons.edit_note_rounded),
+    title: Text(formatDay(log.date)),
+    subtitle: Text(logSummary(log)),
+    trailing: const Icon(Icons.chevron_right_rounded),
+    onTap: () => context.read<ShellTabs>().openLog(log.date),
+  );
+}
+
+class _ReadingTile extends StatelessWidget {
+  const _ReadingTile({required this.reading, required this.onRemove});
+
+  final TemperatureReading reading;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    key: HistoryKeys.reading(reading.date),
+    leading: const Icon(Icons.thermostat_rounded),
+    title: Text('${reading.celsius} °C'),
+    subtitle: Text(formatDay(reading.date)),
+    trailing: IconButton(
+      key: HistoryKeys.removeReading(reading.date),
+      tooltip: 'Remove this reading',
+      icon: const Icon(Icons.delete_outline_rounded),
+      onPressed: onRemove,
+    ),
+  );
 }

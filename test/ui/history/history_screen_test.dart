@@ -94,7 +94,7 @@ void main() {
     expect(find.byKey(PeriodFormKeys.cycleLength), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(HistoryKeys.cycle(d(10))));
+    await tester.tap(find.byKey(HistoryKeys.editCycle(d(10))));
     await tester.pumpAndSettle();
     expect(find.byKey(PeriodFormKeys.save), findsOneWidget);
     expect(find.byKey(PeriodFormKeys.cycleLength), findsNothing);

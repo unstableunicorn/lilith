@@ -11,6 +11,7 @@ import 'package:lilith/ui/history/history_view_model.dart';
 import '../../fakes/fake_pod_service.dart';
 
 void main() {
+  groupingTests();
   chartSpanTests();
   cycleTextTests();
   late HealthRepository repo;
@@ -167,5 +168,53 @@ void chartSpanTests() {
     expect(await vm.addReading(DateTime(2026, 6, 9), 30), isFalse);
     expect(await vm.addReading(DateTime(2026, 6, 11), 36.5), isFalse);
     expect(repo.data.readings, hasLength(1));
+  });
+}
+
+void groupingTests() {
+  DateTime june(int d) => DateTime(2026, 6, d);
+
+  test(
+    'days and readings are grouped into their cycle, newest first',
+    () async {
+      final repo = HealthRepository(
+        FakePodService(),
+        protection: DataProtection.plain,
+      );
+      await repo.load();
+      await repo.apply(
+        (d) => d
+            .withReading(TemperatureReading(date: june(2), celsius: 36.2))
+            .withReading(TemperatureReading(date: june(12), celsius: 36.5))
+            .withReading(TemperatureReading(date: june(20), celsius: 36.7))
+            .withDailyLog(DailyLog(date: june(11), painLevel: 2))
+            .withDailyLog(DailyLog(date: june(21), painLevel: 4))
+            .withPeriod(PeriodEvent(startDate: june(10)))
+            .withPeriod(PeriodEvent(startDate: june(20))),
+      );
+      final vm = HistoryViewModel(repo, now: () => june(25));
+      final cycles = vm.cycles;
+      expect(cycles.map((c) => c.start), [june(20), june(10)]);
+      expect(cycles[0].readings.map((r) => r.date), [june(20)]);
+      expect(cycles[0].days.map((l) => l.date), [june(21)]);
+      expect(cycles[1].readings.map((r) => r.date), [june(12)]);
+      expect(cycles[1].days.map((l) => l.date), [june(11)]);
+      expect(vm.readingsBeforeFirstPeriod.map((r) => r.date), [june(2)]);
+      expect(vm.daysBeforeFirstPeriod, isEmpty);
+    },
+  );
+
+  test('with no period everything is "before the first period"', () async {
+    final repo = HealthRepository(
+      FakePodService(),
+      protection: DataProtection.plain,
+    );
+    await repo.load();
+    await repo.apply(
+      (d) => d.withReading(TemperatureReading(date: june(2), celsius: 36.2)),
+    );
+    final vm = HistoryViewModel(repo, now: () => june(25));
+    expect(vm.cycles, isEmpty);
+    expect(vm.readingsBeforeFirstPeriod, hasLength(1));
   });
 }
