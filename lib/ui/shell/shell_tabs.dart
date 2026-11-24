@@ -18,10 +18,33 @@ enum ShellTab {
 
 class ShellTabs extends ChangeNotifier {
   ShellTab _current = ShellTab.today;
+  final List<ShellTab> _visited = [];
   DateTime? _logDate;
   int _logRequest = 0;
 
   ShellTab get current => _current;
+
+  /// Whether the back button has a tab to return to.
+  bool get canGoBack => _visited.isNotEmpty;
+
+  /// Returns to the tab shown before this one; false when there is none,
+  /// so the caller lets the back button leave the app instead.
+  bool goBack() {
+    if (_visited.isEmpty) return false;
+    _current = _visited.removeLast();
+    notifyListeners();
+    return true;
+  }
+
+  // A tab is remembered once on the way; going round in circles does not
+  // grow the history.
+  void _switchTo(ShellTab tab) {
+    if (tab == _current) return;
+    _visited
+      ..remove(tab)
+      ..add(_current);
+    _current = tab;
+  }
 
   /// The day the Log tab was last asked to open, and a counter that changes
   /// with every request so the same day can be asked for twice.
@@ -32,13 +55,13 @@ class ShellTabs extends ChangeNotifier {
   void openLog(DateTime day) {
     _logDate = day;
     _logRequest++;
-    _current = ShellTab.log;
+    _switchTo(ShellTab.log);
     notifyListeners();
   }
 
   void show(ShellTab tab) {
     if (tab == _current) return;
-    _current = tab;
+    _switchTo(tab);
     notifyListeners();
   }
 }
