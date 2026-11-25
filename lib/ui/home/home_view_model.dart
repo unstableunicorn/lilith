@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/content/period_facts.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
@@ -97,6 +98,28 @@ class HomeViewModel extends ChangeNotifier {
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
   }.withSuppressionNote(p);
+
+  /// Today's cycle day and phase.
+  CycleStatus get cycleStatus => cycleStatusFor(
+    prediction,
+    _repo.data.periods,
+    today: today,
+    hormonalContraception: _repo.data.profile.usesHormonalContraception,
+  );
+
+  /// E.g. "Day 12, follicular", "Day 20, luteal (estimated from your cycle
+  /// length)", or why there is no phase.
+  String cycleStatusText(CycleStatus s) => switch (s) {
+    CycleStatus(day: null) => 'Phase unknown until a period is logged.',
+    CycleStatus(:final day?, phase: null, hormonal: true) =>
+      'Day $day. Hormonal contraception changes the usual phases, so none '
+          'is shown.',
+    CycleStatus(:final day?, phase: null) => 'Day $day',
+    CycleStatus(:final day?, :final phase?, :final basis) =>
+      'Day $day, ${phase.name}'
+          '${basis == PhaseBasis.calendar ? ' (estimated from your cycle '
+                    'length)' : ''}',
+  };
 
   /// This cycle's fertile window when [mode] shows it and something
   /// supports it; null otherwise.

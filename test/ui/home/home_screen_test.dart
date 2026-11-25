@@ -242,6 +242,23 @@ void main() {
       expect(find.byKey(HomeKeys.prediction), findsOneWidget);
     });
 
+    testWidgets('the cycle day and phase show under the last period start', (
+      tester,
+    ) async {
+      await health.apply(
+        (d) => d.withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 27))),
+      );
+      await pump(tester);
+      expect(
+        find.descendant(
+          of: find.byKey(HomeKeys.prediction),
+          matching: find.byKey(HomeKeys.cycleStatus),
+        ),
+        findsOneWidget,
+      );
+      await expectAccessible(tester);
+    });
+
     testWidgets('the average period length shows once an end is known', (
       tester,
     ) async {

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/content/cycle_phases.dart';
 import 'package:lilith/content/period_facts.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -40,6 +42,16 @@ void main() {
     await tester.tap(find.byKey(LearnKeys.factSource(periodFacts.first.text)));
     expect(urls.opened, [Uri.parse(periodFacts.first.source.url)]);
     await expectAccessible(tester);
+  });
+
+  testWidgets('explains each cycle phase with its source', (tester) async {
+    await pump(tester);
+    for (final phase in CyclePhase.values) {
+      expect(find.byKey(LearnKeys.phase(phase)), findsOneWidget);
+    }
+    final first = cyclePhaseEntries.first;
+    await tester.tap(find.byKey(LearnKeys.phaseSource(first.phase)));
+    expect(urls.opened, [Uri.parse(first.source.url)]);
   });
 
   testWidgets('asking shows the best answer, or says there is none', (

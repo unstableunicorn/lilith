@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
@@ -15,6 +17,7 @@ void main() {
   periodInProgressTests();
   forecastTests();
   todaysLogTests();
+  cycleStatusTests();
   final today = DateTime(2026, 6, 10, 9, 30);
   late FakePodService pod;
   late HealthRepository repo;
@@ -288,5 +291,52 @@ void periodInProgressTests() {
     await repo.apply((d) => d.withoutPeriod(june(10)));
     await started(8);
     expect(vm.quickEndDays, [june(10), june(9)]);
+  });
+}
+
+void cycleStatusTests() {
+  final today = DateTime(2026, 6, 10, 9);
+  late HealthRepository repo;
+  late HomeViewModel vm;
+
+  setUp(() async {
+    repo = HealthRepository(FakePodService(), protection: DataProtection.plain);
+    await repo.load();
+    vm = HomeViewModel(repo, now: () => today);
+  });
+
+  test('the cycle status follows the logged periods', () async {
+    expect(vm.cycleStatus.day, isNull);
+    await repo.apply(
+      (d) => d.withPeriod(
+        PeriodEvent(
+          startDate: DateTime(2026, 6, 2),
+          endDate: DateTime(2026, 6, 5),
+        ),
+      ),
+    );
+    expect(
+      (day: vm.cycleStatus.day, phase: vm.cycleStatus.phase),
+      (day: 9, phase: CyclePhase.follicular),
+    );
+  });
+
+  test('hormonal contraception in the profile leaves the phase out', () async {
+    await repo.apply(
+      (d) => d
+          .withPeriod(
+            PeriodEvent(
+              startDate: DateTime(2026, 6, 2),
+              endDate: DateTime(2026, 6, 5),
+            ),
+          )
+          .withProfile(
+            HealthProfile(contraception: Contraception.combinedPill),
+          ),
+    );
+    expect(
+      (phase: vm.cycleStatus.phase, hormonal: vm.cycleStatus.hormonal),
+      (phase: null, hormonal: true),
+    );
   });
 }
