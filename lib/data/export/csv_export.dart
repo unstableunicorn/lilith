@@ -38,6 +38,8 @@ class CsvExport {
     'symptoms',
     'skin_temp_c',
     'skin_temp_source',
+    'ovulation_test',
+    'notes',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -82,6 +84,8 @@ class CsvExport {
         '',
         '',
       ],
+      log?.ovulationTest?.name ?? '',
+      log?.note ?? '',
     ];
   }
 }

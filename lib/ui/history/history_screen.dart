@@ -38,6 +38,7 @@ abstract final class HistoryKeys {
   static const Key addReadingSave = Key('history.addReadingSave');
   static const Key addReadingProblem = Key('history.addReadingProblem');
   static Key day(DateTime d) => Key('history.day.$d');
+  static Key dayNote(DateTime d) => Key('history.dayNote.$d');
   static Key reading(DateTime d) => Key('history.reading.$d');
   static Key removeReading(DateTime d) => Key('history.removeReading.$d');
   static const Key expandAll = Key('history.expandAll');
@@ -578,7 +579,22 @@ class _DayTile extends StatelessWidget {
     key: HistoryKeys.day(log.date),
     leading: const Icon(Icons.edit_note_rounded),
     title: Text(formatDay(log.date)),
-    subtitle: Text(logSummary(log)),
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(logSummary(log)),
+        if (log.note case final note?)
+          Text(
+            key: HistoryKeys.dayNote(log.date),
+            note,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    ),
     trailing: const Icon(Icons.chevron_right_rounded),
     onTap: () => context.read<ShellTabs>().openLog(log.date),
   );

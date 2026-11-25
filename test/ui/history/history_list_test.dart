@@ -47,7 +47,11 @@ void main() {
             ),
           )
           .withDailyLog(
-            DailyLog(date: june(10), symptoms: const {Symptom.bloating}),
+            DailyLog(
+              date: june(10),
+              symptoms: const {Symptom.bloating},
+              note: 'Flew to Perth',
+            ),
           ),
     );
     pageSettings = PageSettingsRepository(FakeSettingsStore());
@@ -80,6 +84,18 @@ void main() {
     await pump(tester);
     expect(day(june(10)), findsOneWidget);
     expect(day(may(2)), findsNothing);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('a day row shows its note; a day without one shows none', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(HistoryKeys.expandAll));
+    await tester.pumpAndSettle();
+    expect(find.byKey(HistoryKeys.dayNote(june(10))), findsOneWidget);
+    expect(find.text('Flew to Perth'), findsOneWidget);
+    expect(find.byKey(HistoryKeys.dayNote(may(2))), findsNothing);
     await expectAccessible(tester);
   });
 

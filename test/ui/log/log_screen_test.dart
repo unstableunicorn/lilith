@@ -93,10 +93,29 @@ void main() {
     expect(find.byKey(LogKeys.saved), findsOneWidget);
   });
 
+  testWidgets('a note is typed, saved, and cleared with the day', (
+    tester,
+  ) async {
+    await pump(tester);
+    final note = find.byKey(LogKeys.note);
+    await tester.ensureVisible(note);
+    await tester.enterText(note, 'Long day at work');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(LogKeys.save));
+    await tester.tap(find.byKey(LogKeys.save));
+    await tester.pumpAndSettle();
+    expect(health.data.logFor(today)?.note, 'Long day at work');
+    await expectAccessible(tester);
+    await tester.ensureVisible(find.byKey(LogKeys.clear));
+    await tester.tap(find.byKey(LogKeys.clear));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(note).controller?.text, isEmpty);
+  });
+
   testWidgets('an ovulation test result is chosen and saved', (tester) async {
     await pump(tester);
     final positive = find.byKey(LogKeys.ovulationTest(OvulationTest.positive));
-    await tester.scrollUntilVisible(positive, 100);
+    await tester.ensureVisible(positive);
     expect(
       tester
           .widget<ChoiceChip>(find.byKey(LogKeys.ovulationTest(null)))

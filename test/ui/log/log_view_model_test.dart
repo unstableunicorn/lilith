@@ -100,6 +100,23 @@ void main() {
     expect(vm.pain, isNull);
   });
 
+  test(
+    'a note is saved alone, reloads with the day, and blank clears it',
+    () async {
+      vm.setNote('Slept badly');
+      expect(vm.isDirty, isTrue);
+      await vm.save();
+      expect(repo.data.logFor(day)?.note, 'Slept badly');
+      vm
+        ..goBack()
+        ..goForward();
+      expect(vm.note, 'Slept badly');
+      vm.setNote('  ');
+      await vm.save();
+      expect(repo.data.logFor(day), isNull);
+    },
+  );
+
   test('an ovulation test result is saved, and can be unset', () async {
     expect(vm.ovulationTest, isNull);
     vm.setOvulationTest(OvulationTest.positive);

@@ -28,6 +28,10 @@ class ShareViewModel extends ChangeNotifier {
   DateTime? _customEnd;
   ShareContent _content = ShareContent.cycleData;
   ExportRange _range = ExportRange.sixMonths;
+  bool _includeNotes = false;
+
+  /// Whether the new share carries the day notes; off until chosen.
+  bool get includeNotes => _includeNotes;
   Share? _created;
   Uri? _createdLink;
   final Set<String> _revealed = {};
@@ -89,6 +93,7 @@ class ShareViewModel extends ChangeNotifier {
   });
   void setContent(ShareContent c) => _edit(() => _content = c);
   void setRange(ExportRange r) => _edit(() => _range = r);
+  void setIncludeNotes({required bool on}) => _edit(() => _includeNotes = on);
 
   Future<void> share() async {
     if (!canShare) return;
@@ -100,6 +105,7 @@ class ShareViewModel extends ChangeNotifier {
       customEnd: _customEnd,
       content: _content,
       range: _range,
+      includeNotes: _includeNotes,
     );
     if (share == null) return;
     _created = share;
@@ -110,6 +116,7 @@ class ShareViewModel extends ChangeNotifier {
     _customEnd = null;
     _content = ShareContent.cycleData;
     _range = ExportRange.sixMonths;
+    _includeNotes = false;
     notifyListeners();
   }
 

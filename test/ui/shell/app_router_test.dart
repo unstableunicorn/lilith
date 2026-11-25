@@ -9,6 +9,8 @@ import '../../fakes/fake_browser_history.dart';
 const _open = Key('open');
 const _close = Key('close');
 const _page = Key('page');
+const _menu = Key('menu');
+const _menuOpen = Key('menuOpen');
 
 /// Stands in for the app: shows the tab, opens and closes a page.
 class _Shell extends StatelessWidget {
@@ -44,6 +46,27 @@ class _Shell extends StatelessWidget {
               ),
             ),
             child: const Text('open'),
+          ),
+          TextButton(
+            key: _menu,
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (dialog) => Dialog(
+                child: TextButton(
+                  key: _menuOpen,
+                  onPressed: () {
+                    Navigator.of(dialog).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const Scaffold(key: _page),
+                      ),
+                    );
+                  },
+                  child: const Text('open from menu'),
+                ),
+              ),
+            ),
+            child: const Text('menu'),
           ),
         ],
       ),
@@ -143,6 +166,28 @@ void main() {
     expect(pageOpen(), isFalse);
     expect(reported.where((r) => !r.$2), isEmpty);
     expect(history.backs, 0);
+  });
+
+  testWidgets('a menu or dialog adds no entry and closing it steps nothing '
+      'back', (tester) async {
+    await pump(tester);
+    await tap(tester, _menu);
+    expect(reported, isEmpty);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+    expect(history.backs, 0);
+    expect(reported, isEmpty);
+  });
+
+  testWidgets('a page opened from a menu stays open with its own entry', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tap(tester, _menu);
+    await tap(tester, _menuOpen);
+    expect(pageOpen(), isTrue);
+    expect(history.backs, 0);
+    expect(reported, [('/today/1', false)]);
   });
 
   testWidgets('browser back can close a page and change tab at once', (

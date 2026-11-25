@@ -112,7 +112,8 @@ class AppRouterDelegate extends RouterDelegate<AppLocation>
   }
 }
 
-/// Counts the routes pushed over the first one.
+/// Counts the pages pushed over the first one. Menus and dialogs are not
+/// pages: they get no browser entry, and closing one steps nothing back.
 class _PageCounter extends NavigatorObserver {
   _PageCounter({required this.opened, required this.closed});
 
@@ -124,6 +125,7 @@ class _PageCounter extends NavigatorObserver {
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is! PageRoute) return;
     _routes.add(route);
     if (_routes.length > 1) opened();
   }

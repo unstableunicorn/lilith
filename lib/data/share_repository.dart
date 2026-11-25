@@ -78,6 +78,7 @@ class ShareRepository extends ChangeNotifier {
     DateTime? customEnd,
     ShareContent content = ShareContent.cycleData,
     ExportRange? range,
+    bool includeNotes = false,
   }) => _run(() async {
     final share = Share(
       recipientWebId: recipientWebId.trim(),
@@ -91,9 +92,10 @@ class ShareRepository extends ChangeNotifier {
           : null,
       content: content,
       range: range,
+      includeNotes: includeNotes,
     );
     await _pod.open(SharePlan.forRecipient(share.recipientWebId));
-    await _writeCopy(share, sharedView(_health.data));
+    await _writeCopy(share, _health.data);
     await _health.apply((d) => d.withShare(share));
     await _remind(share);
     return share;
@@ -140,24 +142,27 @@ class ShareRepository extends ChangeNotifier {
   // every copy is rewritten. The first sight of loaded data is the baseline.
   void _onHealthChanged() {
     if (!_health.isLoaded) return;
-    final current = sharedView(_health.data);
+    final current = sharedView(_health.data, includeNotes: true);
     final previous = _lastCopied;
     _lastCopied = current;
     if (previous == null || previous == current || shares.isEmpty) {
       notifyListeners();
       return;
     }
+    final data = _health.data;
     unawaited(
       _run(() async {
         for (final share in shares) {
-          await _writeCopy(share, current);
+          await _writeCopy(share, data);
         }
       }),
     );
   }
 
-  /// The app view as JSON or a JWE; a report as a PDF and a CSV.
-  Future<void> _writeCopy(Share share, HealthData view) async {
+  /// The share's view of [data], as JSON or a JWE; a report as a PDF and a
+  /// CSV.
+  Future<void> _writeCopy(Share share, HealthData data) async {
+    final view = sharedView(data, includeNotes: share.includeNotes);
     final plan = SharePlan.forRecipient(share.recipientWebId);
     if (!share.isReport) {
       final json = _codec.encode(view);

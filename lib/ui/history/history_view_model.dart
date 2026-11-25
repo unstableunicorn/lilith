@@ -136,11 +136,12 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   /// True when [log] passes every filter set: the search within its
-  /// summary, bleeding, the pain level, and any one of the symptoms.
+  /// summary or note, bleeding, the pain level, and any one of the symptoms.
   bool matches(DailyLog log) {
     final q = _query.trim().toLowerCase();
     final pain = log.painLevel;
-    return (q.isEmpty || logSummary(log).toLowerCase().contains(q)) &&
+    final text = '${logSummary(log)} ${log.note ?? ''}'.toLowerCase();
+    return (q.isEmpty || text.contains(q)) &&
         (!_bleedingOnly || log.flow.isBleeding) &&
         (_minPain == null || (pain != null && pain >= _minPain!)) &&
         (_symptomFilter.isEmpty || log.symptoms.any(_symptomFilter.contains));

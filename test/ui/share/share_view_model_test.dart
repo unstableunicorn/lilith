@@ -78,6 +78,17 @@ void main() {
     expect(vm.created, isNull);
   });
 
+  test('notes stay out unless chosen; the choice resets after', () async {
+    expect(vm.includeNotes, isFalse);
+    vm
+      ..setLabel('Alex')
+      ..setWebId(wife)
+      ..setIncludeNotes(on: true);
+    await vm.share();
+    expect(vm.created!.includeNotes, isTrue);
+    expect(vm.includeNotes, isFalse);
+  });
+
   test('a refused share keeps the form and shows nothing created', () async {
     pod.failOpen = const PodAccessException('403');
     vm.setLabel('Alex');
