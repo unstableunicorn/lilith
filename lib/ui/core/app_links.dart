@@ -9,4 +9,14 @@ abstract final class AppLinks {
     'https://github.com/unstableunicorn/lilith/releases/download/latest/'
     'lilith-android-arm64.apk',
   );
+
+  /// The page of the release tagged `latest`, which names its build number.
+  static final Uri latestBuild = Uri.parse(
+    'https://github.com/unstableunicorn/lilith/releases/tag/latest',
+  );
+
+  /// The app's source code.
+  static final Uri source = Uri.parse(
+    'https://github.com/unstableunicorn/lilith',
+  );
 }

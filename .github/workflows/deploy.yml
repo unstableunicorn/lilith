@@ -38,6 +38,9 @@ jobs:
           mise trust
           mise install flutter node npm:wrangler
       - name: Build
+        env:
+          LILITH_BUILD: ${{ github.run_number }}
+          LILITH_COMMIT: ${{ github.sha }}
         run: PATH="$HOME/.local/share/mise/shims:$PATH" bash scripts/ci.sh --only web
       - name: Deploy
         env:
@@ -66,13 +69,15 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUILD_NUMBER: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
         run: |
           export PATH="$HOME/.local/share/mise/shims:$PATH"
           keystore="$RUNNER_TEMP/lilith-test.jks"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
           export ANDROID_KEYSTORE_PATH="$keystore"
           flutter pub get
-          flutter build apk --release --split-per-abi --target-platform android-arm64 --build-number="$BUILD_NUMBER"
+          flutter build apk --release --split-per-abi --target-platform android-arm64 --build-number="$BUILD_NUMBER" \
+            --dart-define=LILITH_BUILD="$BUILD_NUMBER" --dart-define=LILITH_COMMIT="$SHA"
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk lilith-android-arm64.apk
           rm -f "$keystore"
       - name: Publish as the latest release
