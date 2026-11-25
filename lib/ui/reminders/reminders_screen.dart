@@ -7,6 +7,7 @@ import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/reminders/dose_schedule_screen.dart';
 import 'package:lilith/ui/reminders/reminders_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -177,11 +178,7 @@ class _DoseCard extends StatelessWidget {
             ),
           TextButton.icon(
             key: RemindersKeys.doseSetup,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const DoseScheduleScreen(),
-              ),
-            ),
+            onPressed: () => pushWithData(context, const DoseScheduleScreen()),
             icon: const Icon(Icons.event_repeat_rounded),
             label: Text(
               schedule == null ? 'Set up your schedule' : 'Change the schedule',

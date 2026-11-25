@@ -5,6 +5,7 @@ import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/reminders/reminders_screen.dart';
 import 'package:lilith/ui/settings/security_key_screen.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,9 +42,7 @@ class SettingsScreen extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             title: const Text('Daily, period and pill reminders'),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const RemindersScreen()),
-            ),
+            onTap: () => pushWithData(context, const RemindersScreen()),
           ),
         ),
         AppCard(

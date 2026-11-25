@@ -8,6 +8,7 @@ import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
@@ -15,6 +16,7 @@ import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/period/period_form_screen.dart';
 import 'package:lilith/ui/period/period_form_view_model.dart';
+import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/received/received_screen.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -23,6 +25,7 @@ import 'package:provider/provider.dart';
 
 abstract final class HomeKeys {
   static const Key loading = Key('home.loading');
+  static const Key profile = Key('home.profile');
   static const Key syncWearable = Key('home.syncWearable');
   static const Key wearableState = Key('home.wearableState');
   static const Key error = Key('home.error');
@@ -239,6 +242,15 @@ class _HomeViewState extends State<_HomeView> {
                   label: const Text('Log flow, symptoms and pain'),
                 ),
               ],
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: HomeKeys.profile,
+              onPressed: () => pushWithData(context, const ProfileScreen()),
+              icon: const Icon(Icons.favorite_border_rounded),
+              label: const Text('Edit your health profile'),
             ),
           ),
         ],
