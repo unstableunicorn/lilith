@@ -74,4 +74,39 @@ void main() {
     await repo.setEnabled(true);
     expect(n, 1);
   });
+
+  test('period switches ask once, then save without scheduling', () async {
+    await repo.setBeforePeriod(true);
+    await repo.setWhenLate(true);
+    expect(notifications.permissionRequests, 2);
+    expect(settings.reminder.beforePeriod, isTrue);
+    expect(settings.reminder.whenLate, isTrue);
+    expect(notifications.daily, isEmpty);
+    await repo.setWhenLate(false);
+    expect(settings.reminder.whenLate, isFalse);
+  });
+
+  test('a refused permission leaves the period switch off', () async {
+    notifications.permission = false;
+    await repo.setBeforePeriod(true);
+    expect(repo.setting.beforePeriod, isFalse);
+    expect(repo.isAllowed, isFalse);
+  });
+
+  test('the days before stay between one and five', () async {
+    await repo.setDaysBefore(9);
+    expect(settings.reminder.daysBefore, ReminderSetting.maxDaysBefore);
+    await repo.setDaysBefore(0);
+    expect(settings.reminder.daysBefore, ReminderSetting.minDaysBefore);
+  });
+
+  test('period reminders do not apply until the data says so', () {
+    var n = 0;
+    repo.addListener(() => n++);
+    expect(repo.periodApplies, isFalse);
+    repo.periodApplies = true;
+    repo.periodApplies = true;
+    expect(repo.periodApplies, isTrue);
+    expect(n, 1);
+  });
 }

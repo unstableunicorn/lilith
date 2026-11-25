@@ -10,6 +10,13 @@ class FakeSettingsStore implements SettingsStore {
   ShareInvite? invite;
   ReminderSetting reminder = const ReminderSetting();
   PageSettings pageSettings = const PageSettings();
+  DateTime? snoozedThrough;
+
+  @override
+  Future<DateTime?> readSnoozedThrough() async => snoozedThrough;
+
+  @override
+  Future<void> writeSnoozedThrough(DateTime day) async => snoozedThrough = day;
 
   @override
   Future<PodProvider?> readProvider() async => provider;

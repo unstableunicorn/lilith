@@ -25,8 +25,20 @@ class ReminderRepository extends ChangeNotifier {
   bool? _allowed;
   bool _loaded = false;
 
+  bool _periodApplies = false;
+
   ReminderSetting get setting => _setting;
   bool get isLoaded => _loaded;
+
+  /// Whether period reminders make sense for the data signed in: false
+  /// until it loads, and under hormonal contraception.
+  bool get periodApplies => _periodApplies;
+
+  set periodApplies(bool value) {
+    if (value == _periodApplies) return;
+    _periodApplies = value;
+    notifyListeners();
+  }
 
   /// Whether this device can show reminders at all (not on the web).
   bool get isAvailable => _notifications.isAvailable;
@@ -60,6 +72,37 @@ class ReminderRepository extends ChangeNotifier {
     _setting = _setting.copyWith(enabled: enabled);
     await _settings.writeReminder(_setting);
     await _apply();
+    notifyListeners();
+  }
+
+  /// Turns the reminders before a period on, asking the system first, or off.
+  Future<void> setBeforePeriod(bool on) =>
+      _setPeriod(on, (s, v) => s.copyWith(beforePeriod: v));
+
+  /// Turns the reminders for a late period on, asking first, or off.
+  Future<void> setWhenLate(bool on) =>
+      _setPeriod(on, (s, v) => s.copyWith(whenLate: v));
+
+  Future<void> setDaysBefore(int days) async {
+    _setting = _setting.copyWith(
+      daysBefore: days.clamp(
+        ReminderSetting.minDaysBefore,
+        ReminderSetting.maxDaysBefore,
+      ),
+    );
+    await _settings.writeReminder(_setting);
+    notifyListeners();
+  }
+
+  // The period reminders themselves are scheduled from the data, by
+  // PeriodReminderRepository, which listens here.
+  Future<void> _setPeriod(
+    bool on,
+    ReminderSetting Function(ReminderSetting s, bool on) change,
+  ) async {
+    if (on) _allowed = await _notifications.requestPermission();
+    _setting = change(_setting, on && _allowed != false);
+    await _settings.writeReminder(_setting);
     notifyListeners();
   }
 
