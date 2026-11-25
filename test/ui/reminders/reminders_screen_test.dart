@@ -83,6 +83,45 @@ void main() {
     await expectAccessible(tester);
   });
 
+  testWidgets('period reminders turn on and the days before change', (
+    tester,
+  ) async {
+    repo.periodApplies = true;
+    await pump(tester);
+    expect(find.byKey(RemindersKeys.daysBefore), findsNothing);
+    await tester.tap(find.byKey(RemindersKeys.beforePeriod));
+    await tester.pumpAndSettle();
+    expect(settings.reminder.beforePeriod, isTrue);
+    await tester.ensureVisible(find.byKey(RemindersKeys.daysBefore));
+    await tester.drag(
+      find.byKey(RemindersKeys.daysBefore),
+      const Offset(1000, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(settings.reminder.daysBefore, ReminderSetting.maxDaysBefore);
+    await tester.ensureVisible(find.byKey(RemindersKeys.whenLate));
+    await tester.tap(find.byKey(RemindersKeys.whenLate));
+    await tester.pumpAndSettle();
+    expect(settings.reminder.whenLate, isTrue);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('period reminders are not offered when they do not apply', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byKey(RemindersKeys.toggle), findsOneWidget);
+    expect(find.byKey(RemindersKeys.beforePeriod), findsNothing);
+    expect(find.byKey(RemindersKeys.whenLate), findsNothing);
+  });
+
+  test('the view model says how many days before', () async {
+    final vm = RemindersViewModel(repo);
+    expect(vm.daysBeforeText, '2 days before');
+    await vm.setDaysBefore(1);
+    expect(vm.daysBeforeText, '1 day before');
+  });
+
   test('the view model shows the time with two digits', () {
     final vm = RemindersViewModel(repo);
     expect(vm.timeText, '07:00');

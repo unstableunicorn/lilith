@@ -1,7 +1,9 @@
-// Reminders: a daily nudge to log, at a time of the user's choosing. Phones
-// only; the web cannot schedule a notification for a closed tab.
+// Reminders: a daily nudge to log and reminders around the next period, at a
+// time of the user's choosing. Phones only; the web cannot schedule a
+// notification for a closed tab.
 
 import 'package:lilith/data/reminder_repository.dart';
+import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/reminders/reminders_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -13,6 +15,9 @@ abstract final class RemindersKeys {
   static const Key time = Key('reminders.time');
   static const Key refused = Key('reminders.refused');
   static const Key unavailable = Key('reminders.unavailable');
+  static const Key beforePeriod = Key('reminders.beforePeriod');
+  static const Key daysBefore = Key('reminders.daysBefore');
+  static const Key whenLate = Key('reminders.whenLate');
 }
 
 class RemindersScreen extends StatelessWidget {
@@ -66,18 +71,23 @@ class _RemindersView extends StatelessWidget {
                   icon: const Icon(Icons.schedule_rounded),
                   label: Text('Change the time (${vm.timeText})'),
                 ),
-                if (vm.wasRefused)
-                  const ProblemText(
-                    key: RemindersKeys.refused,
-                    "Notifications are off for Lilith in your phone's "
-                    'settings. Allow them there, then try again.',
-                  ),
               ],
             ),
           ),
+          if (vm.offersPeriod) ...[
+            const SizedBox(height: Space.md),
+            _PeriodCard(vm: vm),
+          ],
+          if (vm.wasRefused)
+            const ProblemText(
+              key: RemindersKeys.refused,
+              "Notifications are off for Lilith in your phone's "
+              'settings. Allow them there, then try again.',
+            ),
           const SizedBox(height: Space.md),
           const Text(
-            'The reminder is set on this phone only and never leaves it.',
+            'Reminders are set on this phone only and never leave it. They '
+            'all show at the time above.',
           ),
         ],
       ],
@@ -93,4 +103,60 @@ class _RemindersView extends StatelessWidget {
     if (picked == null) return;
     await vm.setTime(hour: picked.hour, minute: picked.minute);
   }
+}
+
+/// The reminders before the period's usual window and once it is late.
+class _PeriodCard extends StatelessWidget {
+  const _PeriodCard({required this.vm});
+
+  final RemindersViewModel vm;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    icon: Icons.water_drop_outlined,
+    title: 'Your period',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          key: RemindersKeys.beforePeriod,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Before my period'),
+          subtitle: Text(
+            vm.beforePeriod
+                ? '${vm.daysBeforeText} your usual window, as it starts, '
+                      'and on the expected day'
+                : 'Off',
+          ),
+          value: vm.beforePeriod,
+          onChanged: vm.setBeforePeriod,
+        ),
+        if (vm.beforePeriod)
+          Slider(
+            key: RemindersKeys.daysBefore,
+            value: vm.daysBefore.toDouble(),
+            min: ReminderSetting.minDaysBefore.toDouble(),
+            max: ReminderSetting.maxDaysBefore.toDouble(),
+            divisions:
+                ReminderSetting.maxDaysBefore - ReminderSetting.minDaysBefore,
+            label: vm.daysBeforeText,
+            semanticFormatterCallback: (_) => vm.daysBeforeText,
+            onChanged: (v) => vm.setDaysBefore(v.round()),
+          ),
+        SwitchListTile(
+          key: RemindersKeys.whenLate,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('When it is late'),
+          subtitle: Text(
+            vm.whenLate
+                ? 'As your usual window ends, the day after, then a daily '
+                      'check-in you can snooze'
+                : 'Off',
+          ),
+          value: vm.whenLate,
+          onChanged: vm.setWhenLate,
+        ),
+      ],
+    ),
+  );
 }

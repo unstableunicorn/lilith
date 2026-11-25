@@ -25,6 +25,21 @@ class RemindersViewModel extends ChangeNotifier {
 
   Future<void> setEnabled(bool on) => _repo.setEnabled(on);
 
+  /// Whether the period reminders are offered: not under hormonal
+  /// contraception, where the bleed does not follow the prediction.
+  bool get offersPeriod => _repo.periodApplies;
+  bool get beforePeriod => _repo.setting.beforePeriod;
+  bool get whenLate => _repo.setting.whenLate;
+  int get daysBefore => _repo.setting.daysBefore;
+
+  /// "2 days before", for the slider's label.
+  String get daysBeforeText =>
+      daysBefore == 1 ? '1 day before' : '$daysBefore days before';
+
+  Future<void> setBeforePeriod(bool on) => _repo.setBeforePeriod(on);
+  Future<void> setWhenLate(bool on) => _repo.setWhenLate(on);
+  Future<void> setDaysBefore(int days) => _repo.setDaysBefore(days);
+
   Future<void> setTime({required int hour, required int minute}) =>
       _repo.setTime(hour: hour, minute: minute);
 
