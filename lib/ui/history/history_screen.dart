@@ -2,11 +2,13 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
+import 'package:lilith/domain/cycle_statistics.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
+import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/period/period_form_screen.dart';
@@ -50,6 +52,10 @@ abstract final class HistoryKeys {
   static const Key clearFilters = Key('history.clearFilters');
   static const Key matchCount = Key('history.matchCount');
   static const Key noMatches = Key('history.noMatches');
+  static const Key statistics = Key('history.statistics');
+  static Key statisticFlag(StatisticFlag f) =>
+      Key('history.statisticFlag.${f.name}');
+  static const Key statisticsSource = Key('history.statisticsSource');
 }
 
 class HistoryScreen extends StatelessWidget {
@@ -186,6 +192,7 @@ class _HistoryView extends StatelessWidget {
                 ],
               ),
             ),
+          if (vm.statistics case final s?) _StatisticsCard(vm: vm, stats: s),
           const SectionHeading('Your days'),
           _SearchAndFilters(vm: vm),
           if (vm.isFiltering && vm.matchCount == 0)
@@ -505,6 +512,45 @@ class _SearchAndFiltersState extends State<_SearchAndFilters> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Cycle and period length ranges over every cycle, and any flags with
+/// their source.
+class _StatisticsCard extends StatelessWidget {
+  const _StatisticsCard({required this.vm, required this.stats});
+
+  final HistoryViewModel vm;
+  final CycleStatistics stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final flags = stats.flags;
+    final periods = vm.periodRangeText(stats);
+    return AppCard(
+      key: HistoryKeys.statistics,
+      icon: Icons.insights_rounded,
+      title: 'Your cycles in numbers',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: Space.sm,
+        children: [
+          Text('Cycle length: ${vm.cycleRangeText(stats)}'),
+          if (periods != null) Text('Period length: $periods'),
+          for (final f in StatisticFlag.values)
+            if (flags.contains(f))
+              Text(key: HistoryKeys.statisticFlag(f), vm.flagText(stats, f)),
+          if (flags.isNotEmpty)
+            ActionChip(
+              key: HistoryKeys.statisticsSource,
+              avatar: const Icon(Icons.open_in_new_rounded),
+              label: Text(statisticsSource.name),
+              onPressed: () =>
+                  context.read<UrlOpener>()(Uri.parse(statisticsSource.url)),
+            ),
+        ],
+      ),
     );
   }
 }

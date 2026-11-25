@@ -34,6 +34,19 @@ void main() {
     expect(vm.days, isEmpty);
   });
 
+  test('statistics cover every cycle, whatever the filters', () async {
+    await repo.apply(
+      (data) => data
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+          .withPeriod(PeriodEvent(startDate: d(10))),
+    );
+    expect(vm.statistics?.cycleCount, 2);
+    vm.setBleedingOnly(on: true);
+    expect(vm.cycles, isEmpty);
+    expect(vm.statistics?.cycleCount, 2);
+  });
+
   test('cycles are newest first with the length to the next start', () async {
     await repo.apply(
       (data) => data
@@ -126,6 +139,17 @@ void cycleTextTests() {
       'Current cycle · period 1 day',
     );
   });
+
+  final ranges = [
+    (name: 'a range', from: 4, to: 7, want: '4 to 7 days'),
+    (name: 'the same length every time', from: 5, to: 5, want: '5 days'),
+    (name: 'one day every time', from: 1, to: 1, want: '1 day'),
+  ];
+  for (final r in ranges) {
+    test('a length range reads naturally: ${r.name}', () {
+      expect(HistoryViewModel.rangeText(r.from, r.to), r.want);
+    });
+  }
 }
 
 void chartSpanTests() {
