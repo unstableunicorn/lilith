@@ -97,7 +97,7 @@ const List<PeriodFact> periodFacts = [
     'several cycles gives a far better prediction than any single one.',
     Source(
       'ACOG',
-      'https://www.acog.org/womens-health/faqs/the-menstrual-cycle',
+      'https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding',
     ),
   ),
   PeriodFact(
@@ -146,7 +146,7 @@ const List<PeriodFact> periodFacts = [
     'useful vital sign.',
     Source(
       'ACOG',
-      'https://www.acog.org/womens-health/faqs/the-menstrual-cycle',
+      'https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding',
     ),
   ),
   PeriodFact(
@@ -232,8 +232,12 @@ const List<KnowledgeEntry> knowledgeBase = [
     ],
     sources: [
       Source(
-        'ACOG',
-        'https://www.acog.org/womens-health/faqs/the-menstrual-cycle',
+        'ACOG: abnormal bleeding',
+        'https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding',
+      ),
+      Source(
+        'ACOG: absent periods',
+        'https://www.acog.org/womens-health/faqs/amenorrhea-absence-of-periods',
       ),
     ],
   ),
