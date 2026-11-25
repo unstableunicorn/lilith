@@ -2,9 +2,12 @@
 // draft differs from what the pod holds.
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/content/dose_presets.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/ui/core/dates.dart';
 
 class LogViewModel extends ChangeNotifier {
@@ -86,6 +89,38 @@ class LogViewModel extends ChangeNotifier {
         ? _draft.copyWith(clearNote: true)
         : _draft.copyWith(note: text),
   );
+
+  /// Whether the day asks about the pill, patch or ring: the profile has
+  /// one, and its schedule, if set, has something due that day.
+  bool get offersDose {
+    final profile = _repo.data.profile;
+    if (dosePresetsFor(profile.contraception).isEmpty) return false;
+    final schedule = profile.contraceptionSchedule;
+    return schedule == null || schedule.stepOn(_date) != null;
+  }
+
+  /// True for a patch or ring, which are "done" rather than "taken".
+  bool get doseIsPatchOrRing =>
+      _repo.data.profile.contraception == Contraception.patchOrRing;
+
+  bool get doseDone => _draft.contraceptionDoneAt != null;
+
+  /// Marks the day's dose done, today at this moment and an earlier day at
+  /// the schedule's time, or not.
+  void setDoseDone(bool done) {
+    if (!done) return _edit(_draft.copyWith(clearContraceptionDone: true));
+    final s = _repo.data.profile.contraceptionSchedule;
+    final at = _date == today
+        ? now()
+        : DateTime(
+            _date.year,
+            _date.month,
+            _date.day,
+            s?.hour ?? ContraceptionSchedule.defaultHour,
+            s?.minute ?? 0,
+          );
+    _edit(_draft.copyWith(contraceptionDoneAt: at));
+  }
 
   void clear() => _edit(DailyLog(date: _date));
 
