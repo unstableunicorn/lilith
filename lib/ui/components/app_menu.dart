@@ -3,13 +3,14 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/ui/about/about_screen.dart';
 import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/settings/settings_screen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-enum AppMenuAction { settings, androidApp, logout }
+enum AppMenuAction { settings, about, androidApp, logout }
 
 abstract final class AppMenuKeys {
   static const Key button = Key('appMenu.button');
@@ -34,6 +35,9 @@ class AppMenu extends StatelessWidget {
       AppMenuAction.androidApp => context.read<Downloader>()(
         AppLinks.androidApk,
       ),
+      AppMenuAction.about => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const AboutScreen())),
       AppMenuAction.logout => context.read<SessionRepository>().logout(),
     },
     itemBuilder: (context) => [
@@ -43,6 +47,15 @@ class AppMenu extends StatelessWidget {
         child: const ListTile(
           leading: Icon(Icons.settings_rounded),
           title: Text('Settings'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      PopupMenuItem(
+        key: AppMenuKeys.item(AppMenuAction.about),
+        value: AppMenuAction.about,
+        child: const ListTile(
+          leading: Icon(Icons.info_outline_rounded),
+          title: Text('About'),
           contentPadding: EdgeInsets.zero,
         ),
       ),

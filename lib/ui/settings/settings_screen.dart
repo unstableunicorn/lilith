@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
           child: ListTile(
             key: SettingsKeys.reminders,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Daily and period reminders'),
+            title: const Text('Daily, period and pill reminders'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const RemindersScreen()),

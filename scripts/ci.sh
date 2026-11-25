@@ -80,7 +80,10 @@ if area web; then
 step "web"
 if need flutter "the web build"; then
   run flutter pub get
-  run flutter build web --release
+  # The deploy sets these so About can name the build; locally they are empty.
+  run flutter build web --release \
+    --dart-define=LILITH_BUILD="${LILITH_BUILD:-}" \
+    --dart-define=LILITH_COMMIT="${LILITH_COMMIT:-}"
 fi
 fi
 

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/about/about_screen.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/app_links.dart';
 import 'package:lilith/ui/core/url_opener.dart';
@@ -190,6 +191,13 @@ void appMenuDownloadTests() {
     await tester.pumpAndSettle();
     expect(downloads.opened, [AppLinks.androidApk]);
     expect(urls.opened, isEmpty);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.about)));
+    await tester.pumpAndSettle();
+    expect(find.byType(AboutScreen), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tester.pumpWidget(
       harness(
         session: session,
