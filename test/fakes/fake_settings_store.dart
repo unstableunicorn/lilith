@@ -1,4 +1,5 @@
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/reminder_setting.dart';
@@ -11,6 +12,13 @@ class FakeSettingsStore implements SettingsStore {
   ReminderSetting reminder = const ReminderSetting();
   PageSettings pageSettings = const PageSettings();
   DateTime? snoozedThrough;
+  DoseCache doseCache = const DoseCache();
+
+  @override
+  Future<DoseCache> readDoseCache() async => doseCache;
+
+  @override
+  Future<void> writeDoseCache(DoseCache cache) async => doseCache = cache;
 
   @override
   Future<DateTime?> readSnoozedThrough() async => snoozedThrough;

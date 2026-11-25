@@ -2,26 +2,45 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:lilith/data/contraception_reminder_repository.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/period_reminder_repository.dart';
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+
+/// Where a running app hears of a mark made in the background isolate.
+const String _markedPort = 'lilith.doseMarked';
 
 /// Runs in a fresh isolate the plugin starts when a button that does not
 /// open the app is tapped, whether or not the app is running.
 @pragma('vm:entry-point')
 Future<void> onBackgroundNotificationAction(NotificationResponse r) async {
-  if (r.actionId != ReminderAction.snooze.name) return;
-  DartPluginRegistrant.ensureInitialized();
-  await snoozeCheckIn(
-    SharedPreferencesSettingsStore(),
-    LocalNotificationService(),
-    now: DateTime.now(),
-  );
+  final marks = {ReminderAction.taken.name, ReminderAction.done.name};
+  if (r.actionId == ReminderAction.snooze.name) {
+    DartPluginRegistrant.ensureInitialized();
+    await snoozeCheckIn(
+      SharedPreferencesSettingsStore(),
+      LocalNotificationService(),
+      now: DateTime.now(),
+    );
+  } else if (marks.contains(r.actionId)) {
+    if (doseDayOf(r.payload) case final day?) {
+      DartPluginRegistrant.ensureInitialized();
+      await markDoseDone(
+        SharedPreferencesSettingsStore(),
+        LocalNotificationService(),
+        day: day,
+        now: DateTime.now(),
+      );
+      IsolateNameServer.lookupPortByName(_markedPort)?.send(null);
+    }
+  }
 }
 
 class LocalNotificationService implements NotificationService {
@@ -61,10 +80,21 @@ class LocalNotificationService implements NotificationService {
 
   void _tapped(NotificationResponse r) {
     if (r.actionId == ReminderAction.log.name) _opened.add(ReminderAction.log);
-    if (r.actionId == ReminderAction.snooze.name) {
+    if (r.actionId != ReminderAction.log.name) {
       unawaited(onBackgroundNotificationAction(r));
     }
   }
+
+  Stream<void>? _marked;
+
+  /// The running app's end of [_markedPort]; one per process.
+  @override
+  Stream<void> get marked => _marked ??= () {
+    final port = ReceivePort();
+    IsolateNameServer.removePortNameMapping(_markedPort);
+    IsolateNameServer.registerPortWithName(port.sendPort, _markedPort);
+    return port.asBroadcastStream();
+  }();
 
   @override
   Stream<ReminderAction> get opened {
@@ -82,6 +112,16 @@ class LocalNotificationService implements NotificationService {
     ReminderAction.snooze => AndroidNotificationAction(
       a.name,
       'Snooze 1 day',
+      cancelNotification: true,
+    ),
+    ReminderAction.taken => AndroidNotificationAction(
+      a.name,
+      'Taken',
+      cancelNotification: true,
+    ),
+    ReminderAction.done => AndroidNotificationAction(
+      a.name,
+      'Done',
       cancelNotification: true,
     ),
   };
@@ -110,6 +150,8 @@ class LocalNotificationService implements NotificationService {
           a.name,
           'Snooze 1 day',
         ),
+        ReminderAction.taken => DarwinNotificationAction.plain(a.name, 'Taken'),
+        ReminderAction.done => DarwinNotificationAction.plain(a.name, 'Done'),
       };
 
   /// How [reminder] is shown on each platform.
@@ -149,6 +191,29 @@ class LocalNotificationService implements NotificationService {
     return false;
   }
 
+  AndroidFlutterLocalNotificationsPlugin? get _android => Platform.isAndroid
+      ? _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+      : null;
+
+  /// iOS delivers on time without asking.
+  @override
+  Future<bool> canScheduleExact() async {
+    await _init();
+    if (!Platform.isAndroid) return true;
+    return await _android?.canScheduleExactNotifications() ?? false;
+  }
+
+  @override
+  Future<bool> requestExact() async {
+    await _init();
+    if (!Platform.isAndroid) return true;
+    await _android?.requestExactAlarmsPermission();
+    return await canScheduleExact();
+  }
+
   /// The instant is kept exact by scheduling in UTC: the device's local time
   /// zone database is not needed to say "this many seconds from now".
   @override
@@ -169,13 +234,18 @@ class LocalNotificationService implements NotificationService {
     final now = DateTime.now();
     if (!reminder.at.isAfter(now)) return;
     final when = tz.TZDateTime.now(tz.UTC).add(reminder.at.difference(now));
+    // Without the grant an exact alarm is dropped, so fall back.
+    final exact = reminder.exact && await canScheduleExact();
     await _plugin.zonedSchedule(
       id: reminder.id,
       scheduledDate: when,
       title: reminder.title,
       body: reminder.body,
       notificationDetails: detailsFor(reminder),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: reminder.payload,
+      androidScheduleMode: exact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: repeat,
     );
   }

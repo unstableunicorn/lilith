@@ -29,6 +29,13 @@ void main() {
     );
   });
 
+  test('contraception reminders are off, and load when absent', () {
+    expect(const ReminderSetting().contraception, isFalse);
+    const on = ReminderSetting(contraception: true);
+    expect(ReminderSetting.fromJson(on.toJson()).contraception, isTrue);
+    expect(ReminderSetting.fromJson(const {}).contraception, isFalse);
+  });
+
   test('the next time is today if still ahead, else tomorrow', () {
     const s = ReminderSetting(enabled: true, hour: 7, minute: 30);
     expect(s.nextAfter(DateTime(2026, 6, 10, 6)), DateTime(2026, 6, 10, 7, 30));

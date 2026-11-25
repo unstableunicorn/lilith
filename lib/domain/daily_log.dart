@@ -68,6 +68,7 @@ class DailyLog {
     int? painLevel,
     this.ovulationTest,
     String? note,
+    this.contraceptionDoneAt,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
        painLevel = painLevel?.clamp(0, 10),
@@ -83,6 +84,9 @@ class DailyLog {
     painLevel: (json['painLevel'] as num?)?.toInt(),
     ovulationTest: OvulationTest.fromName(json['ovulationTest'] as String?),
     note: json['note'] as String?,
+    contraceptionDoneAt: DateTime.tryParse(
+      json['contraceptionDoneAt'] as String? ?? '',
+    ),
   );
 
   final DateTime date;
@@ -98,6 +102,10 @@ class DailyLog {
   /// The person's own words for the day, trimmed; null when blank.
   final String? note;
 
+  /// When the day's pill was taken, or its patch or ring done; null when
+  /// not marked.
+  final DateTime? contraceptionDoneAt;
+
   /// The longest note the Log tab takes.
   static const int maxNoteLength = 1000;
 
@@ -107,11 +115,12 @@ class DailyLog {
       symptoms.isEmpty &&
       painLevel == null &&
       ovulationTest == null &&
-      note == null;
+      note == null &&
+      contraceptionDoneAt == null;
 
   /// A copy with the given fields replaced. [clearPain],
-  /// [clearOvulationTest] and [clearNote] unset a value, since null means
-  /// "leave it".
+  /// [clearOvulationTest], [clearNote] and [clearContraceptionDone] unset a
+  /// value, since null means "leave it".
   DailyLog copyWith({
     FlowIntensity? flow,
     Set<Symptom>? symptoms,
@@ -121,7 +130,12 @@ class DailyLog {
     bool clearOvulationTest = false,
     String? note,
     bool clearNote = false,
+    DateTime? contraceptionDoneAt,
+    bool clearContraceptionDone = false,
   }) => DailyLog(
+    contraceptionDoneAt: clearContraceptionDone
+        ? null
+        : (contraceptionDoneAt ?? this.contraceptionDoneAt),
     note: clearNote ? null : (note ?? this.note),
     date: date,
     flow: flow ?? this.flow,
@@ -139,6 +153,8 @@ class DailyLog {
     if (painLevel != null) 'painLevel': painLevel,
     if (ovulationTest case final t?) 'ovulationTest': t.name,
     'note': ?note,
+    if (contraceptionDoneAt case final at?)
+      'contraceptionDoneAt': at.toIso8601String(),
   };
 
   @override
@@ -149,7 +165,8 @@ class DailyLog {
       _symptoms.equals(other.symptoms, symptoms) &&
       other.painLevel == painLevel &&
       other.ovulationTest == ovulationTest &&
-      other.note == note;
+      other.note == note &&
+      other.contraceptionDoneAt == contraceptionDoneAt;
 
   @override
   int get hashCode => Object.hash(
@@ -159,5 +176,6 @@ class DailyLog {
     painLevel,
     ovulationTest,
     note,
+    contraceptionDoneAt,
   );
 }

@@ -4,6 +4,7 @@ import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -127,6 +128,28 @@ void main() {
     await tester.tap(find.byKey(LogKeys.save));
     await tester.pumpAndSettle();
     expect(health.data.logFor(today)?.ovulationTest, OvulationTest.positive);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('the pill is marked taken, only when there is one', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byKey(LogKeys.dose), findsNothing);
+    await health.apply(
+      (d) => d.copyWith(
+        profile: HealthProfile(contraception: Contraception.combinedPill),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(LogKeys.dose), findsOneWidget);
+    await tester.ensureVisible(find.byKey(LogKeys.dose));
+    await tester.tap(find.byKey(LogKeys.dose));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(LogKeys.save));
+    await tester.tap(find.byKey(LogKeys.save));
+    await tester.pumpAndSettle();
+    expect(health.data.logFor(today)?.contraceptionDoneAt, isNotNull);
     await expectAccessible(tester);
   });
 

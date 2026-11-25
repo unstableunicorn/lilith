@@ -13,6 +13,14 @@ class FakeNotificationService implements NotificationService {
 
   void open(ReminderAction action) => _opened.add(action);
 
+  final StreamController<void> _marked = StreamController.broadcast(sync: true);
+
+  @override
+  Stream<void> get marked => _marked.stream;
+
+  /// Plays a mark made from a notification while the app runs.
+  void mark() => _marked.add(null);
+
   final Map<int, Reminder> scheduled = {};
   final Map<int, Reminder> daily = {};
   final List<int> cancelled = [];
@@ -36,6 +44,20 @@ class FakeNotificationService implements NotificationService {
   @override
   Future<void> schedule(Reminder reminder) async =>
       scheduled[reminder.id] = reminder;
+
+  /// Whether exact alarms are allowed, and what the system setting answers.
+  bool exactAllowed = false;
+  bool exactGrant = true;
+  int exactRequests = 0;
+
+  @override
+  Future<bool> canScheduleExact() async => exactAllowed;
+
+  @override
+  Future<bool> requestExact() async {
+    exactRequests++;
+    return exactAllowed = exactGrant;
+  }
 
   @override
   Future<void> cancel(int id) async {

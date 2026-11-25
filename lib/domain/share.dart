@@ -18,18 +18,16 @@ String shareId(String recipientWebId) => sha256
     .substring(0, 16);
 
 /// The part of [data] a recipient sees: the cycle data only. The health
-/// profile, remedy verdicts, shopping list and the shares stay with the owner,
-/// and so do day notes unless [includeNotes].
+/// profile, remedy verdicts, shopping list, the shares and doses marked done
+/// stay with the owner, and so do day notes unless [includeNotes].
 HealthData sharedView(HealthData data, {bool includeNotes = false}) =>
     HealthData(
       readings: data.readings,
       periods: data.periods,
       dailyLogs: [
         for (final l in data.dailyLogs)
-          if (includeNotes)
-            l
-          else if (l.copyWith(clearNote: true) case final bare
-              when !bare.isEmpty)
+          if (l.copyWith(clearNote: !includeNotes, clearContraceptionDone: true)
+              case final bare when !bare.isEmpty)
             bare,
       ],
       wearableNights: data.wearableNights,

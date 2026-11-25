@@ -9,6 +9,12 @@ enum ReminderAction {
 
   /// Skips tomorrow's check-in, without opening the app.
   snooze,
+
+  /// Marks today's pill taken, without opening the app.
+  taken,
+
+  /// Marks today's patch or ring done, without opening the app.
+  done,
 }
 
 /// Every set of buttons a reminder may carry. iOS needs each one registered
@@ -16,7 +22,15 @@ enum ReminderAction {
 const List<List<ReminderAction>> reminderActionSets = [
   logActions,
   checkInActions,
+  takenActions,
+  doneActions,
 ];
+
+/// On a pill reminder.
+const List<ReminderAction> takenActions = [ReminderAction.taken];
+
+/// On a patch or ring reminder.
+const List<ReminderAction> doneActions = [ReminderAction.done];
 
 /// On the expected day and once late.
 const List<ReminderAction> logActions = [ReminderAction.log];
@@ -36,6 +50,8 @@ class Reminder {
     required this.title,
     required this.body,
     this.actions = const [],
+    this.payload,
+    this.exact = false,
   });
 
   /// Stable per purpose, so a reschedule replaces rather than adds.
@@ -45,6 +61,12 @@ class Reminder {
   final String body;
   final List<ReminderAction> actions;
 
+  /// Handed back with a button tap: what the reminder is about.
+  final String? payload;
+
+  /// Shown on the minute where the system allows it, else when it can.
+  final bool exact;
+
   @override
   bool operator ==(Object other) =>
       other is Reminder &&
@@ -52,10 +74,13 @@ class Reminder {
       other.at == at &&
       other.title == title &&
       other.body == body &&
-      listEquals(other.actions, actions);
+      listEquals(other.actions, actions) &&
+      other.payload == payload &&
+      other.exact == exact;
 
   @override
-  int get hashCode => Object.hash(id, at, title, body, Object.hashAll(actions));
+  int get hashCode =>
+      Object.hash(id, at, title, body, Object.hashAll(actions), payload, exact);
 }
 
 abstract interface class NotificationService {
@@ -64,6 +89,12 @@ abstract interface class NotificationService {
 
   /// Asks the system once; true when notifications may be shown.
   Future<bool> requestPermission();
+
+  /// Whether an exact reminder is shown on the minute here.
+  Future<bool> canScheduleExact();
+
+  /// Opens the system setting for exact alarms; true once they are allowed.
+  Future<bool> requestExact();
 
   /// Shows [reminder] at its time and again every day at that time of day,
   /// replacing any with the same id.
@@ -78,6 +109,10 @@ abstract interface class NotificationService {
   /// The buttons tapped that open the app, including the one that
   /// launched it.
   Stream<ReminderAction> get opened;
+
+  /// A dose marked done from a notification while the app is running, so
+  /// the mark can go to the pod at once.
+  Stream<void> get marked;
 }
 
 /// Where notifications cannot be scheduled: the web.
@@ -91,6 +126,12 @@ class NoNotificationService implements NotificationService {
   Future<bool> requestPermission() async => false;
 
   @override
+  Future<bool> canScheduleExact() async => false;
+
+  @override
+  Future<bool> requestExact() async => false;
+
+  @override
   Future<void> scheduleDaily(Reminder reminder) async {}
 
   @override
@@ -101,4 +142,7 @@ class NoNotificationService implements NotificationService {
 
   @override
   Stream<ReminderAction> get opened => const Stream.empty();
+
+  @override
+  Stream<void> get marked => const Stream.empty();
 }

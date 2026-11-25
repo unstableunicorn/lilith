@@ -6,6 +6,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 
 class ReminderRepository extends ChangeNotifier {
@@ -44,6 +46,49 @@ class ReminderRepository extends ChangeNotifier {
   /// while it unmounts and nothing that shows it can be on screen.
   void forgetPeriod() => _periodApplies = false;
 
+  Contraception? _doseMethod;
+  ContraceptionSchedule? _doseSchedule;
+
+  /// The contraception in the profile signed in, and its schedule, for the
+  /// reminders screen; null until the data loads.
+  Contraception? get doseMethod => _doseMethod;
+  ContraceptionSchedule? get doseSchedule => _doseSchedule;
+
+  void setDose(Contraception? method, ContraceptionSchedule? schedule) {
+    if (method == _doseMethod && schedule == _doseSchedule) return;
+    _doseMethod = method;
+    _doseSchedule = schedule;
+    notifyListeners();
+  }
+
+  /// [setDose] cleared without notifying, as [forgetPeriod].
+  void forgetDose() {
+    _doseMethod = null;
+    _doseSchedule = null;
+  }
+
+  /// Turns the pill, patch or ring reminders on, asking the system first,
+  /// or off.
+  Future<void> setContraception(bool on) =>
+      _setFromData(on, (s, v) => s.copyWith(contraception: v));
+
+  bool? _exactAllowed;
+
+  /// Whether reminders can be shown on the minute; null until asked.
+  bool? get exactAllowed => _exactAllowed;
+
+  /// Reads [exactAllowed] from the system.
+  Future<void> checkExact() async {
+    _exactAllowed = await _notifications.canScheduleExact();
+    notifyListeners();
+  }
+
+  /// Opens the system setting for exact alarms, then reads it again.
+  Future<void> requestExact() async {
+    _exactAllowed = await _notifications.requestExact();
+    notifyListeners();
+  }
+
   /// Whether this device can show reminders at all (not on the web).
   bool get isAvailable => _notifications.isAvailable;
 
@@ -81,11 +126,11 @@ class ReminderRepository extends ChangeNotifier {
 
   /// Turns the reminders before a period on, asking the system first, or off.
   Future<void> setBeforePeriod(bool on) =>
-      _setPeriod(on, (s, v) => s.copyWith(beforePeriod: v));
+      _setFromData(on, (s, v) => s.copyWith(beforePeriod: v));
 
   /// Turns the reminders for a late period on, asking first, or off.
   Future<void> setWhenLate(bool on) =>
-      _setPeriod(on, (s, v) => s.copyWith(whenLate: v));
+      _setFromData(on, (s, v) => s.copyWith(whenLate: v));
 
   Future<void> setDaysBefore(int days) async {
     _setting = _setting.copyWith(
@@ -98,9 +143,9 @@ class ReminderRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  // The period reminders themselves are scheduled from the data, by
-  // PeriodReminderRepository, which listens here.
-  Future<void> _setPeriod(
+  // These are scheduled from the data, by the period and contraception
+  // reminder repositories, which listen here.
+  Future<void> _setFromData(
     bool on,
     ReminderSetting Function(ReminderSetting s, bool on) change,
   ) async {

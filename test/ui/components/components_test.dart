@@ -3,6 +3,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/app_links.dart';
+import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -168,6 +169,7 @@ void appMenuDownloadTests() {
     tester,
   ) async {
     final urls = RecordingUrlOpener();
+    final downloads = RecordingUrlOpener();
     final session = SessionRepository(
       FakePodSessionService(),
       FakeSettingsStore(),
@@ -176,6 +178,7 @@ void appMenuDownloadTests() {
       harness(
         session: session,
         openUrl: urls.call,
+        download: Downloader(downloads.call),
         child: Scaffold(
           appBar: AppBar(actions: const [AppMenu(offerAndroidApp: true)]),
         ),
@@ -185,7 +188,8 @@ void appMenuDownloadTests() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(AppMenuKeys.item(AppMenuAction.androidApp)));
     await tester.pumpAndSettle();
-    expect(urls.opened, [AppLinks.androidApk]);
+    expect(downloads.opened, [AppLinks.androidApk]);
+    expect(urls.opened, isEmpty);
     await tester.pumpWidget(
       harness(
         session: session,

@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/ui/log/log_view_model.dart';
 
 import '../../fakes/fake_pod_service.dart';
@@ -116,6 +118,69 @@ void main() {
       expect(repo.data.logFor(day), isNull);
     },
   );
+
+  group('the pill, patch or ring', () {
+    final schedule = ContraceptionSchedule(
+      form: DoseForm.ring,
+      start: DateTime(2026, 5, 20),
+      daysOn: 21,
+      daysOff: 7,
+      windowHours: 48,
+      hour: 20,
+    );
+
+    Future<void> profile(Contraception? method, [ContraceptionSchedule? s]) =>
+        repo.apply(
+          (d) => d.copyWith(
+            profile: HealthProfile(
+              contraception: method,
+              contraceptionSchedule: s,
+            ),
+          ),
+        );
+
+    test('asked about only for a method with a schedule to keep', () async {
+      final cases = <(String, Contraception?, ContraceptionSchedule?, bool)>[
+        ('no contraception', null, null, false),
+        ('an implant', Contraception.implant, null, false),
+        ('a pill, no schedule yet', Contraception.combinedPill, null, true),
+        ('a ring, due today', Contraception.patchOrRing, schedule, true),
+      ];
+      for (final (name, method, s, want) in cases) {
+        await profile(method, s);
+        expect(vm.offersDose, want, reason: name);
+      }
+      expect(vm.doseIsPatchOrRing, isTrue);
+    });
+
+    test('not asked on a day nothing is due', () async {
+      await profile(Contraception.patchOrRing, schedule);
+      vm.pickDate(DateTime(2026, 6, 1));
+      expect(vm.offersDose, isFalse);
+    });
+
+    test(
+      'marked today now, an earlier day at its time, and unmarked',
+      () async {
+        await profile(Contraception.patchOrRing, schedule);
+        vm.setDoseDone(true);
+        expect(vm.doseDone, isTrue);
+        await vm.save();
+        expect(repo.data.logFor(day)?.contraceptionDoneAt, today);
+        vm
+          ..pickDate(DateTime(2026, 5, 20))
+          ..setDoseDone(true);
+        await vm.save();
+        expect(
+          repo.data.logFor(DateTime(2026, 5, 20))?.contraceptionDoneAt,
+          DateTime(2026, 5, 20, 20),
+        );
+        vm.setDoseDone(false);
+        await vm.save();
+        expect(repo.data.logFor(DateTime(2026, 5, 20)), isNull);
+      },
+    );
+  });
 
   test('an ovulation test result is saved, and can be unset', () async {
     expect(vm.ovulationTest, isNull);

@@ -31,7 +31,7 @@ class AppMenu extends StatelessWidget {
       AppMenuAction.settings => Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
-      AppMenuAction.androidApp => context.read<UrlOpener>()(
+      AppMenuAction.androidApp => context.read<Downloader>()(
         AppLinks.androidApk,
       ),
       AppMenuAction.logout => context.read<SessionRepository>().logout(),

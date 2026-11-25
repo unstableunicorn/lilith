@@ -25,6 +25,7 @@ abstract final class LogKeys {
   static Key flow(FlowIntensity f) => Key('log.flow.${f.name}');
   static Key symptom(Symptom s) => Key('log.symptom.${s.name}');
   static const Key note = Key('log.note');
+  static const Key dose = Key('log.dose');
   static Key ovulationTest(OvulationTest? t) =>
       Key('log.ovulationTest.${t?.name ?? 'none'}');
 }
@@ -184,6 +185,16 @@ class _LogViewState extends State<_LogView> {
               ),
           ],
         ),
+        if (vm.offersDose)
+          SwitchListTile(
+            key: LogKeys.dose,
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              vm.doseIsPatchOrRing ? 'Patch or ring done' : 'Pill taken',
+            ),
+            value: vm.doseDone,
+            onChanged: vm.setDoseDone,
+          ),
         const SectionHeading('Note'),
         TextField(
           key: LogKeys.note,

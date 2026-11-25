@@ -15,6 +15,7 @@ class ReminderSetting {
     this.beforePeriod = false,
     this.daysBefore = defaultDaysBefore,
     this.whenLate = false,
+    this.contraception = false,
   });
 
   factory ReminderSetting.fromJson(Map<String, dynamic> json) =>
@@ -25,6 +26,7 @@ class ReminderSetting {
         beforePeriod: json['beforePeriod'] as bool? ?? false,
         daysBefore: (json['daysBefore'] as num?)?.toInt() ?? defaultDaysBefore,
         whenLate: json['whenLate'] as bool? ?? false,
+        contraception: json['contraception'] as bool? ?? false,
       );
 
   /// Early morning, when a temperature is taken.
@@ -49,6 +51,9 @@ class ReminderSetting {
   /// Reminders once the period is past its window, then a daily check-in.
   final bool whenLate;
 
+  /// Reminders for the pill, patch or ring, at the schedule's own time.
+  final bool contraception;
+
   ReminderSetting copyWith({
     bool? enabled,
     int? hour,
@@ -56,6 +61,7 @@ class ReminderSetting {
     bool? beforePeriod,
     int? daysBefore,
     bool? whenLate,
+    bool? contraception,
   }) => ReminderSetting(
     enabled: enabled ?? this.enabled,
     hour: hour ?? this.hour,
@@ -63,6 +69,7 @@ class ReminderSetting {
     beforePeriod: beforePeriod ?? this.beforePeriod,
     daysBefore: daysBefore ?? this.daysBefore,
     whenLate: whenLate ?? this.whenLate,
+    contraception: contraception ?? this.contraception,
   );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +79,7 @@ class ReminderSetting {
     'beforePeriod': beforePeriod,
     'daysBefore': daysBefore,
     'whenLate': whenLate,
+    'contraception': contraception,
   };
 
   /// [day] at this setting's time of day.
@@ -102,9 +110,17 @@ class ReminderSetting {
       other.minute == minute &&
       other.beforePeriod == beforePeriod &&
       other.daysBefore == daysBefore &&
-      other.whenLate == whenLate;
+      other.whenLate == whenLate &&
+      other.contraception == contraception;
 
   @override
-  int get hashCode =>
-      Object.hash(enabled, hour, minute, beforePeriod, daysBefore, whenLate);
+  int get hashCode => Object.hash(
+    enabled,
+    hour,
+    minute,
+    beforePeriod,
+    daysBefore,
+    whenLate,
+    contraception,
+  );
 }
