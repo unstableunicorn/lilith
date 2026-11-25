@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -12,6 +13,9 @@ import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+
+/// Where a running app hears of a mark made in the background isolate.
+const String _markedPort = 'lilith.doseMarked';
 
 /// Runs in a fresh isolate the plugin starts when a button that does not
 /// open the app is tapped, whether or not the app is running.
@@ -34,6 +38,7 @@ Future<void> onBackgroundNotificationAction(NotificationResponse r) async {
         day: day,
         now: DateTime.now(),
       );
+      IsolateNameServer.lookupPortByName(_markedPort)?.send(null);
     }
   }
 }
@@ -79,6 +84,17 @@ class LocalNotificationService implements NotificationService {
       unawaited(onBackgroundNotificationAction(r));
     }
   }
+
+  Stream<void>? _marked;
+
+  /// The running app's end of [_markedPort]; one per process.
+  @override
+  Stream<void> get marked => _marked ??= () {
+    final port = ReceivePort();
+    IsolateNameServer.removePortNameMapping(_markedPort);
+    IsolateNameServer.registerPortWithName(port.sendPort, _markedPort);
+    return port.asBroadcastStream();
+  }();
 
   @override
   Stream<ReminderAction> get opened {

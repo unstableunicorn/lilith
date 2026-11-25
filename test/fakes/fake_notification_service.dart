@@ -13,6 +13,14 @@ class FakeNotificationService implements NotificationService {
 
   void open(ReminderAction action) => _opened.add(action);
 
+  final StreamController<void> _marked = StreamController.broadcast(sync: true);
+
+  @override
+  Stream<void> get marked => _marked.stream;
+
+  /// Plays a mark made from a notification while the app runs.
+  void mark() => _marked.add(null);
+
   final Map<int, Reminder> scheduled = {};
   final Map<int, Reminder> daily = {};
   final List<int> cancelled = [];

@@ -230,6 +230,16 @@ void main() {
     expect(notifications.scheduled, isEmpty);
   });
 
+  test('a tap while the app runs reaches the pod at once', () async {
+    await start(HealthData(profile: profile));
+    final tapped = DateTime(2026, 3, 10, 9, 5);
+    await markDoseDone(settings, notifications, day: today, now: tapped);
+    notifications.mark();
+    await pumpEventQueue();
+    expect(health.data.logFor(today)?.contraceptionDoneAt, tapped);
+    expect(settings.doseCache.pending, isEmpty);
+  });
+
   test('tells the reminders screen the method and schedule', () async {
     await start(HealthData(profile: profile), on: false);
     expect(reminders.doseMethod, Contraception.progestogenOnlyPill);

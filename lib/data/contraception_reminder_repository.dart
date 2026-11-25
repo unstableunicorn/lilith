@@ -30,8 +30,10 @@ class ContraceptionReminderRepository {
   }) {
     _health.addListener(_changed);
     _reminders.addListener(_changed);
+    _marked = _notifications.marked.listen((_) => _changed());
   }
 
+  late final StreamSubscription<void> _marked;
   final HealthRepository _health;
   final ReminderRepository _reminders;
   final NotificationService _notifications;
@@ -96,6 +98,7 @@ class ContraceptionReminderRepository {
       _health.apply((d) => _withDone(d, {dateOnly(day): now()}));
 
   void dispose() {
+    unawaited(_marked.cancel());
     _health.removeListener(_changed);
     _reminders
       ..removeListener(_changed)

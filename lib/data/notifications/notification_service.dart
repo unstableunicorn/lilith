@@ -109,6 +109,10 @@ abstract interface class NotificationService {
   /// The buttons tapped that open the app, including the one that
   /// launched it.
   Stream<ReminderAction> get opened;
+
+  /// A dose marked done from a notification while the app is running, so
+  /// the mark can go to the pod at once.
+  Stream<void> get marked;
 }
 
 /// Where notifications cannot be scheduled: the web.
@@ -138,4 +142,7 @@ class NoNotificationService implements NotificationService {
 
   @override
   Stream<ReminderAction> get opened => const Stream.empty();
+
+  @override
+  Stream<void> get marked => const Stream.empty();
 }
