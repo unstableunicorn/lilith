@@ -4,6 +4,8 @@
     <!-- Local reminders: shown with the user's leave, and kept across a reboot. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Pill, patch and ring reminders on the minute, only if the user allows it. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
         android:label="Lilith"
         android:name="${applicationName}"

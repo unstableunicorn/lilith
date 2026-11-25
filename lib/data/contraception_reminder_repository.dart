@@ -53,6 +53,7 @@ class ContraceptionReminderRepository {
     await _sendPending();
     final data = _health.data;
     final profile = data.profile;
+    _reminders.setDose(profile.contraception, profile.contraceptionSchedule);
     final applies =
         _reminders.setting.contraception &&
         _notifications.isAvailable &&
@@ -96,7 +97,9 @@ class ContraceptionReminderRepository {
 
   void dispose() {
     _health.removeListener(_changed);
-    _reminders.removeListener(_changed);
+    _reminders
+      ..removeListener(_changed)
+      ..forgetDose();
   }
 }
 

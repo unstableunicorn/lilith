@@ -152,6 +152,7 @@ List<DoseReminder> contraceptionRemindersFor({
                 ? takenActions
                 : doneActions,
             payload: _dayText(d),
+            exact: true,
           ),
         );
     final warnAt = due.add(step * 3);

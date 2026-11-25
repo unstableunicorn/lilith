@@ -37,6 +37,20 @@ class FakeNotificationService implements NotificationService {
   Future<void> schedule(Reminder reminder) async =>
       scheduled[reminder.id] = reminder;
 
+  /// Whether exact alarms are allowed, and what the system setting answers.
+  bool exactAllowed = false;
+  bool exactGrant = true;
+  int exactRequests = 0;
+
+  @override
+  Future<bool> canScheduleExact() async => exactAllowed;
+
+  @override
+  Future<bool> requestExact() async {
+    exactRequests++;
+    return exactAllowed = exactGrant;
+  }
+
   @override
   Future<void> cancel(int id) async {
     cancelled.add(id);

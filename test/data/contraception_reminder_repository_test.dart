@@ -230,6 +230,14 @@ void main() {
     expect(notifications.scheduled, isEmpty);
   });
 
+  test('tells the reminders screen the method and schedule', () async {
+    await start(HealthData(profile: profile), on: false);
+    expect(reminders.doseMethod, Contraception.progestogenOnlyPill);
+    expect(reminders.doseSchedule, schedule);
+    repo.dispose();
+    expect(reminders.doseMethod, isNull);
+  });
+
   test('signing out cancels them all', () async {
     await start(HealthData(profile: profile));
     expect(notifications.scheduled, isNotEmpty);

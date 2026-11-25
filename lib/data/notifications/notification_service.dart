@@ -51,6 +51,7 @@ class Reminder {
     required this.body,
     this.actions = const [],
     this.payload,
+    this.exact = false,
   });
 
   /// Stable per purpose, so a reschedule replaces rather than adds.
@@ -63,6 +64,9 @@ class Reminder {
   /// Handed back with a button tap: what the reminder is about.
   final String? payload;
 
+  /// Shown on the minute where the system allows it, else when it can.
+  final bool exact;
+
   @override
   bool operator ==(Object other) =>
       other is Reminder &&
@@ -71,11 +75,12 @@ class Reminder {
       other.title == title &&
       other.body == body &&
       listEquals(other.actions, actions) &&
-      other.payload == payload;
+      other.payload == payload &&
+      other.exact == exact;
 
   @override
   int get hashCode =>
-      Object.hash(id, at, title, body, Object.hashAll(actions), payload);
+      Object.hash(id, at, title, body, Object.hashAll(actions), payload, exact);
 }
 
 abstract interface class NotificationService {
@@ -84,6 +89,12 @@ abstract interface class NotificationService {
 
   /// Asks the system once; true when notifications may be shown.
   Future<bool> requestPermission();
+
+  /// Whether an exact reminder is shown on the minute here.
+  Future<bool> canScheduleExact();
+
+  /// Opens the system setting for exact alarms; true once they are allowed.
+  Future<bool> requestExact();
 
   /// Shows [reminder] at its time and again every day at that time of day,
   /// replacing any with the same id.
@@ -109,6 +120,12 @@ class NoNotificationService implements NotificationService {
 
   @override
   Future<bool> requestPermission() async => false;
+
+  @override
+  Future<bool> canScheduleExact() async => false;
+
+  @override
+  Future<bool> requestExact() async => false;
 
   @override
   Future<void> scheduleDaily(Reminder reminder) async {}

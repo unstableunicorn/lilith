@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/reminder_repository.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 
 import '../fakes/fake_notification_service.dart';
@@ -108,5 +110,60 @@ void main() {
     repo.periodApplies = true;
     expect(repo.periodApplies, isTrue);
     expect(n, 1);
+  });
+
+  group('pill, patch and ring', () {
+    final schedule = ContraceptionSchedule(
+      form: DoseForm.pill,
+      start: DateTime(2026, 6, 1),
+      daysOn: 21,
+      daysOff: 7,
+      windowHours: 24,
+    );
+
+    test('the switch asks once, then saves', () async {
+      await repo.setContraception(true);
+      expect(notifications.permissionRequests, 1);
+      expect(settings.reminder.contraception, isTrue);
+      await repo.setContraception(false);
+      expect(settings.reminder.contraception, isFalse);
+    });
+
+    test('a refused permission leaves the switch off', () async {
+      notifications.permission = false;
+      await repo.setContraception(true);
+      expect(settings.reminder.contraception, isFalse);
+      expect(repo.isAllowed, isFalse);
+    });
+
+    test('exact times: read, then asked for in the system setting', () async {
+      await repo.checkExact();
+      expect(repo.exactAllowed, isFalse);
+      await repo.requestExact();
+      expect(notifications.exactRequests, 1);
+      expect(repo.exactAllowed, isTrue);
+    });
+
+    test('exact times refused stay refused', () async {
+      notifications.exactGrant = false;
+      await repo.requestExact();
+      expect(notifications.exactRequests, 1);
+      expect(repo.exactAllowed, isFalse);
+    });
+
+    test('holds the method and schedule from the data, notifying once', () {
+      var n = 0;
+      repo.addListener(() => n++);
+      repo
+        ..setDose(Contraception.combinedPill, schedule)
+        ..setDose(Contraception.combinedPill, schedule);
+      expect(repo.doseMethod, Contraception.combinedPill);
+      expect(repo.doseSchedule, schedule);
+      expect(n, 1);
+      repo.forgetDose();
+      expect(repo.doseMethod, isNull);
+      expect(repo.doseSchedule, isNull);
+      expect(n, 1);
+    });
   });
 }

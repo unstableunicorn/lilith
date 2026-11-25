@@ -178,6 +178,16 @@ void main() {
     }
   });
 
+  test('every reminder asks to be on the minute', () {
+    final plan = contraceptionRemindersFor(
+      schedule: pill(),
+      now: morning,
+      done: const {},
+    );
+    expect(plan, isNotEmpty);
+    expect(plan.every((r) => r.reminder.exact), isTrue);
+  });
+
   test('each reminder hands back the day it is for', () {
     final plan = contraceptionRemindersFor(
       schedule: pill(window: 12, hour: 15),

@@ -175,6 +175,29 @@ class LocalNotificationService implements NotificationService {
     return false;
   }
 
+  AndroidFlutterLocalNotificationsPlugin? get _android => Platform.isAndroid
+      ? _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+      : null;
+
+  /// iOS delivers on time without asking.
+  @override
+  Future<bool> canScheduleExact() async {
+    await _init();
+    if (!Platform.isAndroid) return true;
+    return await _android?.canScheduleExactNotifications() ?? false;
+  }
+
+  @override
+  Future<bool> requestExact() async {
+    await _init();
+    if (!Platform.isAndroid) return true;
+    await _android?.requestExactAlarmsPermission();
+    return await canScheduleExact();
+  }
+
   /// The instant is kept exact by scheduling in UTC: the device's local time
   /// zone database is not needed to say "this many seconds from now".
   @override
@@ -195,6 +218,8 @@ class LocalNotificationService implements NotificationService {
     final now = DateTime.now();
     if (!reminder.at.isAfter(now)) return;
     final when = tz.TZDateTime.now(tz.UTC).add(reminder.at.difference(now));
+    // Without the grant an exact alarm is dropped, so fall back.
+    final exact = reminder.exact && await canScheduleExact();
     await _plugin.zonedSchedule(
       id: reminder.id,
       scheduledDate: when,
@@ -202,7 +227,9 @@ class LocalNotificationService implements NotificationService {
       body: reminder.body,
       notificationDetails: detailsFor(reminder),
       payload: reminder.payload,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: exact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: repeat,
     );
   }
