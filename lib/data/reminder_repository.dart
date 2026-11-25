@@ -40,6 +40,10 @@ class ReminderRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// [periodApplies] off without notifying, for the signed-in scope to call
+  /// while it unmounts and nothing that shows it can be on screen.
+  void forgetPeriod() => _periodApplies = false;
+
   /// Whether this device can show reminders at all (not on the web).
   bool get isAvailable => _notifications.isAvailable;
 

@@ -51,7 +51,7 @@ class PeriodReminderPlan {
   bool get isEmpty => once.isEmpty && checkIn == null;
 }
 
-const _logAction = [ReminderAction.log];
+const List<ReminderAction> _logAction = [ReminderAction.log];
 
 /// The reminders for a period predicted on [predictedStart], give or take
 /// [spread] days, still ahead of [now]. A check-in never falls on or

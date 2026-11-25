@@ -78,7 +78,7 @@ class PeriodReminderRepository {
     _health.removeListener(_changed);
     _reminders
       ..removeListener(_changed)
-      ..periodApplies = false;
+      ..forgetPeriod();
   }
 }
 

@@ -58,6 +58,10 @@ abstract interface class NotificationService {
   Future<void> schedule(Reminder reminder);
 
   Future<void> cancel(int id);
+
+  /// The buttons tapped that open the app, including the one that
+  /// launched it.
+  Stream<ReminderAction> get opened;
 }
 
 /// Where notifications cannot be scheduled: the web.
@@ -78,4 +82,7 @@ class NoNotificationService implements NotificationService {
 
   @override
   Future<void> cancel(int id) async {}
+
+  @override
+  Stream<ReminderAction> get opened => const Stream.empty();
 }

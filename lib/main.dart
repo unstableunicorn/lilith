@@ -9,6 +9,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/page_settings_repository.dart';
+import 'package:lilith/data/period_reminder_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/pod/share_reader.dart';
@@ -27,6 +28,7 @@ import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/data/wearable/wearable_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/browser_history.dart';
@@ -157,9 +159,19 @@ class _RoutedAppState extends State<_RoutedApp> {
     history: widget.browserHistory,
     child: const _Root(),
   );
+  StreamSubscription<ReminderAction>? _opened;
+
+  @override
+  void initState() {
+    super.initState();
+    _opened = context.read<NotificationService>().opened.listen((action) {
+      if (action == ReminderAction.log) _tabs.openLog(dateOnly(DateTime.now()));
+    });
+  }
 
   @override
   void dispose() {
+    unawaited(_opened?.cancel());
     _router.dispose();
     _tabs.dispose();
     super.dispose();
@@ -274,7 +286,18 @@ class _RootState extends State<_Root> {
             context.read<WearableSource>(),
             now: DateTime.now,
           ),
-          child: const AppShell(),
+          child: Provider(
+            // Not lazy: it follows the data from the first load.
+            lazy: false,
+            create: (context) => PeriodReminderRepository(
+              context.read<HealthRepository>(),
+              context.read<ReminderRepository>(),
+              context.read<NotificationService>(),
+              context.read<SettingsStore>(),
+            ),
+            dispose: (_, repo) => repo.dispose(),
+            child: const AppShell(),
+          ),
         ),
       ),
     ),

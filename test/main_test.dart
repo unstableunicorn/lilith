@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/main.dart';
 import 'package:lilith/ui/home/home_screen.dart';
@@ -34,8 +36,10 @@ void main() {
   late SessionRepository session;
   late SetupRepository setup;
   late FakePodService pod;
+  late FakeNotificationService notifications;
 
   setUp(() {
+    notifications = FakeNotificationService();
     auth = FakePodSessionService();
     podSetup = FakePodSetupService();
     session = SessionRepository(auth, FakeSettingsStore());
@@ -50,7 +54,7 @@ void main() {
     shareService: FakeShareService(),
     shareReader: FakeShareReader(),
     settings: FakeSettingsStore(),
-    notifications: FakeNotificationService(),
+    notifications: notifications,
     wearable: const NoWearableSource(),
     openUrl: (_) async {},
     shareFile: (_) async {},
@@ -109,6 +113,23 @@ void main() {
     await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
     await tester.pumpAndSettle();
     expect(entries, ['/history']);
+  });
+
+  testWidgets('"Log it" on a notification opens Log', (tester) async {
+    await openHome(tester);
+    notifications.open(ReminderAction.log);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      ShellTab.log.index,
+    );
+  });
+
+  testWidgets('period reminders are set again once the data loads', (
+    tester,
+  ) async {
+    await openHome(tester);
+    expect(notifications.cancelled, containsAll(periodReminderIds));
   });
 
   testWidgets('logging in again starts on Today', (tester) async {

@@ -1,7 +1,18 @@
+import 'dart:async';
+
 import 'package:lilith/data/notifications/notification_service.dart';
 
-/// Records what was scheduled and cancelled.
+/// Records what was scheduled and cancelled; [open] plays a button tap.
 class FakeNotificationService implements NotificationService {
+  final StreamController<ReminderAction> _opened = StreamController.broadcast(
+    sync: true,
+  );
+
+  @override
+  Stream<ReminderAction> get opened => _opened.stream;
+
+  void open(ReminderAction action) => _opened.add(action);
+
   final Map<int, Reminder> scheduled = {};
   final Map<int, Reminder> daily = {};
   final List<int> cancelled = [];
