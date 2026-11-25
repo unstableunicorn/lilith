@@ -1,6 +1,31 @@
 // Local notifications: scheduled on the device, no server involved.
 
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
+
+/// A button on a notification.
+enum ReminderAction {
+  /// Opens the app on Log for today.
+  log,
+
+  /// Skips tomorrow's check-in, without opening the app.
+  snooze,
+}
+
+/// Every set of buttons a reminder may carry. iOS needs each one registered
+/// before the app starts.
+const List<List<ReminderAction>> reminderActionSets = [
+  logActions,
+  checkInActions,
+];
+
+/// On the expected day and once late.
+const List<ReminderAction> logActions = [ReminderAction.log];
+
+/// On the daily check-in.
+const List<ReminderAction> checkInActions = [
+  ReminderAction.log,
+  ReminderAction.snooze,
+];
 
 /// One notification to show at a time.
 @immutable
@@ -10,6 +35,7 @@ class Reminder {
     required this.at,
     required this.title,
     required this.body,
+    this.actions = const [],
   });
 
   /// Stable per purpose, so a reschedule replaces rather than adds.
@@ -17,6 +43,7 @@ class Reminder {
   final DateTime at;
   final String title;
   final String body;
+  final List<ReminderAction> actions;
 
   @override
   bool operator ==(Object other) =>
@@ -24,10 +51,11 @@ class Reminder {
       other.id == id &&
       other.at == at &&
       other.title == title &&
-      other.body == body;
+      other.body == body &&
+      listEquals(other.actions, actions);
 
   @override
-  int get hashCode => Object.hash(id, at, title, body);
+  int get hashCode => Object.hash(id, at, title, body, Object.hashAll(actions));
 }
 
 abstract interface class NotificationService {
@@ -46,6 +74,10 @@ abstract interface class NotificationService {
   Future<void> schedule(Reminder reminder);
 
   Future<void> cancel(int id);
+
+  /// The buttons tapped that open the app, including the one that
+  /// launched it.
+  Stream<ReminderAction> get opened;
 }
 
 /// Where notifications cannot be scheduled: the web.
@@ -66,4 +98,7 @@ class NoNotificationService implements NotificationService {
 
   @override
   Future<void> cancel(int id) async {}
+
+  @override
+  Stream<ReminderAction> get opened => const Stream.empty();
 }

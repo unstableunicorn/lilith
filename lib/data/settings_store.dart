@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/reminder_setting.dart';
@@ -31,6 +32,11 @@ abstract interface class SettingsStore {
   Future<PageSettings> readPageSettings();
 
   Future<void> writePageSettings(PageSettings settings);
+
+  /// The last day a late-period check-in was snoozed through, if any.
+  Future<DateTime?> readSnoozedThrough();
+
+  Future<void> writeSnoozedThrough(DateTime day);
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
@@ -38,6 +44,23 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   static const String inviteKey = 'share_invite';
   static const String reminderKey = 'daily_reminder';
   static const String pageSettingsKey = 'page_settings';
+  static const String snoozeKey = 'check_in_snoozed_through';
+
+  /// A snooze is written from a notification's own isolate, so this one's
+  /// cached copy is refreshed before reading it.
+  @override
+  Future<DateTime?> readSnoozedThrough() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final raw = prefs.getString(snoozeKey);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  @override
+  Future<void> writeSnoozedThrough(DateTime day) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(snoozeKey, dateOnly(day).toIso8601String());
+  }
 
   @override
   Future<PodProvider?> readProvider() async {

@@ -126,4 +126,13 @@ void main() {
       reason: 'the choice survives logout',
     );
   });
+
+  test('signing out runs what was asked of it, and only then', () async {
+    var signedOut = 0;
+    repo = SessionRepository(auth, settings, onLogout: () async => signedOut++);
+    await repo.restore();
+    expect(signedOut, 0, reason: 'no session is not a sign-out');
+    await repo.logout();
+    expect(signedOut, 1);
+  });
 }

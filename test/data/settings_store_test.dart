@@ -57,4 +57,17 @@ void main() {
     await store.writeReminder(on);
     expect(await store.readReminder(), on);
   });
+
+  test('keeps the day a check-in is snoozed through', () async {
+    expect(await store.readSnoozedThrough(), isNull);
+    await store.writeSnoozedThrough(DateTime(2026, 6, 25));
+    expect(await store.readSnoozedThrough(), DateTime(2026, 6, 25));
+  });
+
+  test('a corrupt snooze reads as none', () async {
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesSettingsStore.snoozeKey: 'soon',
+    });
+    expect(await store.readSnoozedThrough(), isNull);
+  });
 }

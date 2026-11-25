@@ -7,10 +7,13 @@ import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/pod_provider.dart';
 
 class SessionRepository extends ChangeNotifier {
-  SessionRepository(this._auth, this._settings);
+  SessionRepository(this._auth, this._settings, {this.onLogout});
 
   final PodSessionService _auth;
   final SettingsStore _settings;
+
+  /// Runs when the user signs out, and at no other time.
+  final Future<void> Function()? onLogout;
 
   PodSession? _session;
   PodProvider _provider = PodProvider.builtIn.first;
@@ -73,6 +76,7 @@ class SessionRepository extends ChangeNotifier {
 
   Future<void> logout() async {
     await _auth.logout();
+    await onLogout?.call();
     _session = null;
     notifyListeners();
   }
