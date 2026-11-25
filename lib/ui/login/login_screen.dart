@@ -117,7 +117,7 @@ class _LoginView extends StatelessWidget {
           const SizedBox(height: Space.lg),
           FilledButton.tonalIcon(
             key: LoginKeys.androidApp,
-            onPressed: () => openUrl(AppLinks.androidApk),
+            onPressed: () => context.read<Downloader>()(AppLinks.androidApk),
             icon: const Icon(Icons.android_rounded),
             label: const Text('Get the Android app'),
           ),

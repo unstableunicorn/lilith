@@ -70,6 +70,8 @@ void main() {
       // The Android source comes once the Galaxy Watch spike has chosen it.
       wearable: const NoWearableSource(),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
+      // An attachment loaded in this tab downloads and leaves the app shown.
+      download: Downloader((url) => launchUrl(url, webOnlyWindowName: '_self')),
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
       browserHistory: platformBrowserHistory(),
@@ -92,6 +94,7 @@ class LilithApp extends StatelessWidget {
     required this.notifications,
     required this.wearable,
     required this.openUrl,
+    required this.download,
     required this.shareFile,
     required this.pdfReport,
     required this.browserHistory,
@@ -109,6 +112,7 @@ class LilithApp extends StatelessWidget {
   final NotificationService notifications;
   final WearableSource wearable;
   final UrlOpener openUrl;
+  final Downloader download;
   final FileSharer shareFile;
   final PdfReport pdfReport;
   final BrowserHistory browserHistory;
@@ -119,6 +123,7 @@ class LilithApp extends StatelessWidget {
       ChangeNotifierProvider.value(value: session),
       ChangeNotifierProvider.value(value: setup),
       Provider<UrlOpener>.value(value: openUrl),
+      Provider<Downloader>.value(value: download),
       Provider<FileSharer>.value(value: shareFile),
       Provider<PdfReport>.value(value: pdfReport),
       Provider<PodService Function(PodProvider)>.value(value: podFor),

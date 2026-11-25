@@ -39,6 +39,7 @@ Widget harness({
   PageSettingsRepository? pageSettings,
   ShellTabs? tabs,
   UrlOpener? openUrl,
+  Downloader? download,
   FileSharer? shareFile,
   Brightness brightness = Brightness.light,
 }) => MultiProvider(
@@ -59,6 +60,7 @@ Widget harness({
     ),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
+    Provider<Downloader>.value(value: download ?? Downloader((_) async {})),
     Provider<FileSharer>.value(value: shareFile ?? (_) async {}),
     Provider<PdfReport>.value(value: const PdfReport()),
   ],

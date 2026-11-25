@@ -13,6 +13,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/main.dart';
+import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
@@ -57,6 +58,7 @@ void main() {
     notifications: notifications,
     wearable: const NoWearableSource(),
     openUrl: (_) async {},
+    download: Downloader((_) async {}),
     shareFile: (_) async {},
     pdfReport: const PdfReport(),
     browserHistory: FakeBrowserHistory(),
