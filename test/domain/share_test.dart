@@ -85,6 +85,27 @@ void main() {
       expect(without.dailyLogs, [DailyLog(date: may1, painLevel: 3)]);
       expect(sharedView(noted, includeNotes: true).dailyLogs, noted.dailyLogs);
     });
+
+    test('never shares a dose marked done, notes or not', () {
+      final marked = HealthData(
+        dailyLogs: [
+          DailyLog(
+            date: may1,
+            painLevel: 3,
+            contraceptionDoneAt: DateTime(2026, 5, 1, 9),
+          ),
+          DailyLog(
+            date: DateTime(2026, 5, 2),
+            contraceptionDoneAt: DateTime(2026, 5, 2, 9),
+          ),
+        ],
+      );
+      for (final notes in [false, true]) {
+        expect(sharedView(marked, includeNotes: notes).dailyLogs, [
+          DailyLog(date: may1, painLevel: 3),
+        ], reason: 'includeNotes: $notes');
+      }
+    });
   });
 
   group('ShareDuration', () {

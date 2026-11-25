@@ -156,6 +156,26 @@ void main() {
       expect(log, isNot(log.copyWith(ovulationTest: OvulationTest.negative)));
     });
 
+    test('a dose marked done round-trips, counts as logged, and loads '
+        'absent', () {
+      final at = DateTime(2026, 5, 2, 9, 40);
+      final log = DailyLog(date: day, contraceptionDoneAt: at);
+      expect(log.isEmpty, isFalse);
+      expect(DailyLog.fromJson(log.toJson()).contraceptionDoneAt, at);
+      expect(DailyLog.fromJson(log.toJson()), log);
+      expect(DailyLog(date: day).toJson(), isNot(contains('contraception')));
+      final old = DailyLog.fromJson(const {
+        'date': '2026-05-02T00:00:00.000',
+        'flow': 'none',
+        'symptoms': <String>[],
+      });
+      expect(old.contraceptionDoneAt, isNull);
+      expect(
+        log.copyWith(clearContraceptionDone: true).contraceptionDoneAt,
+        isNull,
+      );
+    });
+
     test('a note round-trips, counts as logged, and loads absent', () {
       final log = DailyLog(date: day, note: 'Started new job');
       expect(log.isEmpty, isFalse);
