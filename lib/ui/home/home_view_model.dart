@@ -107,19 +107,23 @@ class HomeViewModel extends ChangeNotifier {
     hormonalContraception: _repo.data.profile.usesHormonalContraception,
   );
 
-  /// E.g. "Day 12, follicular", "Day 20, luteal (estimated from your cycle
-  /// length)", or why there is no phase.
-  String cycleStatusText(CycleStatus s) => switch (s) {
-    CycleStatus(day: null) => 'Phase unknown until a period is logged.',
-    CycleStatus(:final day?, phase: null, hormonal: true) =>
-      'Day $day. Hormonal contraception changes the usual phases, so none '
-          'is shown.',
-    CycleStatus(:final day?, phase: null) => 'Day $day',
-    CycleStatus(:final day?, :final phase?, :final basis) =>
-      'Day $day, ${phase.name}'
-          '${basis == PhaseBasis.calendar ? ' (estimated from your cycle '
-                    'length)' : ''}',
-  };
+  /// E.g. "Cycle day 12, follicular · since 3 Nov", "(estimated)" after a
+  /// calendar phase, or why there is no phase; null with no period.
+  String? get cycleLine {
+    final s = cycleStatus;
+    final start = prediction.lastPeriodStart;
+    if (s.day == null || start == null) return null;
+    final since = 'since ${formatShortDate(start, today: today)}';
+    return switch (s) {
+      CycleStatus(:final day, :final phase?, :final basis) =>
+        'Cycle day $day, ${phase.name}'
+            '${basis == PhaseBasis.calendar ? ' (estimated)' : ''} · $since',
+      CycleStatus(:final day, hormonal: true) =>
+        'Cycle day $day · $since. Hormonal contraception changes the usual '
+            'phases, so none is shown.',
+      CycleStatus(:final day) => 'Cycle day $day · $since',
+    };
+  }
 
   /// This cycle's fertile window when [mode] shows it and something
   /// supports it; null otherwise.

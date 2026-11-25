@@ -44,7 +44,6 @@ abstract final class HomeKeys {
   static const Key learn = Key('home.learn');
   static const Key daysUntil = Key('home.daysUntil');
   static const Key lastPeriod = Key('home.lastPeriod');
-  static const Key cycleStatus = Key('home.cycleStatus');
   static const Key logPeriod = Key('home.logPeriod');
   static const Key periodInProgress = Key('home.periodInProgress');
   static const Key logToday = Key('home.logToday');
@@ -339,12 +338,8 @@ class _PredictionCard extends StatelessWidget {
             ),
             const SizedBox(height: Space.sm),
           ],
-          if (p.lastPeriodStart case final start?) ...[
-            Text(
-              key: HomeKeys.lastPeriod,
-              'Cycle day ${p.currentCycleDay}, since ${_date(start)}',
-            ),
-            Text(key: HomeKeys.cycleStatus, vm.cycleStatusText(vm.cycleStatus)),
+          if (vm.cycleLine case final line?) ...[
+            Text(key: HomeKeys.lastPeriod, line),
             const SizedBox(height: Space.sm),
           ],
           Text(vm.howText(p)),

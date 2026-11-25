@@ -8,6 +8,7 @@ import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
+import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
 
 import '../../fakes/fake_pod_service.dart';
@@ -319,6 +320,24 @@ void cycleStatusTests() {
       (day: vm.cycleStatus.day, phase: vm.cycleStatus.phase),
       (day: 9, phase: CyclePhase.follicular),
     );
+  });
+
+  test('one line holds the cycle day, the phase and the start', () async {
+    expect(vm.cycleLine, isNull);
+    final start = DateTime(2026, 6, 2);
+    await repo.apply(
+      (d) => d.withPeriod(
+        PeriodEvent(startDate: start, endDate: DateTime(2026, 6, 5)),
+      ),
+    );
+    final line = vm.cycleLine!;
+    for (final part in [
+      '9',
+      CyclePhase.follicular.name,
+      formatShortDate(start, today: today),
+    ]) {
+      expect(line, contains(part));
+    }
   });
 
   test('hormonal contraception in the profile leaves the phase out', () async {

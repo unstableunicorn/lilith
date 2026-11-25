@@ -3,6 +3,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
@@ -242,19 +243,26 @@ void main() {
       expect(find.byKey(HomeKeys.prediction), findsOneWidget);
     });
 
-    testWidgets('the cycle day and phase show under the last period start', (
+    testWidgets('the cycle day, phase and start share one line in the card', (
       tester,
     ) async {
       await health.apply(
-        (d) => d.withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 27))),
+        (d) => d.withPeriod(
+          PeriodEvent(
+            startDate: DateTime(2026, 5, 27),
+            endDate: DateTime(2026, 5, 31),
+          ),
+        ),
       );
       await pump(tester);
+      final line = find.descendant(
+        of: find.byKey(HomeKeys.prediction),
+        matching: find.byKey(HomeKeys.lastPeriod),
+      );
+      expect(line, findsOneWidget);
       expect(
-        find.descendant(
-          of: find.byKey(HomeKeys.prediction),
-          matching: find.byKey(HomeKeys.cycleStatus),
-        ),
-        findsOneWidget,
+        tester.widget<Text>(line).data,
+        contains(CyclePhase.follicular.name),
       );
       await expectAccessible(tester);
     });
