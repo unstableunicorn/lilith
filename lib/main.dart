@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:lilith/data/contraception_reminder_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -55,7 +56,10 @@ void main() {
   final session = SessionRepository(
     SolidPodSessionService(settings),
     settings,
-    onLogout: () => cancelPeriodReminders(notifications),
+    onLogout: () async {
+      await cancelPeriodReminders(notifications);
+      await cancelContraceptionReminders(notifications);
+    },
   );
   unawaited(session.restore());
   runApp(
@@ -306,7 +310,17 @@ class _RootState extends State<_Root> {
               context.read<SettingsStore>(),
             ),
             dispose: (_, repo) => repo.dispose(),
-            child: const AppShell(),
+            child: Provider(
+              lazy: false,
+              create: (context) => ContraceptionReminderRepository(
+                context.read<HealthRepository>(),
+                context.read<ReminderRepository>(),
+                context.read<NotificationService>(),
+                context.read<SettingsStore>(),
+              ),
+              dispose: (_, repo) => repo.dispose(),
+              child: const AppShell(),
+            ),
           ),
         ),
       ),

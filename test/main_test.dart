@@ -9,6 +9,7 @@ import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -132,6 +133,12 @@ void main() {
   ) async {
     await openHome(tester);
     expect(notifications.cancelled, containsAll(periodReminderIds));
+  });
+
+  testWidgets('pill, patch and ring reminders are set again once the data '
+      'loads', (tester) async {
+    await openHome(tester);
+    expect(notifications.cancelled, containsAll(contraceptionReminderIds));
   });
 
   testWidgets('logging in again starts on Today', (tester) async {

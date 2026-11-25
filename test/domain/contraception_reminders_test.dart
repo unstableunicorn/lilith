@@ -178,6 +178,41 @@ void main() {
     }
   });
 
+  test('each reminder hands back the day it is for', () {
+    final plan = contraceptionRemindersFor(
+      schedule: pill(window: 12, hour: 15),
+      now: morning,
+      done: const {},
+    );
+    expect(plan, isNotEmpty);
+    for (final r in plan) {
+      expect(doseDayOf(r.reminder.payload), r.day);
+    }
+    expect(doseDayOf(null), isNull);
+    expect(doseDayOf('soon'), isNull);
+  });
+
+  group('the cache', () {
+    final cache = DoseCache(
+      schedule: pill(),
+      done: {DateTime(2026, 3, 8)},
+      pending: {day: DateTime(2026, 3, 10, 9, 5)},
+    );
+
+    test('round-trips, and reads empty from anything else', () {
+      expect(DoseCache.fromJson(cache.toJson()), cache);
+      expect(DoseCache.fromJson('x'), const DoseCache());
+      expect(
+        DoseCache.fromJson({...cache.toJson(), 'schedule': 'x'}).schedule,
+        isNull,
+      );
+    });
+
+    test('a day is done in the pod or marked on the phone', () {
+      expect(cache.allDone, {DateTime(2026, 3, 8), day});
+    });
+  });
+
   test('ids are distinct and within the range cancelled', () {
     final plan = contraceptionRemindersFor(
       schedule: pill(),

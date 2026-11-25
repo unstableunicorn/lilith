@@ -1,6 +1,7 @@
 // The reminders for a pill, patch or ring: on time, follow-ups through its
 // window, and a warning once the window has passed.
 
+import 'package:collection/collection.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/day.dart';
@@ -20,6 +21,78 @@ final List<int> contraceptionReminderIds = [
 ];
 
 enum DoseReminderKind { due, followUp, warning }
+
+/// The day a reminder's payload names, or null when it names none.
+DateTime? doseDayOf(String? payload) {
+  final day = DateTime.tryParse(payload ?? '');
+  return day == null ? null : dateOnly(day);
+}
+
+String _dayText(DateTime day) => dateOnly(day).toIso8601String();
+
+/// What this phone keeps so a button can replan without the pod: the
+/// schedule, the days the pod has marked done, and marks still to send.
+@immutable
+class DoseCache {
+  const DoseCache({
+    this.schedule,
+    this.done = const {},
+    this.pending = const {},
+  });
+
+  /// The cache stored as [json]; empty when it is not one.
+  factory DoseCache.fromJson(Object? json) {
+    if (json is! Map) return const DoseCache();
+    return DoseCache(
+      schedule: ContraceptionSchedule.tryFromJson(json['schedule']),
+      done: {
+        for (final d in json['done'] as List? ?? const [])
+          ?doseDayOf(d as String?),
+      },
+      pending: {
+        for (final MapEntry(:key, :value)
+            in (json['pending'] as Map? ?? const {}).entries)
+          if ((doseDayOf(key as String?), DateTime.tryParse('$value')) case (
+            final day?,
+            final at?,
+          ))
+            day: at,
+      },
+    );
+  }
+
+  final ContraceptionSchedule? schedule;
+  final Set<DateTime> done;
+
+  /// Day to the time it was marked, not yet written to the pod.
+  final Map<DateTime, DateTime> pending;
+
+  /// Every day known to be done, here or in the pod.
+  Set<DateTime> get allDone => {...done, ...pending.keys};
+
+  Map<String, dynamic> toJson() => {
+    if (schedule case final s?) 'schedule': s.toJson(),
+    'done': [for (final d in done) _dayText(d)],
+    'pending': {
+      for (final MapEntry(:key, :value) in pending.entries)
+        _dayText(key): value.toIso8601String(),
+    },
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is DoseCache &&
+      other.schedule == schedule &&
+      const SetEquality<DateTime>().equals(other.done, done) &&
+      const MapEquality<DateTime, DateTime>().equals(other.pending, pending);
+
+  @override
+  int get hashCode => Object.hash(
+    schedule,
+    const SetEquality<DateTime>().hash(done),
+    const MapEquality<DateTime, DateTime>().hash(pending),
+  );
+}
 
 @immutable
 class DoseReminder {
@@ -78,6 +151,7 @@ List<DoseReminder> contraceptionRemindersFor({
             actions: schedule.form == DoseForm.pill
                 ? takenActions
                 : doneActions,
+            payload: _dayText(d),
           ),
         );
     final warnAt = due.add(step * 3);

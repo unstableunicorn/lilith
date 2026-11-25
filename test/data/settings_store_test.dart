@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 import 'package:lilith/domain/share.dart';
@@ -62,6 +64,27 @@ void main() {
     expect(await store.readSnoozedThrough(), isNull);
     await store.writeSnoozedThrough(DateTime(2026, 6, 25));
     expect(await store.readSnoozedThrough(), DateTime(2026, 6, 25));
+  });
+
+  test('keeps the dose cache, empty by default and when corrupt', () async {
+    expect(await store.readDoseCache(), const DoseCache());
+    final cache = DoseCache(
+      schedule: ContraceptionSchedule(
+        form: DoseForm.pill,
+        start: DateTime(2026, 6, 1),
+        daysOn: 21,
+        daysOff: 7,
+        windowHours: 12,
+      ),
+      done: {DateTime(2026, 6, 3)},
+      pending: {DateTime(2026, 6, 4): DateTime(2026, 6, 4, 9, 5)},
+    );
+    await store.writeDoseCache(cache);
+    expect(await store.readDoseCache(), cache);
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesSettingsStore.doseCacheKey: '{not json',
+    });
+    expect(await store.readDoseCache(), const DoseCache());
   });
 
   test('a corrupt snooze reads as none', () async {

@@ -50,6 +50,7 @@ class Reminder {
     required this.title,
     required this.body,
     this.actions = const [],
+    this.payload,
   });
 
   /// Stable per purpose, so a reschedule replaces rather than adds.
@@ -59,6 +60,9 @@ class Reminder {
   final String body;
   final List<ReminderAction> actions;
 
+  /// Handed back with a button tap: what the reminder is about.
+  final String? payload;
+
   @override
   bool operator ==(Object other) =>
       other is Reminder &&
@@ -66,10 +70,12 @@ class Reminder {
       other.at == at &&
       other.title == title &&
       other.body == body &&
-      listEquals(other.actions, actions);
+      listEquals(other.actions, actions) &&
+      other.payload == payload;
 
   @override
-  int get hashCode => Object.hash(id, at, title, body, Object.hashAll(actions));
+  int get hashCode =>
+      Object.hash(id, at, title, body, Object.hashAll(actions), payload);
 }
 
 abstract interface class NotificationService {

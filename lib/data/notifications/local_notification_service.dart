@@ -5,9 +5,11 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:lilith/data/contraception_reminder_repository.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/period_reminder_repository.dart';
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -15,13 +17,25 @@ import 'package:timezone/timezone.dart' as tz;
 /// open the app is tapped, whether or not the app is running.
 @pragma('vm:entry-point')
 Future<void> onBackgroundNotificationAction(NotificationResponse r) async {
-  if (r.actionId != ReminderAction.snooze.name) return;
-  DartPluginRegistrant.ensureInitialized();
-  await snoozeCheckIn(
-    SharedPreferencesSettingsStore(),
-    LocalNotificationService(),
-    now: DateTime.now(),
-  );
+  final marks = {ReminderAction.taken.name, ReminderAction.done.name};
+  if (r.actionId == ReminderAction.snooze.name) {
+    DartPluginRegistrant.ensureInitialized();
+    await snoozeCheckIn(
+      SharedPreferencesSettingsStore(),
+      LocalNotificationService(),
+      now: DateTime.now(),
+    );
+  } else if (marks.contains(r.actionId)) {
+    if (doseDayOf(r.payload) case final day?) {
+      DartPluginRegistrant.ensureInitialized();
+      await markDoseDone(
+        SharedPreferencesSettingsStore(),
+        LocalNotificationService(),
+        day: day,
+        now: DateTime.now(),
+      );
+    }
+  }
 }
 
 class LocalNotificationService implements NotificationService {
@@ -61,7 +75,7 @@ class LocalNotificationService implements NotificationService {
 
   void _tapped(NotificationResponse r) {
     if (r.actionId == ReminderAction.log.name) _opened.add(ReminderAction.log);
-    if (r.actionId == ReminderAction.snooze.name) {
+    if (r.actionId != ReminderAction.log.name) {
       unawaited(onBackgroundNotificationAction(r));
     }
   }
@@ -187,6 +201,7 @@ class LocalNotificationService implements NotificationService {
       title: reminder.title,
       body: reminder.body,
       notificationDetails: detailsFor(reminder),
+      payload: reminder.payload,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: repeat,
     );

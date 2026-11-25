@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -37,6 +38,11 @@ abstract interface class SettingsStore {
   Future<DateTime?> readSnoozedThrough();
 
   Future<void> writeSnoozedThrough(DateTime day);
+
+  /// The pill, patch or ring state this phone keeps; empty until written.
+  Future<DoseCache> readDoseCache();
+
+  Future<void> writeDoseCache(DoseCache cache);
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
@@ -45,6 +51,27 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   static const String reminderKey = 'daily_reminder';
   static const String pageSettingsKey = 'page_settings';
   static const String snoozeKey = 'check_in_snoozed_through';
+  static const String doseCacheKey = 'dose_cache';
+
+  /// Written from a notification's own isolate too, so read fresh.
+  @override
+  Future<DoseCache> readDoseCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final raw = prefs.getString(doseCacheKey);
+    if (raw == null) return const DoseCache();
+    try {
+      return DoseCache.fromJson(jsonDecode(raw));
+    } on Object {
+      return const DoseCache();
+    }
+  }
+
+  @override
+  Future<void> writeDoseCache(DoseCache cache) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(doseCacheKey, jsonEncode(cache.toJson()));
+  }
 
   /// A snooze is written from a notification's own isolate, so this one's
   /// cached copy is refreshed before reading it.
