@@ -1,14 +1,20 @@
 // What the learn screen decides: the answer to the question asked, if the
-// knowledge base has one, and the facts.
+// knowledge base has one, the cycle's phases and the facts.
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/content/cycle_phases.dart';
 import 'package:lilith/content/period_facts.dart';
 
 class LearnViewModel extends ChangeNotifier {
-  LearnViewModel({this.entries = knowledgeBase, this.facts = periodFacts});
+  LearnViewModel({
+    this.entries = knowledgeBase,
+    this.facts = periodFacts,
+    this.phases = cyclePhaseEntries,
+  });
 
   final List<KnowledgeEntry> entries;
   final List<PeriodFact> facts;
+  final List<CyclePhaseEntry> phases;
 
   bool _asked = false;
   KnowledgeEntry? _answer;

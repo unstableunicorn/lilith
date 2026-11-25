@@ -338,11 +338,8 @@ class _PredictionCard extends StatelessWidget {
             ),
             const SizedBox(height: Space.sm),
           ],
-          if (p.lastPeriodStart case final start?) ...[
-            Text(
-              key: HomeKeys.lastPeriod,
-              'Cycle day ${p.currentCycleDay}, since ${_date(start)}',
-            ),
+          if (vm.cycleLine case final line?) ...[
+            Text(key: HomeKeys.lastPeriod, line),
             const SizedBox(height: Space.sm),
           ],
           Text(vm.howText(p)),

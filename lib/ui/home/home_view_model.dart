@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/content/period_facts.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
@@ -97,6 +98,32 @@ class HomeViewModel extends ChangeNotifier {
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
   }.withSuppressionNote(p);
+
+  /// Today's cycle day and phase.
+  CycleStatus get cycleStatus => cycleStatusFor(
+    prediction,
+    _repo.data.periods,
+    today: today,
+    hormonalContraception: _repo.data.profile.usesHormonalContraception,
+  );
+
+  /// E.g. "Cycle day 12, follicular · since 3 Nov", "(estimated)" after a
+  /// calendar phase, or why there is no phase; null with no period.
+  String? get cycleLine {
+    final s = cycleStatus;
+    final start = prediction.lastPeriodStart;
+    if (s.day == null || start == null) return null;
+    final since = 'since ${formatShortDate(start, today: today)}';
+    return switch (s) {
+      CycleStatus(:final day, :final phase?, :final basis) =>
+        'Cycle day $day, ${phase.name}'
+            '${basis == PhaseBasis.calendar ? ' (estimated)' : ''} · $since',
+      CycleStatus(:final day, hormonal: true) =>
+        'Cycle day $day · $since. Hormonal contraception changes the usual '
+            'phases, so none is shown.',
+      CycleStatus(:final day) => 'Cycle day $day · $since',
+    };
+  }
 
   /// This cycle's fertile window when [mode] shows it and something
   /// supports it; null otherwise.

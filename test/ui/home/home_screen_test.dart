@@ -3,6 +3,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
@@ -240,6 +241,30 @@ void main() {
       await pump(tester);
       expect(find.byKey(HomeKeys.lastPeriod), findsOneWidget);
       expect(find.byKey(HomeKeys.prediction), findsOneWidget);
+    });
+
+    testWidgets('the cycle day, phase and start share one line in the card', (
+      tester,
+    ) async {
+      await health.apply(
+        (d) => d.withPeriod(
+          PeriodEvent(
+            startDate: DateTime(2026, 5, 27),
+            endDate: DateTime(2026, 5, 31),
+          ),
+        ),
+      );
+      await pump(tester);
+      final line = find.descendant(
+        of: find.byKey(HomeKeys.prediction),
+        matching: find.byKey(HomeKeys.lastPeriod),
+      );
+      expect(line, findsOneWidget);
+      expect(
+        tester.widget<Text>(line).data,
+        contains(CyclePhase.follicular.name),
+      );
+      await expectAccessible(tester);
     });
 
     testWidgets('the average period length shows once an end is known', (

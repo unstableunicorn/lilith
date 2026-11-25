@@ -1,6 +1,8 @@
-// Learn: ask a question of the knowledge base, and read the facts.
+// Learn: ask a question of the knowledge base, and read about the cycle's
+// phases and the facts.
 
 import 'package:lilith/content/symptom_advice.dart' show Source;
+import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
@@ -14,6 +16,8 @@ abstract final class LearnKeys {
   static const Key answer = Key('learn.answer');
   static const Key noAnswer = Key('learn.noAnswer');
   static Key answerSource(String url) => Key('learn.answerSource.$url');
+  static Key phase(CyclePhase p) => Key('learn.phase.${p.name}');
+  static Key phaseSource(CyclePhase p) => Key('learn.phaseSource.${p.name}');
   static Key fact(String text) => Key('learn.fact.${text.hashCode}');
   static Key factSource(String text) =>
       Key('learn.factSource.${text.hashCode}');
@@ -113,6 +117,24 @@ class _LearnViewState extends State<_LearnView> {
               ),
             ),
           },
+        const SectionHeading('Phases of your cycle'),
+        for (final entry in vm.phases)
+          AppCard(
+            key: LearnKeys.phase(entry.phase),
+            title: entry.title,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.text),
+                const SizedBox(height: Space.sm),
+                _Sources(
+                  sources: [entry.source],
+                  keyFor: (_) => LearnKeys.phaseSource(entry.phase),
+                  openUrl: openUrl,
+                ),
+              ],
+            ),
+          ),
         const SectionHeading('Did you know?'),
         for (final fact in vm.facts)
           AppCard(
