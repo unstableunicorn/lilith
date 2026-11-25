@@ -1,6 +1,7 @@
 // The user's reproductive-health context: conditions, treatments, notes.
 
 import 'package:collection/collection.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:meta/meta.dart';
 
 /// A diagnosed condition that affects the cycle.
@@ -162,6 +163,7 @@ class HealthProfile {
     this.contraception,
     this.regularity,
     this.history = const ObstetricHistory(),
+    this.contraceptionSchedule,
   }) : conditions = Set.unmodifiable(conditions),
        treatments = Set.unmodifiable(treatments);
 
@@ -184,6 +186,9 @@ class HealthProfile {
       final Map<String, dynamic> h => ObstetricHistory.fromJson(h),
       _ => const ObstetricHistory(),
     },
+    contraceptionSchedule: json.containsKey('contraceptionSchedule')
+        ? ContraceptionSchedule.tryFromJson(json['contraceptionSchedule'])
+        : null,
   );
 
   /// What the app accepts as a usual cycle length, in days.
@@ -208,6 +213,9 @@ class HealthProfile {
   final CycleRegularity? regularity;
   final ObstetricHistory history;
 
+  /// When the pill, patch or ring is due, for its reminders.
+  final ContraceptionSchedule? contraceptionSchedule;
+
   /// Hormonal contraception, said either way: through [contraception] or
   /// the older treatment flag.
   bool get usesHormonalContraception =>
@@ -224,12 +232,13 @@ class HealthProfile {
       birthYear == null &&
       contraception == null &&
       regularity == null &&
-      history.isEmpty;
+      history.isEmpty &&
+      contraceptionSchedule == null;
 
   /// A null argument means "unchanged"; [unset] names the optional fields
   /// to clear: `usualCycleLength`, `usualPeriodLength`, `birthYear`,
-  /// `contraception`, `regularity`. The clear flags for the usual lengths
-  /// stay for the callers that use them.
+  /// `contraception`, `regularity`, `contraceptionSchedule`. The clear flags
+  /// for the usual lengths stay for the callers that use them.
   HealthProfile copyWith({
     Set<ReproductiveCondition>? conditions,
     Set<FertilityTreatment>? treatments,
@@ -242,6 +251,7 @@ class HealthProfile {
     Contraception? contraception,
     CycleRegularity? regularity,
     ObstetricHistory? history,
+    ContraceptionSchedule? contraceptionSchedule,
     Set<String> unset = const {},
   }) => HealthProfile(
     conditions: conditions ?? this.conditions,
@@ -263,6 +273,9 @@ class HealthProfile {
         ? null
         : regularity ?? this.regularity,
     history: history ?? this.history,
+    contraceptionSchedule: unset.contains('contraceptionSchedule')
+        ? null
+        : contraceptionSchedule ?? this.contraceptionSchedule,
   );
 
   Map<String, dynamic> toJson() => {
@@ -275,6 +288,8 @@ class HealthProfile {
     if (contraception != null) 'contraception': contraception!.name,
     if (regularity != null) 'regularity': regularity!.name,
     if (!history.isEmpty) 'history': history.toJson(),
+    if (contraceptionSchedule != null)
+      'contraceptionSchedule': contraceptionSchedule!.toJson(),
   };
 
   @override
@@ -288,7 +303,8 @@ class HealthProfile {
       other.birthYear == birthYear &&
       other.contraception == contraception &&
       other.regularity == regularity &&
-      other.history == history;
+      other.history == history &&
+      other.contraceptionSchedule == contraceptionSchedule;
 
   @override
   int get hashCode => Object.hash(
@@ -301,5 +317,6 @@ class HealthProfile {
     contraception,
     regularity,
     history,
+    contraceptionSchedule,
   );
 }
