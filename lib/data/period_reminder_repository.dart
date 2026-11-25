@@ -48,9 +48,7 @@ class PeriodReminderRepository {
     final data = _health.data;
     final applies = !data.profile.usesHormonalContraception;
     _reminders.periodApplies = applies;
-    for (final id in periodReminderIds) {
-      await _notifications.cancel(id);
-    }
+    await cancelPeriodReminders(_notifications);
     if (!applies || !_notifications.isAvailable) return;
     final at = now();
     final today = dateOnly(at);
@@ -79,6 +77,13 @@ class PeriodReminderRepository {
     _reminders
       ..removeListener(_changed)
       ..forgetPeriod();
+  }
+}
+
+/// Signing out leaves no period reminder from that account behind.
+Future<void> cancelPeriodReminders(NotificationService notifications) async {
+  for (final id in periodReminderIds) {
+    await notifications.cancel(id);
   }
 }
 

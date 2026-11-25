@@ -49,7 +49,14 @@ void main() {
   if (ShareInvite.fromUri(Uri.base) case final invite?) {
     unawaited(settings.writeInvite(invite));
   }
-  final session = SessionRepository(SolidPodSessionService(settings), settings);
+  final notifications = kIsWeb
+      ? const NoNotificationService()
+      : LocalNotificationService();
+  final session = SessionRepository(
+    SolidPodSessionService(settings),
+    settings,
+    onLogout: () => cancelPeriodReminders(notifications),
+  );
   unawaited(session.restore());
   runApp(
     LilithApp(
@@ -59,9 +66,7 @@ void main() {
       shareService: const SolidShareService(),
       shareReader: const SolidShareReader(),
       settings: settings,
-      notifications: kIsWeb
-          ? const NoNotificationService()
-          : LocalNotificationService(),
+      notifications: notifications,
       // The Android source comes once the Galaxy Watch spike has chosen it.
       wearable: const NoWearableSource(),
       openUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),

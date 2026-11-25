@@ -180,6 +180,12 @@ void main() {
     expect(notifications.daily[checkInReminderId]!.at, DateTime(2026, 6, 6, 8));
   });
 
+  test('signing out cancels every period reminder', () async {
+    notifications = FakeNotificationService();
+    await cancelPeriodReminders(notifications);
+    expect(notifications.cancelled, periodReminderIds);
+  });
+
   test('once disposed, period reminders no longer apply', () async {
     await start(withHistory());
     repo.dispose();
