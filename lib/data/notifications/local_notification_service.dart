@@ -84,6 +84,16 @@ class LocalNotificationService implements NotificationService {
       'Snooze 1 day',
       cancelNotification: true,
     ),
+    ReminderAction.taken => AndroidNotificationAction(
+      a.name,
+      'Taken',
+      cancelNotification: true,
+    ),
+    ReminderAction.done => AndroidNotificationAction(
+      a.name,
+      'Done',
+      cancelNotification: true,
+    ),
   };
 
   /// The iOS category that carries [actions], or null for none.
@@ -110,6 +120,8 @@ class LocalNotificationService implements NotificationService {
           a.name,
           'Snooze 1 day',
         ),
+        ReminderAction.taken => DarwinNotificationAction.plain(a.name, 'Taken'),
+        ReminderAction.done => DarwinNotificationAction.plain(a.name, 'Done'),
       };
 
   /// How [reminder] is shown on each platform.

@@ -9,6 +9,12 @@ enum ReminderAction {
 
   /// Skips tomorrow's check-in, without opening the app.
   snooze,
+
+  /// Marks today's pill taken, without opening the app.
+  taken,
+
+  /// Marks today's patch or ring done, without opening the app.
+  done,
 }
 
 /// Every set of buttons a reminder may carry. iOS needs each one registered
@@ -16,7 +22,15 @@ enum ReminderAction {
 const List<List<ReminderAction>> reminderActionSets = [
   logActions,
   checkInActions,
+  takenActions,
+  doneActions,
 ];
+
+/// On a pill reminder.
+const List<ReminderAction> takenActions = [ReminderAction.taken];
+
+/// On a patch or ring reminder.
+const List<ReminderAction> doneActions = [ReminderAction.done];
 
 /// On the expected day and once late.
 const List<ReminderAction> logActions = [ReminderAction.log];
