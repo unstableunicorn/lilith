@@ -3,9 +3,11 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lilith/content/symptom_advice.dart' show Source;
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
+import 'package:lilith/domain/cycle_statistics.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/fertile_window.dart';
@@ -15,6 +17,12 @@ import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/log/log_summary.dart';
+
+/// Where the usual ranges behind the statistics flags come from.
+const Source statisticsSource = Source(
+  'ACOG',
+  'https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding',
+);
 
 /// One cycle: when it started and how long it ran, null while it is current.
 class CycleEntry {
@@ -69,6 +77,42 @@ class HistoryViewModel extends ChangeNotifier {
 
   /// At least one period is logged, so there are cycles to list.
   bool get hasCycles => _repo.data.periods.isNotEmpty;
+
+  /// Over every cycle, whatever the filters; null with fewer than two.
+  CycleStatistics? get statistics =>
+      cycleStatisticsFor(_repo.data.periods, today: today);
+
+  /// E.g. "26 to 30 days, average 28.0, usually within ±2.0 days, over 3
+  /// cycles".
+  String cycleRangeText(CycleStatistics s) =>
+      '${rangeText(s.shortestCycle, s.longestCycle)}, average '
+      '${s.averageCycle.toStringAsFixed(1)}, usually within '
+      '±${s.cycleSpread.toStringAsFixed(1)} days, over ${s.cycleCount} cycles';
+
+  /// E.g. "4 to 7 days"; null when no period end is known.
+  String? periodRangeText(CycleStatistics s) =>
+      switch ((s.shortestPeriod, s.longestPeriod)) {
+        (final a?, final b?) => rangeText(a, b),
+        _ => null,
+      };
+
+  /// "4 to 7 days", or "5 days" / "1 day" when both ends are the same.
+  static String rangeText(int from, int to) =>
+      from == to ? '$from ${from == 1 ? 'day' : 'days'}' : '$from to $to days';
+
+  /// What a flag says, with the figure behind it.
+  String flagText(CycleStatistics s, StatisticFlag f) => switch (f) {
+    StatisticFlag.longPeriod =>
+      'Your longest period, ${s.longestPeriod} days, is longer than the '
+          'usual $usualLongestPeriod. Worth mentioning to a doctor.',
+    StatisticFlag.shortCycle =>
+      'Your shortest cycle, ${s.shortestCycle} days, is shorter than the '
+          'usual $usualShortestCycle. Worth mentioning to a doctor.',
+    StatisticFlag.longCycle =>
+      'Your longest cycle, ${s.longestCycle} days, is longer than the '
+          'usual $usualLongestCycle. Unless a period went unlogged, worth '
+          'mentioning to a doctor.',
+  };
 
   /// The cycles newest first, each with the days and readings logged from
   /// its start up to the next start. While filtering: only the matching
