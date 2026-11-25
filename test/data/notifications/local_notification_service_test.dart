@@ -49,7 +49,11 @@ void main() {
       LocalNotificationService.categoryFor(both),
     );
     expect(
-      [for (final a in details.android?.actions ?? const []) a.id],
+      [
+        for (final a
+            in details.android?.actions ?? const <AndroidNotificationAction>[])
+          a.id,
+      ],
       [for (final a in both) a.name],
     );
   });
