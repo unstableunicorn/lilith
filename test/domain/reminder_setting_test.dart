@@ -12,6 +12,23 @@ void main() {
     expect(ReminderSetting.fromJson(const {}), s);
   });
 
+  test('period reminders are off, two days before, and load when absent', () {
+    const s = ReminderSetting();
+    expect(s.beforePeriod, isFalse);
+    expect(s.whenLate, isFalse);
+    expect(s.daysBefore, 2);
+    const on = ReminderSetting(
+      beforePeriod: true,
+      whenLate: true,
+      daysBefore: 4,
+    );
+    expect(ReminderSetting.fromJson(on.toJson()), on);
+    expect(
+      ReminderSetting.fromJson(const {'enabled': true, 'hour': 6}),
+      const ReminderSetting(enabled: true, hour: 6),
+    );
+  });
+
   test('the next time is today if still ahead, else tomorrow', () {
     const s = ReminderSetting(enabled: true, hour: 7, minute: 30);
     expect(s.nextAfter(DateTime(2026, 6, 10, 6)), DateTime(2026, 6, 10, 7, 30));

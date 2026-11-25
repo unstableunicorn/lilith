@@ -1,6 +1,15 @@
 // Local notifications: scheduled on the device, no server involved.
 
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
+
+/// A button on a notification.
+enum ReminderAction {
+  /// Opens the app on Log for today.
+  log,
+
+  /// Skips tomorrow's check-in, without opening the app.
+  snooze,
+}
 
 /// One notification to show at a time.
 @immutable
@@ -10,6 +19,7 @@ class Reminder {
     required this.at,
     required this.title,
     required this.body,
+    this.actions = const [],
   });
 
   /// Stable per purpose, so a reschedule replaces rather than adds.
@@ -17,6 +27,7 @@ class Reminder {
   final DateTime at;
   final String title;
   final String body;
+  final List<ReminderAction> actions;
 
   @override
   bool operator ==(Object other) =>
@@ -24,10 +35,11 @@ class Reminder {
       other.id == id &&
       other.at == at &&
       other.title == title &&
-      other.body == body;
+      other.body == body &&
+      listEquals(other.actions, actions);
 
   @override
-  int get hashCode => Object.hash(id, at, title, body);
+  int get hashCode => Object.hash(id, at, title, body, Object.hashAll(actions));
 }
 
 abstract interface class NotificationService {

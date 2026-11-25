@@ -12,6 +12,9 @@ class ReminderSetting {
     this.enabled = false,
     this.hour = defaultHour,
     this.minute = 0,
+    this.beforePeriod = false,
+    this.daysBefore = defaultDaysBefore,
+    this.whenLate = false,
   });
 
   factory ReminderSetting.fromJson(Map<String, dynamic> json) =>
@@ -19,27 +22,61 @@ class ReminderSetting {
         enabled: json['enabled'] as bool? ?? false,
         hour: (json['hour'] as num?)?.toInt() ?? defaultHour,
         minute: (json['minute'] as num?)?.toInt() ?? 0,
+        beforePeriod: json['beforePeriod'] as bool? ?? false,
+        daysBefore: (json['daysBefore'] as num?)?.toInt() ?? defaultDaysBefore,
+        whenLate: json['whenLate'] as bool? ?? false,
       );
 
   /// Early morning, when a temperature is taken.
   static const int defaultHour = 7;
 
+  static const int defaultDaysBefore = 2;
+  static const int minDaysBefore = 1;
+  static const int maxDaysBefore = 5;
+
+  /// The daily reminder to log.
   final bool enabled;
+
+  /// The time of day every reminder here is shown at.
   final int hour;
   final int minute;
 
-  ReminderSetting copyWith({bool? enabled, int? hour, int? minute}) =>
-      ReminderSetting(
-        enabled: enabled ?? this.enabled,
-        hour: hour ?? this.hour,
-        minute: minute ?? this.minute,
-      );
+  /// Reminders as the period's window nears: [daysBefore] days ahead of
+  /// it, at its start, and on the predicted day.
+  final bool beforePeriod;
+  final int daysBefore;
+
+  /// Reminders once the period is past its window, then a daily check-in.
+  final bool whenLate;
+
+  ReminderSetting copyWith({
+    bool? enabled,
+    int? hour,
+    int? minute,
+    bool? beforePeriod,
+    int? daysBefore,
+    bool? whenLate,
+  }) => ReminderSetting(
+    enabled: enabled ?? this.enabled,
+    hour: hour ?? this.hour,
+    minute: minute ?? this.minute,
+    beforePeriod: beforePeriod ?? this.beforePeriod,
+    daysBefore: daysBefore ?? this.daysBefore,
+    whenLate: whenLate ?? this.whenLate,
+  );
 
   Map<String, dynamic> toJson() => {
     'enabled': enabled,
     'hour': hour,
     'minute': minute,
+    'beforePeriod': beforePeriod,
+    'daysBefore': daysBefore,
+    'whenLate': whenLate,
   };
+
+  /// [day] at this setting's time of day.
+  DateTime timeOn(DateTime day) =>
+      DateTime(day.year, day.month, day.day, hour, minute);
 
   /// The next time this reminder is due after [now], today or tomorrow.
   DateTime nextAfter(DateTime now) {
@@ -62,8 +99,12 @@ class ReminderSetting {
       other is ReminderSetting &&
       other.enabled == enabled &&
       other.hour == hour &&
-      other.minute == minute;
+      other.minute == minute &&
+      other.beforePeriod == beforePeriod &&
+      other.daysBefore == daysBefore &&
+      other.whenLate == whenLate;
 
   @override
-  int get hashCode => Object.hash(enabled, hour, minute);
+  int get hashCode =>
+      Object.hash(enabled, hour, minute, beforePeriod, daysBefore, whenLate);
 }
