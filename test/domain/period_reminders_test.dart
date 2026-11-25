@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/domain/cycle_statistics.dart';
@@ -161,5 +162,26 @@ void main() {
     final r = snoozedCheckIn(both, now: DateTime(2026, 6, 24, 8, 1));
     expect(r.at, at(26));
     expect(r.id, checkInReminderId);
+  });
+
+  test('every set of buttons a reminder carries is a known one', () {
+    final plan = periodRemindersFor(
+      predictedStart: p,
+      spread: 2,
+      setting: both,
+      now: early,
+    );
+    final reminders = [
+      ...plan.once,
+      plan.checkIn!,
+      snoozedCheckIn(both, now: early),
+    ];
+    for (final r in reminders.where((r) => r.actions.isNotEmpty)) {
+      expect(
+        reminderActionSets.any((set) => listEquals(set, r.actions)),
+        isTrue,
+        reason: 'reminder ${r.id}',
+      );
+    }
   });
 }

@@ -39,12 +39,13 @@ class LocalNotificationService implements NotificationService {
   Future<void> _init() => _ready ??= () async {
     tzdata.initializeTimeZones();
     await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      settings: InitializationSettings(
+        android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
           requestBadgePermission: false,
           requestSoundPermission: false,
+          notificationCategories: darwinCategories,
         ),
       ),
       onDidReceiveNotificationResponse: _tapped,
@@ -84,6 +85,46 @@ class LocalNotificationService implements NotificationService {
       cancelNotification: true,
     ),
   };
+
+  /// The iOS category that carries [actions], or null for none.
+  static String? categoryFor(List<ReminderAction> actions) =>
+      actions.isEmpty ? null : actions.map((a) => a.name).join('_');
+
+  /// One iOS category per set of buttons in [reminderActionSets].
+  static List<DarwinNotificationCategory> get darwinCategories => [
+    for (final set in reminderActionSets)
+      DarwinNotificationCategory(
+        categoryFor(set)!,
+        actions: [for (final a in set) _darwinButton(a)],
+      ),
+  ];
+
+  static DarwinNotificationAction _darwinButton(ReminderAction a) =>
+      switch (a) {
+        ReminderAction.log => DarwinNotificationAction.plain(
+          a.name,
+          'Log it',
+          options: const {DarwinNotificationActionOption.foreground},
+        ),
+        ReminderAction.snooze => DarwinNotificationAction.plain(
+          a.name,
+          'Snooze 1 day',
+        ),
+      };
+
+  /// How [reminder] is shown on each platform.
+  static NotificationDetails detailsFor(Reminder reminder) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel,
+          'Reminders',
+          channelDescription: 'Reminders about your period, shares and logging',
+          actions: [for (final a in reminder.actions) _button(a)],
+        ),
+        iOS: DarwinNotificationDetails(
+          categoryIdentifier: categoryFor(reminder.actions),
+        ),
+      );
 
   @override
   bool get isAvailable => true;
@@ -133,15 +174,7 @@ class LocalNotificationService implements NotificationService {
       scheduledDate: when,
       title: reminder.title,
       body: reminder.body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channel,
-          'Reminders',
-          channelDescription: 'Reminders about your period, shares and logging',
-          actions: [for (final a in reminder.actions) _button(a)],
-        ),
-        iOS: const DarwinNotificationDetails(),
-      ),
+      notificationDetails: detailsFor(reminder),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: repeat,
     );

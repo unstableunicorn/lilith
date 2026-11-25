@@ -11,6 +11,22 @@ enum ReminderAction {
   snooze,
 }
 
+/// Every set of buttons a reminder may carry. iOS needs each one registered
+/// before the app starts.
+const List<List<ReminderAction>> reminderActionSets = [
+  logActions,
+  checkInActions,
+];
+
+/// On the expected day and once late.
+const List<ReminderAction> logActions = [ReminderAction.log];
+
+/// On the daily check-in.
+const List<ReminderAction> checkInActions = [
+  ReminderAction.log,
+  ReminderAction.snooze,
+];
+
 /// One notification to show at a time.
 @immutable
 class Reminder {
