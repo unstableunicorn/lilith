@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/app_lock_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
@@ -38,6 +39,7 @@ Widget harness({
   WearableRepository? wearable,
   PageSettingsRepository? pageSettings,
   ShellTabs? tabs,
+  AppLockRepository? appLock,
   UrlOpener? openUrl,
   Downloader? download,
   FileSharer? shareFile,
@@ -50,6 +52,7 @@ Widget harness({
     if (shares != null) ChangeNotifierProvider.value(value: shares),
     if (received != null) ChangeNotifierProvider.value(value: received),
     if (wearable != null) ChangeNotifierProvider.value(value: wearable),
+    if (appLock != null) ChangeNotifierProvider.value(value: appLock),
     ChangeNotifierProvider.value(
       value: pageSettings ?? PageSettingsRepository(FakeSettingsStore()),
     ),

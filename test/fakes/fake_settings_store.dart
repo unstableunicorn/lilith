@@ -1,4 +1,5 @@
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/app_lock.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -13,6 +14,13 @@ class FakeSettingsStore implements SettingsStore {
   PageSettings pageSettings = const PageSettings();
   DateTime? snoozedThrough;
   DoseCache doseCache = const DoseCache();
+  AppLock appLock = const AppLock();
+
+  @override
+  Future<AppLock> readAppLock() async => appLock;
+
+  @override
+  Future<void> writeAppLock(AppLock lock) async => appLock = lock;
 
   @override
   Future<DoseCache> readDoseCache() async => doseCache;

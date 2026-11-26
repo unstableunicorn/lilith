@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Pill, patch and ring reminders on the minute, only if the user allows it. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- The app lock's fingerprint or face, if the user turns it on. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="Lilith"
         android:name="${applicationName}"

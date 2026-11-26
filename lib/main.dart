@@ -3,10 +3,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:lilith/data/app_lock_repository.dart';
+import 'package:lilith/data/biometrics.dart';
 import 'package:lilith/data/contraception_reminder_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/local_biometrics.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/page_settings_repository.dart';
@@ -35,6 +38,7 @@ import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/core/browser_history.dart';
 import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
+import 'package:lilith/ui/lock/lock_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:lilith/ui/shell/app_router.dart';
@@ -79,6 +83,7 @@ void main() {
       shareFile: shareExportFile,
       pdfReport: const PdfReport(loadTheme: robotoTheme),
       browserHistory: platformBrowserHistory(),
+      biometrics: kIsWeb ? const NoBiometrics() : LocalBiometrics(),
     ),
   );
 }
@@ -102,8 +107,16 @@ class LilithApp extends StatelessWidget {
     required this.shareFile,
     required this.pdfReport,
     required this.browserHistory,
+    this.biometrics = const NoBiometrics(),
+    this.now = DateTime.now,
     super.key,
   });
+
+  /// The fingerprint or face check for the app lock; none on the web.
+  final Biometrics biometrics;
+
+  /// The clock the app lock times the background by, injected for tests.
+  final DateTime Function() now;
 
   final SessionRepository session;
   final SetupRepository setup;
@@ -150,9 +163,68 @@ class LilithApp extends StatelessWidget {
         lazy: false,
         create: (_) => ReminderRepository(settings, notifications)..loadLater(),
       ),
+      ChangeNotifierProvider(
+        // Not lazy: it must know whether to lock before anything shows.
+        lazy: false,
+        create: (_) {
+          final lock = AppLockRepository(
+            settings,
+            biometrics,
+            signOut: session.logout,
+            now: now,
+          );
+          unawaited(lock.load());
+          return lock;
+        },
+      ),
     ],
     child: _RoutedApp(browserHistory: browserHistory),
   );
+}
+
+/// The app lock over everything once signed in, pages opened over the tabs
+/// included. The app stays built beneath, offstage, so nothing typed is lost
+/// and nothing of it is drawn or read out while locked.
+class _LockGate extends StatefulWidget {
+  const _LockGate({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LockGate> createState() => _LockGateState();
+}
+
+class _LockGateState extends State<_LockGate> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onPause: () => context.read<AppLockRepository>().paused(),
+      onResume: () => context.read<AppLockRepository>().resumed(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = context.watch<SessionRepository>().session != null;
+    final lock = context.watch<AppLockRepository>();
+    // Until the setting is read, show nothing rather than the data.
+    final hidden = signedIn && (!lock.isLoaded || lock.isLocked);
+    return Stack(
+      children: [
+        Offstage(offstage: hidden, child: widget.child),
+        if (signedIn && lock.isLocked) const LockScreen(),
+      ],
+    );
+  }
 }
 
 /// The app inside a Router, so each tab and page is a browser history entry
@@ -201,6 +273,7 @@ class _RoutedAppState extends State<_RoutedApp> {
       routerDelegate: _router,
       routeInformationParser: const AppLocationParser(),
       backButtonDispatcher: RootBackButtonDispatcher(),
+      builder: (context, app) => _LockGate(child: app!),
     ),
   );
 }

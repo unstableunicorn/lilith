@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/app_lock_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
@@ -9,6 +10,7 @@ import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
+import 'package:lilith/domain/app_lock.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -18,6 +20,7 @@ import 'package:lilith/main.dart';
 import 'package:lilith/ui/components/app_menu.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/lock/lock_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/reminders/dose_schedule_screen.dart';
@@ -29,6 +32,7 @@ import 'package:lilith/ui/shell/shell_tabs.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import 'fakes/fake_biometrics.dart';
 import 'fakes/fake_browser_history.dart';
 import 'fakes/fake_notification_service.dart';
 import 'fakes/fake_pod_service.dart';
@@ -45,8 +49,12 @@ void main() {
   late SetupRepository setup;
   late FakePodService pod;
   late FakeNotificationService notifications;
+  late FakeSettingsStore store;
+  late DateTime clock;
 
   setUp(() {
+    store = FakeSettingsStore();
+    clock = DateTime(2026, 11, 26, 9);
     notifications = FakeNotificationService();
     auth = FakePodSessionService();
     podSetup = FakePodSetupService();
@@ -61,7 +69,9 @@ void main() {
     podFor: (_) => pod,
     shareService: FakeShareService(),
     shareReader: FakeShareReader(),
-    settings: FakeSettingsStore(),
+    settings: store,
+    biometrics: FakeBiometrics(),
+    now: () => clock,
     notifications: notifications,
     wearable: const NoWearableSource(),
     openUrl: (_) async {},
@@ -196,6 +206,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byKey(ProfileKeys.save), findsOneWidget);
+    });
+  });
+
+  group('the app lock', () {
+    testWidgets('covers home until the PIN is entered', (tester) async {
+      store.appLock = AppLock(pin: PinHash.create('2468'));
+      await openHome(tester);
+      expect(find.byKey(LockKeys.screen), findsOneWidget);
+      expect(find.byType(HomeScreen), findsNothing);
+      for (final d in [2, 4, 6, 8]) {
+        await tester.tap(find.byKey(LockKeys.digit(d)));
+        await tester.pump();
+      }
+      await tester.tap(find.byKey(LockKeys.unlock));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(find.byKey(LockKeys.screen), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('is not shown before login', (tester) async {
+      store.appLock = AppLock(pin: PinHash.create('2468'));
+      await tester.pumpWidget(app());
+      await session.restore();
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byKey(LockKeys.screen), findsNothing);
+    });
+
+    testWidgets('locks again after five minutes in the background', (
+      tester,
+    ) async {
+      await openHome(tester);
+      final lock = tester
+          .element(find.byType(AppShell))
+          .read<AppLockRepository>();
+      await tester.runAsync(() => lock.setPin('2468'));
+      await tester.pump();
+      expect(find.byKey(LockKeys.screen), findsNothing);
+      final change = tester.binding.handleAppLifecycleStateChanged;
+      [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ].forEach(change);
+      clock = clock.add(lockAfterAway + const Duration(seconds: 1));
+      [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ].forEach(change);
+      await tester.pump();
+      expect(find.byKey(LockKeys.screen), findsOneWidget);
     });
   });
 

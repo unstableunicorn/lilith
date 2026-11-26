@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/app_lock.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/page_settings.dart';
@@ -43,6 +44,11 @@ abstract interface class SettingsStore {
   Future<DoseCache> readDoseCache();
 
   Future<void> writeDoseCache(DoseCache cache);
+
+  /// The app lock on this phone; off until a PIN is set.
+  Future<AppLock> readAppLock();
+
+  Future<void> writeAppLock(AppLock lock);
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
@@ -52,6 +58,28 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   static const String pageSettingsKey = 'page_settings';
   static const String snoozeKey = 'check_in_snoozed_through';
   static const String doseCacheKey = 'dose_cache';
+  static const String appLockKey = 'app_lock';
+
+  @override
+  Future<AppLock> readAppLock() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(appLockKey);
+    if (raw == null) return const AppLock();
+    try {
+      final json = jsonDecode(raw);
+      return json is Map<String, Object?>
+          ? AppLock.fromJson(json)
+          : const AppLock();
+    } on FormatException {
+      return const AppLock();
+    }
+  }
+
+  @override
+  Future<void> writeAppLock(AppLock lock) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(appLockKey, jsonEncode(lock.toJson()));
+  }
 
   /// Written from a notification's own isolate too, so read fresh.
   @override

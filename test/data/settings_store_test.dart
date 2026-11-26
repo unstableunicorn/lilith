@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/settings_store.dart';
+import 'package:lilith/domain/app_lock.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/pod_provider.dart';
@@ -92,5 +93,18 @@ void main() {
       SharedPreferencesSettingsStore.snoozeKey: 'soon',
     });
     expect(await store.readSnoozedThrough(), isNull);
+  });
+
+  test('keeps the app lock, off by default and when corrupt', () async {
+    expect((await store.readAppLock()).isEnabled, isFalse);
+    final on = AppLock(pin: PinHash.create('2468'), failures: 3);
+    await store.writeAppLock(on);
+    final back = await store.readAppLock();
+    expect(back.pin?.matches('2468'), isTrue);
+    expect(back.failures, 3);
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesSettingsStore.appLockKey: '{not json',
+    });
+    expect((await store.readAppLock()).isEnabled, isFalse);
   });
 }

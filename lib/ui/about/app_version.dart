@@ -7,7 +7,7 @@ class AppVersion {
 
   /// This build.
   static const AppVersion current = AppVersion(
-    name: '0.2.2',
+    name: '0.3.0',
     build: String.fromEnvironment('LILITH_BUILD'),
     commit: String.fromEnvironment('LILITH_COMMIT'),
   );
