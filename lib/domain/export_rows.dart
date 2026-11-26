@@ -2,9 +2,11 @@
 // has anything logged, merging the reading, period start and daily log.
 
 import 'package:collection/collection.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
 import 'package:meta/meta.dart';
@@ -41,6 +43,8 @@ class ExportRow {
     this.periodEnd = false,
     this.log,
     this.night,
+    this.dose,
+    this.method,
   }) : date = dateOnly(date);
 
   final DateTime date;
@@ -59,6 +63,12 @@ class ExportRow {
   /// The wearable's change from baseline that night, when synced.
   final WearableNight? night;
 
+  /// How the day's dose went; null when there is no verdict.
+  final DoseStatus? dose;
+
+  /// The contraception in use, on a row with a [dose].
+  final Contraception? method;
+
   @override
   bool operator ==(Object other) =>
       other is ExportRow &&
@@ -68,14 +78,26 @@ class ExportRow {
       other.periodDay == periodDay &&
       other.periodEnd == periodEnd &&
       other.log == log &&
-      other.night == night;
+      other.night == night &&
+      other.dose == dose &&
+      other.method == method;
 
   @override
-  int get hashCode =>
-      Object.hash(date, reading, periodStart, periodDay, periodEnd, log, night);
+  int get hashCode => Object.hash(
+    date,
+    reading,
+    periodStart,
+    periodDay,
+    periodEnd,
+    log,
+    night,
+    dose,
+    method,
+  );
 }
 
-/// One row per day with anything logged from [range]'s start, oldest first.
+/// One row per day with anything logged, or a missed dose, from [range]'s
+/// start, oldest first. Doses are judged as of [today].
 List<ExportRow> exportRows(
   HealthData data, {
   required ExportRange range,
@@ -83,6 +105,14 @@ List<ExportRow> exportRows(
 }) {
   final since = range.since(today);
   bool included(DateTime day) => since == null || !day.isBefore(since);
+  final schedule = data.profile.contraceptionSchedule;
+  final logs = {for (final l in data.dailyLogs) l.date: l};
+  DoseStatus? dose(DateTime day) => doseStatus(
+    schedule: schedule,
+    day: day,
+    doneAt: logs[day]?.contraceptionDoneAt,
+    now: today,
+  );
   final periodDays = <DateTime>{
     for (final p in data.periods)
       for (var d = p.startDate; !d.isAfter(p.lastKnownDay); d = addDays(d, 1))
@@ -93,22 +123,27 @@ List<ExportRow> exportRows(
     ...periodDays,
     ...data.dailyLogs.map((l) => l.date),
     ...data.wearableNights.map((d) => d.date),
+    if (schedule != null)
+      for (var d = schedule.start; !d.isAfter(today); d = addDays(d, 1))
+        if (dose(d) == DoseStatus.missed) d,
   }.where(included).sorted();
   final readings = {for (final r in data.readings) r.date: r};
   final starts = data.periods.map((p) => p.startDate).toSet();
   final ends = {for (final p in data.periods) ?p.endDate};
-  final logs = {for (final l in data.dailyLogs) l.date: l};
   final nights = {for (final d in data.wearableNights) d.date: d};
   return [
     for (final day in days)
-      ExportRow(
-        date: day,
-        reading: readings[day],
-        periodStart: starts.contains(day),
-        periodDay: periodDays.contains(day),
-        periodEnd: ends.contains(day),
-        log: logs[day],
-        night: nights[day],
-      ),
+      if (dose(day) case final status)
+        ExportRow(
+          date: day,
+          reading: readings[day],
+          periodStart: starts.contains(day),
+          periodDay: periodDays.contains(day),
+          periodEnd: ends.contains(day),
+          log: logs[day],
+          night: nights[day],
+          dose: status,
+          method: status == null ? null : data.profile.contraception,
+        ),
   ];
 }
