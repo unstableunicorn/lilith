@@ -11,12 +11,18 @@ import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/main.dart';
+import 'package:lilith/ui/components/app_menu.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
+import 'package:lilith/ui/profile/profile_screen.dart';
+import 'package:lilith/ui/reminders/dose_schedule_screen.dart';
+import 'package:lilith/ui/reminders/reminders_screen.dart';
+import 'package:lilith/ui/settings/settings_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
@@ -139,6 +145,58 @@ void main() {
       'loads', (tester) async {
     await openHome(tester);
     expect(notifications.cancelled, containsAll(contraceptionReminderIds));
+  });
+
+  group('pages opened over the tabs can reach the data', () {
+    Future<void> onThePill(WidgetTester tester) async {
+      final health = tester
+          .element(find.byType(AppShell))
+          .read<HealthRepository>();
+      await health.apply(
+        (d) => d.copyWith(
+          profile: HealthProfile(contraception: Contraception.combinedPill),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapMenu(WidgetTester tester, AppMenuAction action) async {
+      await tester.tap(find.byKey(AppMenuKeys.button).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AppMenuKeys.item(action)));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the pill schedule, through Settings and Reminders', (
+      tester,
+    ) async {
+      await openHome(tester);
+      await onThePill(tester);
+      await tapMenu(tester, AppMenuAction.settings);
+      await tester.tap(find.byKey(SettingsKeys.reminders));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(RemindersKeys.doseSetup));
+      await tester.tap(find.byKey(RemindersKeys.doseSetup));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(DoseScheduleKeys.save), findsOneWidget);
+    });
+
+    testWidgets('the health profile, from the menu', (tester) async {
+      await openHome(tester);
+      await tapMenu(tester, AppMenuAction.profile);
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ProfileKeys.save), findsOneWidget);
+    });
+
+    testWidgets('the health profile, from Today', (tester) async {
+      await openHome(tester);
+      await tester.ensureVisible(find.byKey(HomeKeys.profile));
+      await tester.tap(find.byKey(HomeKeys.profile));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ProfileKeys.save), findsOneWidget);
+    });
   });
 
   testWidgets('logging in again starts on Today', (tester) async {

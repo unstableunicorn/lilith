@@ -1,6 +1,8 @@
 // The account tab: who is logged in, where the data lives and how it is
 // protected, with the way out.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -10,6 +12,7 @@ import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/design/design_screen.dart';
 import 'package:lilith/ui/export/export_screen.dart';
@@ -110,7 +113,7 @@ class PodScreen extends StatelessWidget {
                 key: PodKeys.profile,
                 onPressed: () => _openProfile(context),
                 icon: const Icon(Icons.edit_rounded),
-                label: const Text('Conditions, treatments and notes'),
+                label: const Text('Edit your health profile'),
               ),
             ],
           ),
@@ -189,17 +192,8 @@ class PodScreen extends StatelessWidget {
   }
 
   /// The profile is a page of its own, so it gets the repository by hand.
-  void _openProfile(BuildContext context) {
-    final repo = context.read<HealthRepository>();
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeNotifierProvider.value(
-          value: repo,
-          child: const ProfileScreen(),
-        ),
-      ),
-    );
-  }
+  void _openProfile(BuildContext context) =>
+      unawaited(pushWithData(context, const ProfileScreen()));
 
   void _openSharing(BuildContext context) {
     final health = context.read<HealthRepository>();
