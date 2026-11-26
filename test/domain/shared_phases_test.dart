@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/fertile_window.dart';
@@ -154,7 +155,7 @@ void main() {
     );
     final days = p.month(year: 2026, month: 6);
     expect(days, hasLength(30));
-    Set<int> where(bool Function(dynamic d) f) => {
+    Set<int> where(bool Function(CalendarDay d) f) => {
       for (final d in days)
         if (f(d)) d.date.day,
     };

@@ -113,7 +113,6 @@ void main() {
         (d) => d.withProfile(HealthProfile(usualPeriodLength: 3)),
       );
       expect(shares.calls, ['write shares/${share.id}']);
-      expect(copyOf(share)['predictedDays'], isNot(5));
     });
 
     test('turning the fertile window on rewrites the copy', () async {

@@ -2,6 +2,7 @@
 // ending them, keeping every copy current, and ending the ones past their day.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -18,8 +19,11 @@ import 'package:lilith/data/pod/share_service.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/share_reminder.dart';
+import 'package:lilith/domain/shared_phases.dart';
 
 /// What last went wrong, for the UI to phrase.
 enum ShareError { notLoggedIn, unreachable, failed }
@@ -39,6 +43,8 @@ class ShareRepository extends ChangeNotifier {
     this._pageSettings,
   }) : _random = random ?? Random.secure() {
     _health.addListener(_onHealthChanged);
+    _lastMode = _fertileWindowMode;
+    _pageSettings?.addListener(_onPageSettingsChanged);
   }
 
   final HealthRepository _health;
@@ -61,6 +67,8 @@ class ShareRepository extends ChangeNotifier {
   final PageSettingsRepository? _pageSettings;
 
   HealthData? _lastCopied;
+  HealthProfile? _lastProfile;
+  FertileWindowMode? _lastMode;
   bool _busy = false;
   ShareError? _error;
   String? _errorDetail;
@@ -94,13 +102,14 @@ class ShareRepository extends ChangeNotifier {
       expiresOn: duration.endFrom(today, customEnd: customEnd),
       code:
           protection == DataProtection.encrypted &&
-              content == ShareContent.cycleData
+              content != ShareContent.report
           ? ShareKey.generate(_random).code
           : null,
       content: content,
       range: range,
-      includeNotes: includeNotes,
-      includeContraception: includeContraception,
+      includeNotes: content != ShareContent.phases && includeNotes,
+      includeContraception:
+          content != ShareContent.phases && includeContraception,
     );
     await _pod.open(SharePlan.forRecipient(share.recipientWebId));
     await _writeCopy(share, _health.data);
@@ -129,6 +138,15 @@ class ShareRepository extends ChangeNotifier {
     for (final share in shares) {
       await _remind(share, ask: false);
     }
+    // A phases copy holds dates worked out on the day it was written.
+    final phases = _phasesShares;
+    if (phases.isEmpty || !_health.isLoaded) return;
+    final data = _health.data;
+    await _run(() async {
+      for (final share in phases) {
+        await _writeCopy(share, data);
+      }
+    });
   }
 
   /// Schedules the share's end-day reminder, asking for permission on the
@@ -148,6 +166,8 @@ class ShareRepository extends ChangeNotifier {
 
   // The copies follow the data: after a save that changed what is shared,
   // every copy is rewritten. The first sight of loaded data is the baseline.
+  // A phases copy is also worked out from the profile, so a profile change
+  // rewrites those.
   void _onHealthChanged() {
     if (!_health.isLoaded) return;
     final current = sharedView(
@@ -156,15 +176,46 @@ class ShareRepository extends ChangeNotifier {
       includeContraception: true,
     );
     final previous = _lastCopied;
+    final previousProfile = _lastProfile;
     _lastCopied = current;
-    if (previous == null || previous == current || shares.isEmpty) {
+    _lastProfile = _health.data.profile;
+    if (previous == null || shares.isEmpty) {
+      notifyListeners();
+      return;
+    }
+    if (previous != current) {
+      _rewrite(shares);
+    } else if (previousProfile != _health.data.profile) {
+      _rewrite(_phasesShares);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  // A phases copy carries the fertile window only as this device shows it.
+  void _onPageSettingsChanged() {
+    final mode = _fertileWindowMode;
+    final previous = _lastMode;
+    _lastMode = mode;
+    if (previous == mode || !_health.isLoaded) return;
+    _rewrite(_phasesShares);
+  }
+
+  FertileWindowMode get _fertileWindowMode =>
+      _pageSettings?.settings.fertileWindowMode ?? FertileWindowMode.hidden;
+
+  List<Share> get _phasesShares =>
+      shares.where((s) => s.content == ShareContent.phases).toList();
+
+  void _rewrite(List<Share> which) {
+    if (which.isEmpty) {
       notifyListeners();
       return;
     }
     final data = _health.data;
     unawaited(
       _run(() async {
-        for (final share in shares) {
+        for (final share in which) {
           await _writeCopy(share, data);
         }
       }),
@@ -181,7 +232,15 @@ class ShareRepository extends ChangeNotifier {
     );
     final plan = SharePlan.forRecipient(share.recipientWebId);
     if (!share.isReport) {
-      final json = _codec.encode(view);
+      final json = share.content == ShareContent.phases
+          ? jsonEncode(
+              sharedPhases(
+                data,
+                today: _now(),
+                fertileWindowMode: _fertileWindowMode,
+              ).toJson(),
+            )
+          : _codec.encode(view);
       return await _pod.write(plan, switch (share.code) {
         final code? => _cipher.encrypt(json, ShareKey.fromCode(code)!, _random),
         null => json,
@@ -230,6 +289,7 @@ class ShareRepository extends ChangeNotifier {
   @override
   void dispose() {
     _health.removeListener(_onHealthChanged);
+    _pageSettings?.removeListener(_onPageSettingsChanged);
     super.dispose();
   }
 }
