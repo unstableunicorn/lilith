@@ -8,8 +8,13 @@ import 'package:lilith/domain/share.dart';
 /// The hour, local time, reminders are shown at.
 const int reminderHour = 9;
 
+/// Above every other kind of reminder's ids (daily 1 to 9, period 10s,
+/// pill 2000s), so a share's reminder never replaces or cancels another.
+const int shareReminderBaseId = 1 << 22;
+
 /// A stable id for [share]'s reminder, apart from other kinds of reminder.
-int shareReminderId(Share share) => 1000 + (share.id.hashCode & 0x3fffff);
+int shareReminderId(Share share) =>
+    shareReminderBaseId + (share.id.hashCode & 0x3fffff);
 
 /// The reminder for [share], or null when it has no end day.
 Reminder? shareReminder(Share share) {
@@ -26,5 +31,6 @@ Reminder? shareReminder(Share share) {
     ),
     title: 'You are still sharing with ${share.label}',
     body: 'That share was due to end. Open Lilith to end it.',
+    exact: true,
   );
 }

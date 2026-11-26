@@ -50,6 +50,28 @@ void main() {
     expect(settings.reminder.enabled, isFalse);
   });
 
+  testWidgets('with the daily reminder on, offers exact times', (tester) async {
+    await pump(tester);
+    expect(find.byKey(RemindersKeys.exact), findsNothing);
+    await tester.tap(find.byKey(RemindersKeys.toggle));
+    await tester.pumpAndSettle();
+    expect(find.byKey(RemindersKeys.exact), findsOneWidget);
+    await tester.ensureVisible(find.byKey(RemindersKeys.exact));
+    await tester.tap(find.byKey(RemindersKeys.exact));
+    await tester.pumpAndSettle();
+    expect(notifications.exactRequests, 1);
+    expect(find.byKey(RemindersKeys.exact), findsNothing);
+  });
+
+  testWidgets('a test notification can be sent', (tester) async {
+    await pump(tester);
+    await tester.ensureVisible(find.byKey(RemindersKeys.test));
+    await tester.tap(find.byKey(RemindersKeys.test));
+    await tester.pumpAndSettle();
+    expect(notifications.shown, hasLength(1));
+    await expectAccessible(tester);
+  });
+
   testWidgets('a refusal is explained and the switch stays off', (
     tester,
   ) async {

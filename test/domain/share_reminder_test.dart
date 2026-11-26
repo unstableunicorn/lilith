@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
+import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/share_reminder.dart';
 
@@ -17,7 +19,17 @@ void main() {
     expect(r.at, DateTime(2026, 6, 1, reminderHour));
     expect(r.title, contains('Alex'));
     expect(r.id, shareReminderId(share));
-    expect(r.id, greaterThanOrEqualTo(1000));
+    expect(r.id, greaterThanOrEqualTo(shareReminderBaseId));
+    expect(r.exact, isTrue);
+  });
+
+  test('its ids sit above every other reminder, so none is replaced', () {
+    expect(shareReminderBaseId, greaterThan(contraceptionReminderIds.last));
+    expect(shareReminderBaseId, greaterThan(periodReminderIds.last));
+    for (var i = 0; i < 200; i++) {
+      final s = Share(recipientWebId: '$wife$i', label: 'A', createdOn: may1);
+      expect(shareReminderId(s), greaterThanOrEqualTo(shareReminderBaseId));
+    }
   });
 
   test('a share without an end day has no reminder', () {

@@ -251,6 +251,18 @@ class LocalNotificationService implements NotificationService {
   }
 
   @override
+  Future<void> show(Reminder reminder) async {
+    await _init();
+    await _plugin.show(
+      id: reminder.id,
+      title: reminder.title,
+      body: reminder.body,
+      notificationDetails: detailsFor(reminder),
+      payload: reminder.payload,
+    );
+  }
+
+  @override
   Future<void> cancel(int id) async {
     await _init();
     await _plugin.cancel(id: id);

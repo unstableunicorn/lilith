@@ -72,6 +72,7 @@ PeriodReminderPlan periodRemindersFor({
         body: setting.daysBefore == 1
             ? 'Your usual window starts tomorrow.'
             : 'Your usual window starts in ${setting.daysBefore} days.',
+        exact: true,
       ),
       if (spread > 0)
         Reminder(
@@ -79,6 +80,7 @@ PeriodReminderPlan periodRemindersFor({
           at: setting.timeOn(addDays(p, -spread)),
           title: 'Your period could start any day now',
           body: 'Today is the start of your usual window.',
+          exact: true,
         ),
       Reminder(
         id: _dueTodayId,
@@ -86,6 +88,7 @@ PeriodReminderPlan periodRemindersFor({
         title: 'Your period is expected today',
         body: 'Log it when it starts.',
         actions: logActions,
+        exact: true,
       ),
     ],
     if (setting.whenLate) ...[
@@ -96,6 +99,7 @@ PeriodReminderPlan periodRemindersFor({
           title: 'Your period may be late',
           body: 'Today is the end of your usual window. Log it if it started.',
           actions: logActions,
+          exact: true,
         ),
       Reminder(
         id: _lateId,
@@ -103,6 +107,7 @@ PeriodReminderPlan periodRemindersFor({
         title: 'Your period is late',
         body: 'It is past your usual window. Log it if it started.',
         actions: logActions,
+        exact: true,
       ),
     ],
   ];
@@ -149,4 +154,5 @@ Reminder _checkIn(DateTime at) => Reminder(
       'Is everything OK? Log it if it started, or snooze this for a day. '
       'A test or a word with your doctor can tell you more.',
   actions: checkInActions,
+  exact: true,
 );

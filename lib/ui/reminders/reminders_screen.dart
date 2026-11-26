@@ -26,7 +26,8 @@ abstract final class RemindersKeys {
   static const Key doseToggle = Key('reminders.doseToggle');
   static const Key doseSetup = Key('reminders.doseSetup');
   static const Key doseBreak = Key('reminders.doseBreak');
-  static const Key doseExact = Key('reminders.doseExact');
+  static const Key exact = Key('reminders.exact');
+  static const Key test = Key('reminders.test');
 }
 
 class RemindersScreen extends StatelessWidget {
@@ -83,6 +84,12 @@ class _RemindersView extends StatelessWidget {
                   icon: const Icon(Icons.schedule_rounded),
                   label: Text('Change the time (${vm.timeText})'),
                 ),
+                TextButton.icon(
+                  key: RemindersKeys.test,
+                  onPressed: vm.sendTest,
+                  icon: const Icon(Icons.notifications_active_outlined),
+                  label: const Text('Send a test notification now'),
+                ),
               ],
             ),
           ),
@@ -93,6 +100,29 @@ class _RemindersView extends StatelessWidget {
           if (vm.offersDose) ...[
             const SizedBox(height: Space.md),
             _DoseCard(vm: vm),
+          ],
+          if (vm.offersExact) ...[
+            const SizedBox(height: Space.md),
+            AppCard(
+              icon: Icons.timer_outlined,
+              title: 'On time',
+              tone: CardTone.callout,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your phone may show reminders an hour or more late. '
+                    'Allow exact times to have them on the minute.',
+                  ),
+                  TextButton.icon(
+                    key: RemindersKeys.exact,
+                    onPressed: vm.requestExact,
+                    icon: const Icon(Icons.timer_outlined),
+                    label: const Text('Allow exact times'),
+                  ),
+                ],
+              ),
+            ),
           ],
           if (vm.wasRefused)
             const ProblemText(
@@ -157,25 +187,6 @@ class _DoseCard extends StatelessWidget {
             value: vm.doseOn,
             onChanged: vm.setDoseOn,
           ),
-          if (vm.offersExact)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Space.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your phone may show these some minutes late. Allow '
-                    'exact times to have them on the minute.',
-                  ),
-                  TextButton.icon(
-                    key: RemindersKeys.doseExact,
-                    onPressed: vm.requestExact,
-                    icon: const Icon(Icons.timer_outlined),
-                    label: const Text('Allow exact times'),
-                  ),
-                ],
-              ),
-            ),
           TextButton.icon(
             key: RemindersKeys.doseSetup,
             onPressed: () => pushWithData(context, const DoseScheduleScreen()),

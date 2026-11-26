@@ -54,4 +54,17 @@ void main() {
     expect(r.title, isNotEmpty);
     expect(dailyReminderId, lessThan(1000));
   });
+
+  test('the daily reminder asks to be on the minute', () {
+    const s = ReminderSetting(enabled: true, hour: 8);
+    expect(s.reminderAfter(DateTime(2026, 6, 10, 9)).exact, isTrue);
+  });
+
+  test('the test notification is shown at once, with its own id', () {
+    final now = DateTime(2026, 6, 10, 9);
+    final r = testReminder(now);
+    expect(r.at, now);
+    expect(r.id, isNot(dailyReminderId));
+    expect(r.id, lessThan(10));
+  });
 }
