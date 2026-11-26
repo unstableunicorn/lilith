@@ -83,10 +83,23 @@ class ReminderRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Opens the system setting for exact alarms, then reads it again.
+  /// Opens the system setting for exact alarms, then reads it again. The
+  /// daily reminder is set again here; the period and pill reminders are
+  /// set again by their repositories, which listen.
   Future<void> requestExact() async {
     _exactAllowed = await _notifications.requestExact();
+    if (_setting.enabled) await _apply();
     notifyListeners();
+  }
+
+  /// Shows a notification now, so the user sees whether they arrive.
+  Future<void> sendTest() async {
+    _allowed = await _notifications.requestPermission();
+    if (_allowed == false) {
+      notifyListeners();
+      return;
+    }
+    await _notifications.show(testReminder(now()));
   }
 
   /// Whether this device can show reminders at all (not on the web).

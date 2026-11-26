@@ -94,6 +94,17 @@ void main() {
     expect(periodReminderIds.toSet(), ids.toSet());
   });
 
+  test('every reminder asks to be on the minute', () {
+    final plan = periodRemindersFor(
+      predictedStart: p,
+      spread: 2,
+      setting: both,
+      now: early,
+    );
+    expect([for (final r in plan.once) r.exact], everyElement(isTrue));
+    expect(plan.checkIn!.exact, isTrue);
+  });
+
   test('with no spread the edges are the day itself, shown once', () {
     final plan = periodRemindersFor(
       predictedStart: p,

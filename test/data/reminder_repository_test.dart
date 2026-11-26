@@ -55,6 +55,18 @@ void main() {
     expect(notifications.daily[dailyReminderId]!.at, DateTime(2026, 6, 10, 22));
   });
 
+  test('allowing exact times sets the daily reminder again', () async {
+    await repo.setEnabled(true);
+    notifications.daily.clear();
+    await repo.requestExact();
+    expect(notifications.daily.keys, [dailyReminderId]);
+  });
+
+  test('a test notification is shown now', () async {
+    await repo.sendTest();
+    expect(notifications.shown.map((r) => r.at), [now]);
+  });
+
   test('turning off cancels', () async {
     await repo.setEnabled(true);
     await repo.setEnabled(false);

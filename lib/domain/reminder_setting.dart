@@ -6,6 +6,17 @@ import 'package:meta/meta.dart';
 /// The id of the one daily reminder, apart from share reminders (1000+).
 const int dailyReminderId = 1;
 
+/// The id of the test notification sent from Reminders.
+const int testReminderId = 2;
+
+/// A notification to show at once, so the user sees reminders reach them.
+Reminder testReminder(DateTime now) => Reminder(
+  id: testReminderId,
+  at: now,
+  title: 'Lilith',
+  body: 'Reminders reach you on this phone.',
+);
+
 @immutable
 class ReminderSetting {
   const ReminderSetting({
@@ -100,6 +111,7 @@ class ReminderSetting {
     at: nextAfter(now),
     title: 'Time to log',
     body: 'Your temperature and how today feels, before the day gets going.',
+    exact: true,
   );
 
   @override

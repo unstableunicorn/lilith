@@ -1,6 +1,8 @@
 // What the reminders screen decides: the switch, the time as shown, and
 // what to say when the device or the user said no.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:lilith/content/dose_presets.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -11,6 +13,8 @@ import 'package:lilith/domain/health_profile.dart';
 class RemindersViewModel extends ChangeNotifier {
   RemindersViewModel(this._repo, {this.health, this.now = DateTime.now}) {
     _repo.addListener(notifyListeners);
+    // The user may have changed it in the system settings meanwhile.
+    if (_repo.isAvailable) unawaited(_repo.checkExact());
   }
 
   final ReminderRepository _repo;
@@ -33,7 +37,10 @@ class RemindersViewModel extends ChangeNotifier {
   /// True once the system refused; the switch then stays off.
   bool get wasRefused => _repo.isAllowed == false;
 
-  Future<void> setEnabled(bool on) => _repo.setEnabled(on);
+  Future<void> setEnabled(bool on) async {
+    await _repo.setEnabled(on);
+    await _repo.checkExact();
+  }
 
   /// Whether the period reminders are offered: not under hormonal
   /// contraception, where the bleed does not follow the prediction.
@@ -46,8 +53,16 @@ class RemindersViewModel extends ChangeNotifier {
   String get daysBeforeText =>
       daysBefore == 1 ? '1 day before' : '$daysBefore days before';
 
-  Future<void> setBeforePeriod(bool on) => _repo.setBeforePeriod(on);
-  Future<void> setWhenLate(bool on) => _repo.setWhenLate(on);
+  Future<void> setBeforePeriod(bool on) async {
+    await _repo.setBeforePeriod(on);
+    await _repo.checkExact();
+  }
+
+  Future<void> setWhenLate(bool on) async {
+    await _repo.setWhenLate(on);
+    await _repo.checkExact();
+  }
+
   Future<void> setDaysBefore(int days) => _repo.setDaysBefore(days);
 
   Future<void> setTime({required int hour, required int minute}) =>
@@ -64,7 +79,7 @@ class RemindersViewModel extends ChangeNotifier {
 
   Future<void> setDoseOn(bool on) async {
     await _repo.setContraception(on);
-    if (doseOn) await _repo.checkExact();
+    await _repo.checkExact();
   }
 
   /// The schedule set in the profile, if any.
@@ -85,9 +100,17 @@ class RemindersViewModel extends ChangeNotifier {
     });
   }
 
-  /// Whether to offer exact times: on, and the system has not allowed them.
-  bool get offersExact => doseOn && _repo.exactAllowed == false;
+  /// Whether to offer exact times: a reminder is on, and the system has not
+  /// allowed them. Without them Android may show a reminder an hour or more
+  /// late.
+  bool get offersExact => _anyOn && _repo.exactAllowed == false;
   Future<void> requestExact() => _repo.requestExact();
+
+  bool get _anyOn =>
+      isEnabled || doseOn || (offersPeriod && (beforePeriod || whenLate));
+
+  /// Shows a notification now, to see that they arrive.
+  Future<void> sendTest() => _repo.sendTest();
 
   @override
   void dispose() {

@@ -104,6 +104,9 @@ abstract interface class NotificationService {
   /// already past is dropped.
   Future<void> schedule(Reminder reminder);
 
+  /// Shows [reminder] now, whatever its time.
+  Future<void> show(Reminder reminder);
+
   Future<void> cancel(int id);
 
   /// The buttons tapped that open the app, including the one that
@@ -136,6 +139,9 @@ class NoNotificationService implements NotificationService {
 
   @override
   Future<void> schedule(Reminder reminder) async {}
+
+  @override
+  Future<void> show(Reminder reminder) async {}
 
   @override
   Future<void> cancel(int id) async {}

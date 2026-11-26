@@ -107,16 +107,16 @@ void main() {
       tester,
     ) async {
       await pump(tester, schedule: continuous());
-      expect(find.byKey(RemindersKeys.doseExact), findsNothing);
+      expect(find.byKey(RemindersKeys.exact), findsNothing);
       expect(find.byKey(RemindersKeys.doseToggle), findsOneWidget);
       await tester.tap(find.byKey(RemindersKeys.doseToggle));
       await tester.pumpAndSettle();
-      expect(find.byKey(RemindersKeys.doseExact), findsOneWidget);
+      expect(find.byKey(RemindersKeys.exact), findsOneWidget);
       await expectAccessible(tester);
-      await tester.tap(find.byKey(RemindersKeys.doseExact));
+      await tester.tap(find.byKey(RemindersKeys.exact));
       await tester.pumpAndSettle();
       expect(notifications.exactRequests, 1);
-      expect(find.byKey(RemindersKeys.doseExact), findsNothing);
+      expect(find.byKey(RemindersKeys.exact), findsNothing);
     });
 
     testWidgets('a break today moves the next dose four days on', (

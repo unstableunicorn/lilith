@@ -41,6 +41,11 @@ class FakeNotificationService implements NotificationService {
     return permission;
   }
 
+  final List<Reminder> shown = [];
+
+  @override
+  Future<void> show(Reminder reminder) async => shown.add(reminder);
+
   @override
   Future<void> schedule(Reminder reminder) async =>
       scheduled[reminder.id] = reminder;
