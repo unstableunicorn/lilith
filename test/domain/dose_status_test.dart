@@ -24,8 +24,8 @@ void main() {
 
   DoseStatus? status(
     int day, {
-    DateTime? doneAt,
     required DateTime now,
+    DateTime? doneAt,
     ContraceptionSchedule? s,
     bool noSchedule = false,
   }) => doseStatus(
