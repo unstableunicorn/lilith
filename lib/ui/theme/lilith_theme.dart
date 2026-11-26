@@ -24,6 +24,12 @@ abstract final class Space {
 abstract final class Sizes {
   static const double chart = 200;
   static const double chartLabelGutter = 40;
+
+  /// The lock screen: a key of its number pad, the widest it grows, and
+  /// its lock icon.
+  static const double padKey = 64;
+  static const double lockWidth = 360;
+  static const double lockIcon = 48;
 }
 
 /// Corner radii, from controls up to cards.

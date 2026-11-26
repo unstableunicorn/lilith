@@ -104,13 +104,13 @@ class _LockScreenState extends State<LockScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(Space.lg),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
+              constraints: const BoxConstraints(maxWidth: Sizes.lockWidth),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.lock_outline_rounded,
-                    size: 48,
+                    size: Sizes.lockIcon,
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(height: Space.md),
@@ -216,7 +216,7 @@ class _Pad extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 72, height: 72),
+            const SizedBox.square(dimension: Sizes.padKey + 2 * Space.xs),
             key(0),
             _PadButton(
               key: LockKeys.delete,
@@ -246,9 +246,8 @@ class _PadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(Space.xs),
-    child: SizedBox(
-      width: 64,
-      height: 64,
+    child: SizedBox.square(
+      dimension: Sizes.padKey,
       child: Semantics(
         button: true,
         label: label,
