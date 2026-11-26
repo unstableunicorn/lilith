@@ -8,7 +8,6 @@ import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/period_event.dart';
-import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shared_phases.dart';
 
 import '../fakes/fake_pod_service.dart';

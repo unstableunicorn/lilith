@@ -2,6 +2,7 @@
 // and forgetting it. The list lives in the user's own pod document.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -171,8 +172,11 @@ class ReceivedShareRepository extends ChangeNotifier {
     try {
       final root = await _reader.podRootOf(share.sharerWebId);
       final url = SharePlan.forRecipient(ownWebId).documentUrl(root);
-      final content = await _reader.readDocument(url);
-      return SharedViewReady(codec.decode(_open(content, share.code)));
+      final json = _open(await _reader.readDocument(url), share.code);
+      return switch (_phasesIn(json)) {
+        final phases? => SharedViewPhases(phases),
+        null => SharedViewReady(codec.decode(json)),
+      };
     } on PodNotLoggedInException {
       return const SharedViewFailed(ReceivedShareError.notLoggedIn);
     } on PodAccessException {
@@ -195,6 +199,23 @@ class ReceivedShareRepository extends ChangeNotifier {
       return SharedViewFailed(ReceivedShareError.malformed, detail: '$e');
     } on UnsupportedDocumentVersionException catch (e) {
       return SharedViewFailed(ReceivedShareError.malformed, detail: '$e');
+    }
+  }
+
+  /// The phases in [json] when it is a phases copy; null for anything else,
+  /// which the health document codec then reads.
+  static SharedPhases? _phasesIn(String json) {
+    final Object? doc;
+    try {
+      doc = jsonDecode(json);
+    } on FormatException {
+      return null;
+    }
+    if (doc is! Map<String, dynamic> || !isPhasesJson(doc)) return null;
+    try {
+      return SharedPhases.fromJson(doc);
+    } on Object catch (e) {
+      throw MalformedDocumentException(e);
     }
   }
 
