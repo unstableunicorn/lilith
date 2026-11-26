@@ -9,6 +9,7 @@ import 'package:lilith/data/export/csv_export.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
+import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_cipher.dart';
@@ -35,6 +36,7 @@ class ShareRepository extends ChangeNotifier {
     this._cipher = const ShareCipher(),
     this._pdf = const PdfReport(),
     this._csv = const CsvExport(),
+    this._pageSettings,
   }) : _random = random ?? Random.secure() {
     _health.addListener(_onHealthChanged);
   }
@@ -53,6 +55,10 @@ class ShareRepository extends ChangeNotifier {
   final ShareCipher _cipher;
   final PdfReport _pdf;
   final CsvExport _csv;
+
+  /// This device's settings: whether a phases copy carries the fertile
+  /// window. None means it never does.
+  final PageSettingsRepository? _pageSettings;
 
   HealthData? _lastCopied;
   bool _busy = false;
