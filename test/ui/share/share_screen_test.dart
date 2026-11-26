@@ -121,6 +121,26 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
+    testWidgets('phases only hides the notes and contraception switches', (
+      tester,
+    ) async {
+      await pump(tester);
+      await fillIn(tester);
+      final phases = find.byKey(ShareKeys.content(ShareContent.phases));
+      expect(phases, findsOneWidget);
+      await tester.ensureVisible(phases);
+      await tester.tap(phases);
+      await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.includeNotes), findsNothing);
+      expect(find.byKey(ShareKeys.includeContraception), findsNothing);
+      await expectAccessible(tester);
+      await tester.ensureVisible(find.byKey(ShareKeys.submit));
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      expect(shares.shares.single.content, ShareContent.phases);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
     testWidgets('points out a bad WebID and accepts a good one', (
       tester,
     ) async {
