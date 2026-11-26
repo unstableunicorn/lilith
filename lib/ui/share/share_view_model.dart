@@ -32,6 +32,12 @@ class ShareViewModel extends ChangeNotifier {
 
   /// Whether the new share carries the day notes; off until chosen.
   bool get includeNotes => _includeNotes;
+
+  /// Whether the new share carries the method and doses; off until chosen.
+  bool get includeContraception => _includeContraception;
+  bool _includeContraception = false;
+  void setIncludeContraception({required bool on}) =>
+      _edit(() => _includeContraception = on);
   Share? _created;
   Uri? _createdLink;
   final Set<String> _revealed = {};
@@ -106,6 +112,7 @@ class ShareViewModel extends ChangeNotifier {
       content: _content,
       range: _range,
       includeNotes: _includeNotes,
+      includeContraception: _includeContraception,
     );
     if (share == null) return;
     _created = share;
@@ -117,6 +124,7 @@ class ShareViewModel extends ChangeNotifier {
     _content = ShareContent.cycleData;
     _range = ExportRange.sixMonths;
     _includeNotes = false;
+    _includeContraception = false;
     notifyListeners();
   }
 

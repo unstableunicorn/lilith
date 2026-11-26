@@ -3,9 +3,11 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -105,5 +107,41 @@ void main() {
     expect(vm.hasData, isFalse);
     expect(vm.cycles, isEmpty);
     expect(vm.days, isEmpty);
+  });
+
+  test('without their contraception there are no dose lines', () async {
+    await vm.refresh();
+    final day = DateTime(2026, 6, 8);
+    expect(vm.doseText(day), isNull);
+    expect(vm.summaryLine(vm.days.single), isNotNull);
+  });
+
+  test('with their contraception: dose lines and missed days', () async {
+    DateTime june(int d, [int h = 0]) => DateTime(2026, 6, d, h);
+    reader.documents[copyUrl] = codec.encode(
+      theirs
+          .withProfile(
+            HealthProfile(
+              contraception: Contraception.combinedPill,
+              contraceptionSchedule: ContraceptionSchedule(
+                form: DoseForm.pill,
+                start: june(6),
+                daysOn: 21,
+                daysOff: 7,
+                windowHours: 3,
+              ),
+            ),
+          )
+          .withDailyLog(
+            DailyLog(date: june(6), contraceptionDoneAt: june(6, 9)),
+          ),
+    );
+    await vm.refresh();
+    expect(vm.days.map((l) => l.date), [june(9), june(8), june(7), june(6)]);
+    expect(vm.doseText(june(6)), contains('09:00'));
+    expect(vm.doseText(june(7)), isNotNull);
+    expect(vm.doseText(june(10)), isNull);
+    expect(vm.summaryLine(vm.days.last), isNull);
+    expect(vm.summaryLine(vm.days[1]), isNotNull);
   });
 }

@@ -79,6 +79,7 @@ class ShareRepository extends ChangeNotifier {
     ShareContent content = ShareContent.cycleData,
     ExportRange? range,
     bool includeNotes = false,
+    bool includeContraception = false,
   }) => _run(() async {
     final share = Share(
       recipientWebId: recipientWebId.trim(),
@@ -93,6 +94,7 @@ class ShareRepository extends ChangeNotifier {
       content: content,
       range: range,
       includeNotes: includeNotes,
+      includeContraception: includeContraception,
     );
     await _pod.open(SharePlan.forRecipient(share.recipientWebId));
     await _writeCopy(share, _health.data);
@@ -142,7 +144,11 @@ class ShareRepository extends ChangeNotifier {
   // every copy is rewritten. The first sight of loaded data is the baseline.
   void _onHealthChanged() {
     if (!_health.isLoaded) return;
-    final current = sharedView(_health.data, includeNotes: true);
+    final current = sharedView(
+      _health.data,
+      includeNotes: true,
+      includeContraception: true,
+    );
     final previous = _lastCopied;
     _lastCopied = current;
     if (previous == null || previous == current || shares.isEmpty) {
@@ -162,7 +168,11 @@ class ShareRepository extends ChangeNotifier {
   /// The share's view of [data], as JSON or a JWE; a report as a PDF and a
   /// CSV.
   Future<void> _writeCopy(Share share, HealthData data) async {
-    final view = sharedView(data, includeNotes: share.includeNotes);
+    final view = sharedView(
+      data,
+      includeNotes: share.includeNotes,
+      includeContraception: share.includeContraception,
+    );
     final plan = SharePlan.forRecipient(share.recipientWebId);
     if (!share.isReport) {
       final json = _codec.encode(view);

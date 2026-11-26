@@ -10,7 +10,6 @@ import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
-import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/period/period_form_screen.dart';
 import 'package:lilith/ui/period/period_form_view_model.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
@@ -41,6 +40,9 @@ abstract final class HistoryKeys {
   static const Key addReadingProblem = Key('history.addReadingProblem');
   static Key day(DateTime d) => Key('history.day.$d');
   static Key dayNote(DateTime d) => Key('history.dayNote.$d');
+  static Key daySummary(DateTime d) => Key('history.daySummary.$d');
+  static Key dayDose(DateTime d) => Key('history.dayDose.$d');
+  static const Key filterDose = Key('history.filterDose');
   static Key reading(DateTime d) => Key('history.reading.$d');
   static Key removeReading(DateTime d) => Key('history.removeReading.$d');
   static const Key expandAll = Key('history.expandAll');
@@ -476,6 +478,13 @@ class _SearchAndFiltersState extends State<_SearchAndFilters> {
                   selected: vm.symptomFilter.contains(s),
                   onSelected: (_) => vm.toggleSymptomFilter(s),
                 ),
+              if (vm.tracksDoses)
+                FilterChip(
+                  key: HistoryKeys.filterDose,
+                  label: const Text('Missed or late dose'),
+                  selected: vm.doseProblemsOnly,
+                  onSelected: (on) => vm.setDoseProblemsOnly(on: on),
+                ),
             ],
           ),
         ],
@@ -621,29 +630,35 @@ class _DayTile extends StatelessWidget {
   final DailyLog log;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    key: HistoryKeys.day(log.date),
-    leading: const Icon(Icons.edit_note_rounded),
-    title: Text(formatDay(log.date)),
-    subtitle: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(logSummary(log)),
-        if (log.note case final note?)
-          Text(
-            key: HistoryKeys.dayNote(log.date),
-            note,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+  Widget build(BuildContext context) {
+    final vm = context.read<HistoryViewModel>();
+    return ListTile(
+      key: HistoryKeys.day(log.date),
+      leading: const Icon(Icons.edit_note_rounded),
+      title: Text(formatDay(log.date)),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (vm.summaryLine(log) case final summary?)
+            Text(key: HistoryKeys.daySummary(log.date), summary),
+          if (vm.doseText(log.date) case final dose?)
+            Text(key: HistoryKeys.dayDose(log.date), dose),
+          if (log.note case final note?)
+            Text(
+              key: HistoryKeys.dayNote(log.date),
+              note,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-      ],
-    ),
-    trailing: const Icon(Icons.chevron_right_rounded),
-    onTap: () => context.read<ShellTabs>().openLog(log.date),
-  );
+        ],
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: () => context.read<ShellTabs>().openLog(log.date),
+    );
+  }
 }
 
 class _ReadingTile extends StatelessWidget {

@@ -100,6 +100,27 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
+    testWidgets('contraception is off by default and goes when on', (
+      tester,
+    ) async {
+      await pump(tester);
+      await fillIn(tester);
+      final doses = find.byKey(ShareKeys.includeContraception);
+      expect(doses, findsOneWidget);
+      await tester.ensureVisible(doses);
+      expect(tester.widget<SwitchListTile>(doses).value, isFalse);
+      await tester.tap(doses);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(doses).value, isTrue);
+      await expectAccessible(tester);
+      await tester.ensureVisible(find.byKey(ShareKeys.submit));
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      expect(shares.shares.single.includeContraception, isTrue);
+      expect(shares.shares.single.includeNotes, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
     testWidgets('points out a bad WebID and accepts a good one', (
       tester,
     ) async {

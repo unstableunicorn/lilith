@@ -6,8 +6,11 @@ import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
+import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
@@ -98,6 +101,42 @@ void main() {
   ) async {
     await pump(tester);
     expect(find.byKey(SharedPersonKeys.prediction), findsOneWidget);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('their shared doses show as lines, missed days too', (
+    tester,
+  ) async {
+    DateTime june(int d, [int h = 0]) => DateTime(2026, 6, d, h);
+    reader.documents[SharePlan.forRecipient(auth.webId)
+        .documentUrl(ownerRoot)] = codec.encode(
+      HealthData.empty
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+          .withProfile(
+            HealthProfile(
+              contraception: Contraception.combinedPill,
+              contraceptionSchedule: ContraceptionSchedule(
+                form: DoseForm.pill,
+                start: june(8),
+                daysOn: 21,
+                daysOff: 7,
+                windowHours: 3,
+              ),
+            ),
+          )
+          .withDailyLog(
+            DailyLog(
+              date: june(8),
+              contraceptionDoneAt: june(8, 9),
+              symptoms: const {Symptom.cramps},
+            ),
+          ),
+    );
+    await pump(tester);
+    expect(find.byKey(SharedPersonKeys.dayDose(june(8))), findsOneWidget);
+    expect(find.byKey(SharedPersonKeys.daySummary(june(8))), findsOneWidget);
+    expect(find.byKey(SharedPersonKeys.dayDose(june(9))), findsOneWidget);
+    expect(find.byKey(SharedPersonKeys.daySummary(june(9))), findsNothing);
     await expectAccessible(tester);
   });
 }

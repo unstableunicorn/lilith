@@ -150,6 +150,62 @@ void main() {
       });
     }
 
+    final doseCases = [
+      (name: 'leaves doses and the method out by default', include: false),
+      (name: 'carries doses and the method when asked', include: true),
+    ];
+    for (final c in doseCases) {
+      test('the copy ${c.name}, after a dose is marked too', () async {
+        await health.apply(
+          (d) => d
+              .withProfile(
+                HealthProfile(
+                  contraception: Contraception.combinedPill,
+                  notes: 'private',
+                ),
+              )
+              .withDailyLog(
+                DailyLog(
+                  date: may1,
+                  painLevel: 2,
+                  contraceptionDoneAt: DateTime(2026, 5, 1, 9),
+                ),
+              ),
+        );
+        final share = (await repo.create(
+          recipientWebId: wife,
+          label: 'A',
+          duration: ShareDuration.untilRevoked,
+          today: may1,
+          includeContraception: c.include,
+        ))!;
+        expect(share.includeContraception, c.include);
+        HealthData seen() => codec.decode(
+          cipher.decrypt(
+            shares.folders['shares/${share.id}']!,
+            ShareKey.fromCode(share.code!)!,
+          ),
+        );
+        final may2 = DateTime(2026, 5, 2);
+        await health.apply(
+          (d) => d.withDailyLog(
+            DailyLog(date: may2, contraceptionDoneAt: DateTime(2026, 5, 2, 9)),
+          ),
+        );
+        expect(
+          seen().dailyLogs.map((l) => l.contraceptionDoneAt),
+          c.include
+              ? [DateTime(2026, 5, 1, 9), DateTime(2026, 5, 2, 9)]
+              : [null],
+        );
+        expect(
+          seen().profile.contraception,
+          c.include ? Contraception.combinedPill : null,
+        );
+        expect(seen().profile.notes, isEmpty);
+      });
+    }
+
     test(
       'a save that changes only private data leaves the copies alone',
       () async {
@@ -369,6 +425,47 @@ void reportShareTests() {
         expect(csv, isNot(contains('private')));
       },
     );
+
+    test('a report carries doses only when asked', () async {
+      await health.apply(
+        (d) => d
+            .withProfile(
+              HealthProfile(contraception: Contraception.combinedPill),
+            )
+            .withDailyLog(
+              DailyLog(
+                date: may1,
+                contraceptionDoneAt: DateTime(2026, 5, 1, 9),
+              ),
+            ),
+      );
+      Future<String> csvFor(String webId, {required bool include}) async {
+        final share = (await repo.create(
+          recipientWebId: webId,
+          label: 'Dr',
+          duration: ShareDuration.thirtyDays,
+          today: may1,
+          content: ShareContent.report,
+          range: ExportRange.year,
+          includeContraception: include,
+        ))!;
+        return String.fromCharCodes(
+          shares.files['shares/${share.id}']!['cycle_data.csv']!,
+        );
+      }
+
+      expect(
+        await csvFor(doctor, include: true),
+        contains('combinedPill,taken,2026-05-01T09:00'),
+      );
+      expect(
+        await csvFor(
+          'https://pods.example/other/profile/card#me',
+          include: false,
+        ),
+        isNot(contains('combinedPill')),
+      );
+    });
 
     test('a save rewrites the report', () async {
       final share = (await repo.create(

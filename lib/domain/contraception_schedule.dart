@@ -176,3 +176,33 @@ class ContraceptionSchedule {
     quietHours: quietHours ?? this.quietHours,
   );
 }
+
+/// How a day's dose went, judged against the current schedule.
+enum DoseStatus { taken, late, missed }
+
+/// The verdict on [day]: done within the window is taken, done after it is
+/// late, not done once the window has passed is missed. Null when nothing
+/// was due and nothing done, before the start, or while the window is open.
+/// A dose done on a day the schedule does not name counts as taken.
+DoseStatus? doseStatus({
+  required ContraceptionSchedule? schedule,
+  required DateTime day,
+  required DateTime? doneAt,
+  required DateTime now,
+}) {
+  final d = dateOnly(day);
+  if (schedule == null || schedule.stepOn(d) == null) {
+    return doneAt == null ? null : DoseStatus.taken;
+  }
+  final windowEnd = DateTime(
+    d.year,
+    d.month,
+    d.day,
+    schedule.hour,
+    schedule.minute,
+  ).add(Duration(hours: schedule.windowHours));
+  if (doneAt != null) {
+    return doneAt.isAfter(windowEnd) ? DoseStatus.late : DoseStatus.taken;
+  }
+  return now.isAfter(windowEnd) ? DoseStatus.missed : null;
+}

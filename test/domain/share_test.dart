@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
@@ -106,6 +107,45 @@ void main() {
         ], reason: 'includeNotes: $notes');
       }
     });
+
+    final schedule = ContraceptionSchedule(
+      form: DoseForm.pill,
+      start: may1,
+      daysOn: 21,
+      daysOff: 7,
+      windowHours: 12,
+    );
+    final onPill = HealthData(
+      dailyLogs: [
+        DailyLog(date: may1, contraceptionDoneAt: DateTime(2026, 5, 1, 9)),
+      ],
+      profile: HealthProfile(
+        contraception: Contraception.combinedPill,
+        contraceptionSchedule: schedule,
+        conditions: const {ReproductiveCondition.pcos},
+        notes: 'private',
+        usualCycleLength: 28,
+      ),
+    );
+
+    test('with contraception: the method, schedule and doses, nothing '
+        'else of the profile', () {
+      final shared = sharedView(onPill, includeContraception: true);
+      expect(shared.dailyLogs, onPill.dailyLogs);
+      expect(
+        shared.profile,
+        HealthProfile(
+          contraception: Contraception.combinedPill,
+          contraceptionSchedule: schedule,
+        ),
+      );
+    });
+
+    test('without contraception: no method, schedule or doses', () {
+      final shared = sharedView(onPill);
+      expect(shared.dailyLogs, isEmpty);
+      expect(shared.profile, HealthProfile());
+    });
   });
 
   group('ShareDuration', () {
@@ -194,6 +234,22 @@ void main() {
       );
       expect(Share.fromJson(withNotes.toJson()), withNotes);
       expect(withNotes, isNot(open));
+    });
+
+    test('leaves contraception out by default; the choice round-trips', () {
+      final open = Share(recipientWebId: wife, label: 'A', createdOn: may1);
+      expect(open.includeContraception, isFalse);
+      expect(open.toJson().containsKey('includeContraception'), isFalse);
+      final withDoses = Share(
+        recipientWebId: wife,
+        label: 'A',
+        createdOn: may1,
+        includeContraception: true,
+      );
+      expect(withDoses.toJson()['includeContraception'], isTrue);
+      expect(Share.fromJson(withDoses.toJson()), withDoses);
+      expect(withDoses, isNot(open));
+      expect(withDoses.hashCode, isNot(open.hashCode));
     });
   });
 
