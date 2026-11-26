@@ -1,11 +1,13 @@
-// Settings: reminders, what each tab shows on this device, and the security
-// key of an encrypted pod.
+// Settings: the app lock, reminders, what each tab shows on this device,
+// and the security key of an encrypted pod.
 
+import 'package:lilith/data/app_lock_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/data_route.dart';
+import 'package:lilith/ui/lock/pin_setup_screen.dart';
 import 'package:lilith/ui/reminders/reminders_screen.dart';
 import 'package:lilith/ui/settings/security_key_screen.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,6 +22,8 @@ abstract final class SettingsKeys {
   static const Key tryingToConceive = Key('settings.tryingToConceive');
   static const Key showFertileWindow = Key('settings.showFertileWindow');
   static const Key securityKey = Key('settings.securityKey');
+  static const Key appLock = Key('settings.appLock');
+  static const Key appLockBiometrics = Key('settings.appLockBiometrics');
 }
 
 class SettingsScreen extends StatelessWidget {
@@ -30,10 +34,43 @@ class SettingsScreen extends StatelessWidget {
     final repo = context.watch<PageSettingsRepository>();
     final s = repo.settings;
     final canChangeKey = context.watch<SetupRepository>().canChangeKey;
+    final lock = context.watch<AppLockRepository?>();
     Future<void> set(PageSettings next) => repo.update(next);
     return PageScaffold(
       title: 'Settings',
       children: [
+        if (lock != null)
+          AppCard(
+            icon: Icons.lock_outline_rounded,
+            title: 'App lock',
+            child: Column(
+              children: [
+                SwitchListTile(
+                  key: SettingsKeys.appLock,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Lock with a PIN'),
+                  subtitle: const Text(
+                    'On this phone, when Lilith starts and after five '
+                    'minutes away',
+                  ),
+                  value: lock.lock.isEnabled,
+                  onChanged: (_) => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PinSetupScreen(),
+                    ),
+                  ),
+                ),
+                if (lock.lock.isEnabled && lock.biometricsAvailable)
+                  SwitchListTile(
+                    key: SettingsKeys.appLockBiometrics,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Unlock with your fingerprint or face'),
+                    value: lock.lock.biometrics,
+                    onChanged: lock.setBiometrics,
+                  ),
+              ],
+            ),
+          ),
         AppCard(
           icon: Icons.alarm_rounded,
           title: 'Reminders',

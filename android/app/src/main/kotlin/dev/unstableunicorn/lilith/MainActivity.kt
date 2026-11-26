@@ -1,5 +1,6 @@
 package dev.unstableunicorn.lilith
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// A FragmentActivity, which local_auth needs for the fingerprint prompt.
+class MainActivity : FlutterFragmentActivity()
