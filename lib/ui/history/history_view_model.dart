@@ -12,12 +12,12 @@ import 'package:lilith/domain/cycle_statistics.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/fertile_window.dart';
-import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
+import 'package:lilith/ui/log/dose_summary.dart' as dose;
 import 'package:lilith/ui/log/log_summary.dart';
 
 /// Where the usual ranges behind the statistics flags come from.
@@ -203,50 +203,17 @@ class HistoryViewModel extends ChangeNotifier {
             });
   }
 
-  ContraceptionSchedule? get _schedule =>
-      _repo.data.profile.contraceptionSchedule;
-
   /// A schedule or a dose marked done: the dose lines and filter apply.
-  bool get tracksDoses =>
-      _schedule != null ||
-      _repo.data.dailyLogs.any((l) => l.contraceptionDoneAt != null);
+  bool get tracksDoses => dose.tracksDoses(_repo.data);
 
   /// How [day]'s dose went, or null when there is no verdict.
-  DoseStatus? doseStatusOn(DateTime day) => doseStatus(
-    schedule: _schedule,
-    day: day,
-    doneAt: _repo.data.dailyLogs
-        .firstWhereOrNull((l) => l.date == dateOnly(day))
-        ?.contraceptionDoneAt,
-    now: now(),
-  );
+  DoseStatus? doseStatusOn(DateTime day) =>
+      dose.doseStatusIn(_repo.data, day, now: now());
 
   /// E.g. "Pill taken 09:12", "Pill taken late, 14:03", "Pill missed";
   /// null when there is no verdict.
-  String? doseText(DateTime day) {
-    final status = doseStatusOn(day);
-    if (status == null) return null;
-    final (noun, verb) = switch (_schedule?.form) {
-      DoseForm.pill => ('Pill', 'taken'),
-      DoseForm.patch => ('Patch', 'done'),
-      DoseForm.ring => ('Ring', 'done'),
-      null when _repo.data.profile.contraception == Contraception.patchOrRing =>
-        ('Patch or ring', 'done'),
-      null => ('Pill', 'taken'),
-    };
-    final at = _repo.data.dailyLogs
-        .firstWhereOrNull((l) => l.date == dateOnly(day))
-        ?.contraceptionDoneAt;
-    final time = at == null
-        ? ''
-        : '${at.hour.toString().padLeft(2, '0')}:'
-              '${at.minute.toString().padLeft(2, '0')}';
-    return switch (status) {
-      DoseStatus.taken => '$noun $verb $time',
-      DoseStatus.late => '$noun $verb late, $time',
-      DoseStatus.missed => '$noun missed',
-    };
-  }
+  String? doseText(DateTime day) =>
+      dose.doseSummary(_repo.data, day, now: now());
 
   bool _doseProblemsOnly = false;
   bool get doseProblemsOnly => _doseProblemsOnly;
@@ -258,27 +225,10 @@ class HistoryViewModel extends ChangeNotifier {
   /// What a day's tile says above its dose line; null when the day holds
   /// nothing but its dose.
   String? summaryLine(DailyLog log) =>
-      doseText(log.date) != null &&
-          log.copyWith(clearContraceptionDone: true, clearNote: true).isEmpty
-      ? null
-      : logSummary(log);
+      dose.daySummaryLine(_repo.data, log, now: now());
 
-  /// The daily logs, oldest first, with an empty one for each missed day
-  /// nothing was logged on, so it can be listed.
-  List<DailyLog> get _logs {
-    final logs = _repo.data.dailyLogs;
-    final s = _schedule;
-    if (s == null) return logs;
-    final logged = logs.map((l) => l.date).toSet();
-    return [
-      ...logs,
-      for (var d = s.start; !d.isAfter(today); d = addDays(d, 1))
-        if (!logged.contains(d) &&
-            doseStatus(schedule: s, day: d, doneAt: null, now: now()) ==
-                DoseStatus.missed)
-          DailyLog(date: d),
-    ].sortedBy((l) => l.date);
-  }
+  /// The daily logs, oldest first, with each missed day as an empty one.
+  List<DailyLog> get _logs => dose.logsWithMissedDoses(_repo.data, now: now());
 
   /// Days that match, in cycles and before the first period.
   int get matchCount =>
