@@ -135,4 +135,33 @@ void main() {
     vm.setQuery('09:41');
     expect(vm.cycles.single.days.map((l) => l.date), [d(1)]);
   });
+
+  test('a day holding only its dose has no summary line', () async {
+    await withPill(done: {1: at(1, 9)});
+    expect(vm.summaryLine(DailyLog(date: d(3))), isNull);
+    expect(
+      vm.summaryLine(DailyLog(date: d(1), contraceptionDoneAt: at(1, 9))),
+      isNull,
+    );
+    expect(
+      vm.summaryLine(
+        DailyLog(date: d(1), contraceptionDoneAt: at(1, 9), note: 'x'),
+      ),
+      isNull,
+    );
+    expect(
+      vm.summaryLine(
+        DailyLog(
+          date: d(1),
+          contraceptionDoneAt: at(1, 9),
+          flow: FlowIntensity.light,
+        ),
+      ),
+      isNotNull,
+    );
+  });
+
+  test('a day with no dose keeps its summary line', () async {
+    expect(vm.summaryLine(DailyLog(date: d(3))), isNotNull);
+  });
 }

@@ -255,6 +255,14 @@ class HistoryViewModel extends ChangeNotifier {
   void setDoseProblemsOnly({required bool on}) =>
       _filter(() => _doseProblemsOnly = on);
 
+  /// What a day's tile says above its dose line; null when the day holds
+  /// nothing but its dose.
+  String? summaryLine(DailyLog log) =>
+      doseText(log.date) != null &&
+          log.copyWith(clearContraceptionDone: true, clearNote: true).isEmpty
+      ? null
+      : logSummary(log);
+
   /// The daily logs, oldest first, with an empty one for each missed day
   /// nothing was logged on, so it can be listed.
   List<DailyLog> get _logs {
