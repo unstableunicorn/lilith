@@ -7,7 +7,6 @@ import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/dates.dart';
-import 'package:lilith/ui/log/log_summary.dart';
 import 'package:lilith/ui/received/received_view_model.dart';
 import 'package:lilith/ui/received/shared_person_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -23,6 +22,8 @@ abstract final class SharedPersonKeys {
   static const Key refresh = Key('sharedPerson.refresh');
   static Key cycle(DateTime d) => Key('sharedPerson.cycle.$d');
   static Key day(DateTime d) => Key('sharedPerson.day.$d');
+  static Key daySummary(DateTime d) => Key('sharedPerson.daySummary.$d');
+  static Key dayDose(DateTime d) => Key('sharedPerson.dayDose.$d');
 }
 
 class SharedPersonScreen extends StatelessWidget {
@@ -203,7 +204,15 @@ class _Data extends StatelessWidget {
             key: SharedPersonKeys.day(log.date),
             leading: const Icon(Icons.edit_note_rounded),
             title: Text(formatDay(log.date)),
-            subtitle: Text(logSummary(log)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (vm.summaryLine(log) case final summary?)
+                  Text(key: SharedPersonKeys.daySummary(log.date), summary),
+                if (vm.doseText(log.date) case final dose?)
+                  Text(key: SharedPersonKeys.dayDose(log.date), dose),
+              ],
+            ),
           ),
       ],
     );

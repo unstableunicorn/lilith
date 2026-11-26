@@ -12,6 +12,8 @@ import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
+import 'package:lilith/ui/log/dose_summary.dart' as dose;
+import 'package:lilith/ui/log/log_summary.dart';
 
 class SharedPersonViewModel extends ChangeNotifier {
   SharedPersonViewModel(
@@ -82,7 +84,24 @@ class SharedPersonViewModel extends ChangeNotifier {
     ];
   }
 
-  List<DailyLog> get days => data?.dailyLogs.reversed.toList() ?? const [];
+  /// Their days newest first, with each missed dose they share as a day.
+  List<DailyLog> get days => switch (data) {
+    final d? => dose.logsWithMissedDoses(d, now: now()).reversed.toList(),
+    null => const [],
+  };
+
+  /// Their dose that day, when they share it; null otherwise.
+  String? doseText(DateTime day) => switch (data) {
+    final d? => dose.doseSummary(d, day, now: now()),
+    null => null,
+  };
+
+  /// What a day's tile says above its dose line; null when the day holds
+  /// nothing but its dose.
+  String? summaryLine(DailyLog log) => switch (data) {
+    final d? => dose.daySummaryLine(d, log, now: now()),
+    null => logSummary(log),
+  };
 
   /// The newest readings, oldest first, as many as the chart shows.
   List<TemperatureReading> get chartReadings {
