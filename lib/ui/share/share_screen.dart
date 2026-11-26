@@ -182,26 +182,29 @@ class _ShareViewState extends State<_ShareView> {
             ],
           ),
         ],
-        SwitchListTile(
-          key: ShareKeys.includeNotes,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Include my day notes'),
-          subtitle: const Text(
-            'Off: they see flow, pain, symptoms and tests, not what you wrote.',
+        if (vm.content != ShareContent.phases) ...[
+          SwitchListTile(
+            key: ShareKeys.includeNotes,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Include my day notes'),
+            subtitle: const Text(
+              'Off: they see flow, pain, symptoms and tests, not what you '
+              'wrote.',
+            ),
+            value: vm.includeNotes,
+            onChanged: (on) => vm.setIncludeNotes(on: on),
           ),
-          value: vm.includeNotes,
-          onChanged: (on) => vm.setIncludeNotes(on: on),
-        ),
-        SwitchListTile(
-          key: ShareKeys.includeContraception,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Include contraception'),
-          subtitle: const Text(
-            'Off: they do not see your method or which days you took it.',
+          SwitchListTile(
+            key: ShareKeys.includeContraception,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Include contraception'),
+            subtitle: const Text(
+              'Off: they do not see your method or which days you took it.',
+            ),
+            value: vm.includeContraception,
+            onChanged: (on) => vm.setIncludeContraception(on: on),
           ),
-          value: vm.includeContraception,
-          onChanged: (on) => vm.setIncludeContraception(on: on),
-        ),
+        ],
         const SectionHeading('For how long'),
         Wrap(
           spacing: Space.sm,
