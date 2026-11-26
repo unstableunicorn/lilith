@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:meta/meta.dart';
 
 /// The folder name of the share for [recipientWebId]: the first 16 hex digits
@@ -19,19 +20,32 @@ String shareId(String recipientWebId) => sha256
 
 /// The part of [data] a recipient sees: the cycle data only. The health
 /// profile, remedy verdicts, shopping list, the shares and doses marked done
-/// stay with the owner, and so do day notes unless [includeNotes].
-HealthData sharedView(HealthData data, {bool includeNotes = false}) =>
-    HealthData(
-      readings: data.readings,
-      periods: data.periods,
-      dailyLogs: [
-        for (final l in data.dailyLogs)
-          if (l.copyWith(clearNote: !includeNotes, clearContraceptionDone: true)
-              case final bare when !bare.isEmpty)
-            bare,
-      ],
-      wearableNights: data.wearableNights,
-    );
+/// stay with the owner, and so do day notes unless [includeNotes]. With
+/// [includeContraception], the method, its schedule and the doses go too.
+HealthData sharedView(
+  HealthData data, {
+  bool includeNotes = false,
+  bool includeContraception = false,
+}) => HealthData(
+  readings: data.readings,
+  periods: data.periods,
+  dailyLogs: [
+    for (final l in data.dailyLogs)
+      if (l.copyWith(
+            clearNote: !includeNotes,
+            clearContraceptionDone: !includeContraception,
+          )
+          case final bare when !bare.isEmpty)
+        bare,
+  ],
+  wearableNights: data.wearableNights,
+  profile: includeContraception
+      ? HealthProfile(
+          contraception: data.profile.contraception,
+          contraceptionSchedule: data.profile.contraceptionSchedule,
+        )
+      : null,
+);
 
 /// How long a share lasts, as offered on the share screen.
 enum ShareDuration {
@@ -98,6 +112,7 @@ class Share {
     this.content = ShareContent.cycleData,
     ExportRange? range,
     this.includeNotes = false,
+    this.includeContraception = false,
   }) : createdOn = dateOnly(createdOn),
        expiresOn = expiresOn == null ? null : dateOnly(expiresOn),
        range = content == ShareContent.report
@@ -119,6 +134,7 @@ class Share {
       _ => null,
     },
     includeNotes: json['includeNotes'] == true,
+    includeContraception: json['includeContraception'] == true,
   );
 
   final String recipientWebId;
@@ -143,6 +159,10 @@ class Share {
   /// Whether the recipient also sees the day notes; off unless chosen.
   final bool includeNotes;
 
+  /// Whether the recipient also sees the method and the doses; off unless
+  /// chosen.
+  final bool includeContraception;
+
   String get id => shareId(recipientWebId);
   bool get isEncrypted => code != null;
   bool get isReport => content == ShareContent.report;
@@ -160,6 +180,7 @@ class Share {
     'content': content.name,
     if (range != null) 'range': range!.name,
     if (includeNotes) 'includeNotes': true,
+    if (includeContraception) 'includeContraception': true,
   };
 
   @override
@@ -172,7 +193,8 @@ class Share {
       other.code == code &&
       other.content == content &&
       other.range == range &&
-      other.includeNotes == includeNotes;
+      other.includeNotes == includeNotes &&
+      other.includeContraception == includeContraception;
 
   @override
   int get hashCode => Object.hash(
@@ -184,6 +206,7 @@ class Share {
     content,
     range,
     includeNotes,
+    includeContraception,
   );
 }
 
