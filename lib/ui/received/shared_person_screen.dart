@@ -105,15 +105,95 @@ class _SharedPersonView extends StatelessWidget {
                         '${detail == null ? '' : ' ($detail)'}',
             ),
           ),
-          SharedViewReady() when !vm.hasData => const AppCard(
+          SharedViewReady() ||
+          SharedViewPhases() when !vm.hasData => const AppCard(
             key: SharedPersonKeys.empty,
             icon: Icons.insights_rounded,
             title: 'Nothing logged yet',
             child: Text('They have not logged anything to show.'),
           ),
           SharedViewReady() => _Data(vm: vm, date: date),
-          SharedViewPhases() => const SizedBox.shrink(),
+          SharedViewPhases() => _Phases(vm: vm, date: date),
         },
+      ],
+    );
+  }
+}
+
+/// A "phases only" share: the next period and a read-only calendar.
+class _Phases extends StatelessWidget {
+  const _Phases({required this.vm, required this.date});
+
+  final SharedPersonViewModel vm;
+  final String Function(DateTime) date;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final small = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppCard(
+          key: SharedPersonKeys.prediction,
+          icon: Icons.favorite_rounded,
+          title: 'Next period',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                vm.nextPeriodText ?? 'Not enough logged yet to predict.',
+                style: theme.textTheme.titleLarge,
+              ),
+              if (vm.phasesCycleLine case final line?)
+                Padding(
+                  padding: const EdgeInsets.only(top: Space.sm),
+                  child: Text(line),
+                ),
+              if (vm.phasesUpdatedText case final updated?)
+                Padding(
+                  padding: const EdgeInsets.only(top: Space.sm),
+                  child: Text(
+                    key: SharedPersonKeys.updated,
+                    updated,
+                    style: small,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        AppCard(
+          key: SharedPersonKeys.calendar,
+          icon: Icons.calendar_month_rounded,
+          title: 'Calendar',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MonthCalendar(
+                title: formatMonth(vm.month),
+                days: vm.phasesDays,
+                leadingBlanks: vm.calendarLeadingBlanks,
+                today: vm.today,
+                onPrevious: vm.previousMonth,
+                onNext: vm.nextMonth,
+                dayKey: SharedPersonKeys.calendarDay,
+                previousKey: SharedPersonKeys.calendarPrev,
+                nextKey: SharedPersonKeys.calendarNext,
+              ),
+              if (vm.phasesDisclaimer case final text?)
+                Padding(
+                  padding: const EdgeInsets.only(top: Space.sm),
+                  child: Text(
+                    key: SharedPersonKeys.disclaimer,
+                    text,
+                    style: small,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ],
     );
   }

@@ -13,8 +13,8 @@ class MonthCalendar extends StatelessWidget {
     required this.leadingBlanks,
     required this.onPrevious,
     required this.onNext,
-    required this.onDay,
     required this.dayKey,
+    this.onDay,
     this.previousKey,
     this.nextKey,
     this.today,
@@ -28,7 +28,9 @@ class MonthCalendar extends StatelessWidget {
   final int leadingBlanks;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
-  final void Function(DateTime day) onDay;
+
+  /// Null for a read-only calendar, whose days cannot be opened.
+  final void Function(DateTime day)? onDay;
   final Key Function(DateTime day) dayKey;
   final Key? previousKey;
   final Key? nextKey;
@@ -80,7 +82,10 @@ class MonthCalendar extends StatelessWidget {
                 key: dayKey(day.date),
                 day: day,
                 isToday: today != null && _sameDay(today!, day.date),
-                onTap: () => onDay(day.date),
+                onTap: switch (onDay) {
+                  final tap? => () => tap(day.date),
+                  null => null,
+                },
               ),
           ],
         ),
@@ -101,13 +106,15 @@ class MonthCalendar extends StatelessWidget {
 class CalendarDayCell extends StatelessWidget {
   const CalendarDayCell({
     required this.day,
-    required this.onTap,
+    this.onTap,
     this.isToday = false,
     super.key,
   });
 
   final CalendarDay day;
-  final VoidCallback onTap;
+
+  /// Null for a day that cannot be opened, as in a read-only calendar.
+  final VoidCallback? onTap;
   final bool isToday;
 
   @override
@@ -125,7 +132,7 @@ class CalendarDayCell extends StatelessWidget {
         ? Border.all(color: scheme.outline)
         : null;
     return Semantics(
-      button: true,
+      button: onTap != null,
       label: describeDay(day, isToday: isToday),
       child: InkWell(
         onTap: onTap,
