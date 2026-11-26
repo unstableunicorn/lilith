@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:lilith/data/export/csv_export.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
@@ -151,6 +152,7 @@ const List<String> reportDayHeaders = [
   'Flow',
   'Pain',
   'Symptoms and tests',
+  'Dose',
   'Notes',
 ];
 
@@ -177,6 +179,12 @@ List<String> reportDayCells(ExportRow r) {
         for (final s in Symptom.values.where(log.symptoms.contains)) s.label,
         if (log.ovulationTest case final t?) 'Ovulation test ${t.name}',
       ].join(', '),
+    switch ((r.dose, log?.contraceptionDoneAt)) {
+      (DoseStatus.missed, _) => 'missed',
+      (final s?, final at?) => '${s.name} ${clockTime(at)}',
+      (final s?, null) => s.name,
+      (null, _) => '',
+    },
     log?.note ?? '',
   ];
 }
@@ -222,8 +230,18 @@ List<(String, String)> _summary(
       'Readings in this export',
       '${rows.where((r) => r.reading != null).length}',
     ),
+    if (rows.any((r) => r.dose != null))
+      (
+        'Doses in this export',
+        '${_count(rows, DoseStatus.taken)} on time, '
+            '${_count(rows, DoseStatus.late)} late, '
+            '${_count(rows, DoseStatus.missed)} missed',
+      ),
   ];
 }
+
+int _count(List<ExportRow> rows, DoseStatus s) =>
+    rows.where((r) => r.dose == s).length;
 
 List<(String, String)> _profile(HealthProfile profile) {
   if (profile.isEmpty) return const [];

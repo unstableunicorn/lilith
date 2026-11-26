@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/export/csv_export.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/export_rows.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
 
@@ -22,8 +24,35 @@ void main() {
       csv.text(const []),
       'date,temperature_c,temperature_source,period_start,period_end,flow,'
       'pain_0_10,'
-      'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes\r\n',
+      'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes,'
+      'contraception,dose,dose_done_at\r\n',
     );
+  });
+
+  test('a dose row gives the method, the verdict and when it was done', () {
+    final lines = csv
+        .text([
+          ExportRow(
+            date: DateTime(2026, 6, 4),
+            log: DailyLog(
+              date: DateTime(2026, 6, 4),
+              contraceptionDoneAt: DateTime(2026, 6, 4, 20, 5),
+            ),
+            dose: DoseStatus.late,
+            method: Contraception.combinedPill,
+          ),
+          ExportRow(
+            date: DateTime(2026, 6, 5),
+            dose: DoseStatus.missed,
+            method: Contraception.combinedPill,
+          ),
+        ])
+        .split('\r\n');
+    expect(lines.sublist(1), [
+      '2026-06-04,,,,,,,,,,,,combinedPill,late,2026-06-04T20:05',
+      '2026-06-05,,,,,,,,,,,,combinedPill,missed,',
+      '',
+    ]);
   });
 
   test('one line per day with blanks for what was not logged', () {
@@ -62,12 +91,13 @@ void main() {
     const header =
         'date,temperature_c,temperature_source,period_start,period_end,flow,'
         'pain_0_10,'
-        'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes';
+        'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes,'
+        'contraception,dose,dose_done_at';
     expect(lines, [
       header,
-      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,',
-      '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very"""',
-      '2026-06-03,37.0,ring,,,,,,,,,',
+      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,,,,',
+      '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very""",,,',
+      '2026-06-03,37.0,ring,,,,,,,,,,,,',
       '',
     ]);
   });

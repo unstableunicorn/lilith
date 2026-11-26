@@ -18,6 +18,11 @@ String isoDay(DateTime day) =>
     '${day.month.toString().padLeft(2, '0')}-'
     '${day.day.toString().padLeft(2, '0')}';
 
+/// "09:05": the hour and minute of [at], on the 24-hour clock.
+String clockTime(DateTime at) =>
+    '${at.hour.toString().padLeft(2, '0')}:'
+    '${at.minute.toString().padLeft(2, '0')}';
+
 /// "36.4", "37.0": the same on every platform, unlike double.toString().
 String formatCelsius(double celsius) {
   final text = celsius.toStringAsFixed(2);
@@ -40,6 +45,9 @@ class CsvExport {
     'skin_temp_source',
     'ovulation_test',
     'notes',
+    'contraception',
+    'dose',
+    'dose_done_at',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -86,6 +94,12 @@ class CsvExport {
       ],
       log?.ovulationTest?.name ?? '',
       log?.note ?? '',
+      row.method?.name ?? '',
+      row.dose?.name ?? '',
+      if (log?.contraceptionDoneAt case final at?)
+        '${isoDay(at)}T${clockTime(at)}'
+      else
+        '',
     ];
   }
 }
