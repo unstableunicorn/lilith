@@ -6,11 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:lilith/content/symptom_advice.dart' show Source;
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/calendar.dart';
+import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/cycle_statistics.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/fertile_window.dart';
+import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
@@ -150,7 +152,8 @@ class HistoryViewModel extends ChangeNotifier {
       _query.trim().isNotEmpty ||
       _bleedingOnly ||
       _minPain != null ||
-      _symptomFilter.isNotEmpty;
+      _symptomFilter.isNotEmpty ||
+      _doseProblemsOnly;
 
   void setQuery(String query) => _filter(() => _query = query);
 
@@ -171,6 +174,7 @@ class HistoryViewModel extends ChangeNotifier {
     _bleedingOnly = false;
     _minPain = null;
     _symptomFilter = const {};
+    _doseProblemsOnly = false;
   });
 
   void _filter(void Function() change) {
@@ -180,15 +184,92 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   /// True when [log] passes every filter set: the search within its
-  /// summary or note, bleeding, the pain level, and any one of the symptoms.
+  /// summary, dose line or note, bleeding, the pain level, any one of the
+  /// symptoms, and a late or missed dose.
   bool matches(DailyLog log) {
     final q = _query.trim().toLowerCase();
     final pain = log.painLevel;
-    final text = '${logSummary(log)} ${log.note ?? ''}'.toLowerCase();
+    final text =
+        '${logSummary(log)} ${doseText(log.date) ?? ''} ${log.note ?? ''}'
+            .toLowerCase();
     return (q.isEmpty || text.contains(q)) &&
         (!_bleedingOnly || log.flow.isBleeding) &&
         (_minPain == null || (pain != null && pain >= _minPain!)) &&
-        (_symptomFilter.isEmpty || log.symptoms.any(_symptomFilter.contains));
+        (_symptomFilter.isEmpty || log.symptoms.any(_symptomFilter.contains)) &&
+        (!_doseProblemsOnly ||
+            switch (doseStatusOn(log.date)) {
+              DoseStatus.late || DoseStatus.missed => true,
+              _ => false,
+            });
+  }
+
+  ContraceptionSchedule? get _schedule =>
+      _repo.data.profile.contraceptionSchedule;
+
+  /// A schedule or a dose marked done: the dose lines and filter apply.
+  bool get tracksDoses =>
+      _schedule != null ||
+      _repo.data.dailyLogs.any((l) => l.contraceptionDoneAt != null);
+
+  /// How [day]'s dose went, or null when there is no verdict.
+  DoseStatus? doseStatusOn(DateTime day) => doseStatus(
+    schedule: _schedule,
+    day: day,
+    doneAt: _repo.data.dailyLogs
+        .firstWhereOrNull((l) => l.date == dateOnly(day))
+        ?.contraceptionDoneAt,
+    now: now(),
+  );
+
+  /// E.g. "Pill taken 09:12", "Pill taken late, 14:03", "Pill missed";
+  /// null when there is no verdict.
+  String? doseText(DateTime day) {
+    final status = doseStatusOn(day);
+    if (status == null) return null;
+    final (noun, verb) = switch (_schedule?.form) {
+      DoseForm.pill => ('Pill', 'taken'),
+      DoseForm.patch => ('Patch', 'done'),
+      DoseForm.ring => ('Ring', 'done'),
+      null when _repo.data.profile.contraception == Contraception.patchOrRing =>
+        ('Patch or ring', 'done'),
+      null => ('Pill', 'taken'),
+    };
+    final at = _repo.data.dailyLogs
+        .firstWhereOrNull((l) => l.date == dateOnly(day))
+        ?.contraceptionDoneAt;
+    final time = at == null
+        ? ''
+        : '${at.hour.toString().padLeft(2, '0')}:'
+              '${at.minute.toString().padLeft(2, '0')}';
+    return switch (status) {
+      DoseStatus.taken => '$noun $verb $time',
+      DoseStatus.late => '$noun $verb late, $time',
+      DoseStatus.missed => '$noun missed',
+    };
+  }
+
+  bool _doseProblemsOnly = false;
+  bool get doseProblemsOnly => _doseProblemsOnly;
+
+  /// Only days whose dose was late or missed.
+  void setDoseProblemsOnly({required bool on}) =>
+      _filter(() => _doseProblemsOnly = on);
+
+  /// The daily logs, oldest first, with an empty one for each missed day
+  /// nothing was logged on, so it can be listed.
+  List<DailyLog> get _logs {
+    final logs = _repo.data.dailyLogs;
+    final s = _schedule;
+    if (s == null) return logs;
+    final logged = logs.map((l) => l.date).toSet();
+    return [
+      ...logs,
+      for (var d = s.start; !d.isAfter(today); d = addDays(d, 1))
+        if (!logged.contains(d) &&
+            doseStatus(schedule: s, day: d, doneAt: null, now: now()) ==
+                DoseStatus.missed)
+          DailyLog(date: d),
+    ].sortedBy((l) => l.date);
   }
 
   /// Days that match, in cycles and before the first period.
@@ -233,6 +314,7 @@ class HistoryViewModel extends ChangeNotifier {
   List<CycleEntry> get _allCycles {
     final periods = _repo.data.periods;
     final data = _repo.data;
+    final logs = _logs;
     bool within(DateTime d, int i) =>
         !d.isBefore(periods[i].startDate) &&
         (i + 1 >= periods.length || d.isBefore(periods[i + 1].startDate));
@@ -246,11 +328,7 @@ class HistoryViewModel extends ChangeNotifier {
           end: periods[i].endDate,
           periodLength: periods[i].lengthDays,
           flow: periods[i].flow,
-          days: data.dailyLogs
-              .where((l) => within(l.date, i))
-              .toList()
-              .reversed
-              .toList(),
+          days: logs.where((l) => within(l.date, i)).toList().reversed.toList(),
           readings: data.readings
               .where((r) => within(r.date, i))
               .toList()
@@ -263,7 +341,7 @@ class HistoryViewModel extends ChangeNotifier {
   /// Logged before the first period start, newest first, or everything
   /// when there is no period yet; only matching days while filtering.
   List<DailyLog> get daysBeforeFirstPeriod => _before(
-    _repo.data.dailyLogs,
+    _logs,
     (l) => l.date,
   ).where((l) => !isFiltering || matches(l)).toList();
 
