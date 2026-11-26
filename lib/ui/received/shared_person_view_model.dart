@@ -3,11 +3,13 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/shared_phases.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -41,8 +43,35 @@ class SharedPersonViewModel extends ChangeNotifier {
     _ => null,
   };
 
+  /// Their phases, for a "phases only" share; else null.
+  SharedPhases? get phases => null;
+
   bool get isLoading => view is SharedViewLoading;
   bool get hasData => data?.hasData ?? false;
+
+  /// "Cycle day 12, since 3 Jun", from their phases; null without a period.
+  String? get phasesCycleLine => null;
+
+  /// "Updated today", "Updated 8 Jun": when their app last wrote the copy.
+  String? get phasesUpdatedText => null;
+
+  /// The sentence that goes with their ovulation or fertile window.
+  String? get phasesDisclaimer => null;
+
+  DateTime? _month;
+
+  /// The month the calendar shows: this month until moved.
+  DateTime get month => _month ?? DateTime(today.year, today.month);
+
+  void previousMonth() {}
+
+  void nextMonth() {}
+
+  /// The shown month's days, from their phases.
+  List<CalendarDay> get phasesDays => const [];
+
+  int get calendarLeadingBlanks =>
+      leadingBlanks(year: month.year, month: month.month);
 
   CyclePrediction? get prediction => switch (data) {
     final d? => predictor.predict(
