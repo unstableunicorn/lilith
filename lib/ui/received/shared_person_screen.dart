@@ -106,6 +106,7 @@ class _SharedPersonView extends StatelessWidget {
             child: Text('They have not logged anything to show.'),
           ),
           SharedViewReady() => _Data(vm: vm, date: date),
+          SharedViewPhases() => const SizedBox.shrink(),
         },
       ],
     );

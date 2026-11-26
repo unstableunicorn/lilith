@@ -138,7 +138,7 @@ class ReceivedViewModel extends ChangeNotifier {
   /// "Up to date", "Ended", "Could not fetch", or "Checking…" while unknown.
   String stateText(ReceivedShare share) => switch (_repo.viewOf(share)) {
     SharedViewLoading() => 'Checking…',
-    SharedViewReady() => 'Up to date',
+    SharedViewReady() || SharedViewPhases() => 'Up to date',
     SharedViewFailed(error: ReceivedShareError.ended) => 'Ended',
     SharedViewFailed() => 'Could not fetch',
   };

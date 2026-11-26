@@ -13,6 +13,7 @@ import 'package:lilith/data/pod/share_reader.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/shared_phases.dart';
 
 /// Why a share could not be read.
 enum ReceivedShareError {
@@ -39,6 +40,12 @@ class SharedViewLoading extends SharedView {
 class SharedViewReady extends SharedView {
   const SharedViewReady(this.data);
   final HealthData data;
+}
+
+/// A "phases only" share: period days and dates, nothing else.
+class SharedViewPhases extends SharedView {
+  const SharedViewPhases(this.phases);
+  final SharedPhases phases;
 }
 
 class SharedViewFailed extends SharedView {
