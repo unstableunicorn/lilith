@@ -24,6 +24,12 @@ abstract final class SharedPersonKeys {
   static Key day(DateTime d) => Key('sharedPerson.day.$d');
   static Key daySummary(DateTime d) => Key('sharedPerson.daySummary.$d');
   static Key dayDose(DateTime d) => Key('sharedPerson.dayDose.$d');
+  static const Key calendar = Key('sharedPerson.calendar');
+  static const Key calendarPrev = Key('sharedPerson.calendarPrev');
+  static const Key calendarNext = Key('sharedPerson.calendarNext');
+  static Key calendarDay(DateTime d) => Key('sharedPerson.calendarDay.$d');
+  static const Key updated = Key('sharedPerson.updated');
+  static const Key disclaimer = Key('sharedPerson.disclaimer');
 }
 
 class SharedPersonScreen extends StatelessWidget {
