@@ -89,6 +89,21 @@ void main() {
     expect(vm.includeNotes, isFalse);
   });
 
+  test(
+    'contraception stays out unless chosen; the choice resets after',
+    () async {
+      expect(vm.includeContraception, isFalse);
+      vm
+        ..setLabel('Alex')
+        ..setWebId(wife)
+        ..setIncludeContraception(on: true);
+      expect(vm.includeContraception, isTrue);
+      await vm.share();
+      expect(vm.created!.includeContraception, isTrue);
+      expect(vm.includeContraception, isFalse);
+    },
+  );
+
   test('a refused share keeps the form and shows nothing created', () async {
     pod.failOpen = const PodAccessException('403');
     vm.setLabel('Alex');

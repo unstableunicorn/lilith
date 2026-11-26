@@ -29,6 +29,7 @@ abstract final class ShareKeys {
   static const Key customEnd = Key('share.customEnd');
   static const Key customEndMissing = Key('share.customEndMissing');
   static const Key includeNotes = Key('share.includeNotes');
+  static const Key includeContraception = Key('share.includeContraception');
   static Key content(ShareContent c) => Key('share.content.${c.name}');
   static Key range(ExportRange r) => Key('share.range.${r.name}');
   static const Key createdLink = Key('share.createdLink');
@@ -190,6 +191,16 @@ class _ShareViewState extends State<_ShareView> {
           ),
           value: vm.includeNotes,
           onChanged: (on) => vm.setIncludeNotes(on: on),
+        ),
+        SwitchListTile(
+          key: ShareKeys.includeContraception,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Include contraception'),
+          subtitle: const Text(
+            'Off: they do not see your method or which days you took it.',
+          ),
+          value: vm.includeContraception,
+          onChanged: (on) => vm.setIncludeContraception(on: on),
         ),
         const SectionHeading('For how long'),
         Wrap(
