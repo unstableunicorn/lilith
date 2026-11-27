@@ -6,6 +6,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/data_route.dart';
@@ -28,6 +29,7 @@ abstract final class SettingsKeys {
   static const Key appLock = Key('settings.appLock');
   static const Key appLockBiometrics = Key('settings.appLockBiometrics');
   static Key mode(AppMode m) => Key('settings.mode.${m.name}');
+  static Key logGroup(LogGroup g) => Key('settings.logGroup.${g.name}');
 }
 
 class SettingsScreen extends StatelessWidget {
@@ -101,6 +103,30 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => pushWithData(context, const RemindersScreen()),
             ),
           ),
+          if (health != null && health.isLoaded)
+            AppCard(
+              icon: Icons.edit_note_rounded,
+              title: 'Log shows',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Flow, pain, symptoms and ovulation tests are always '
+                    'there. Turn on what else you want to log; it follows '
+                    'you to every device.',
+                  ),
+                  for (final g in LogGroup.values)
+                    SwitchListTile(
+                      key: SettingsKeys.logGroup(g),
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(g.label),
+                      value: health.data.shownLogGroups.contains(g),
+                      onChanged: (shown) =>
+                          health.apply((d) => d.withLogGroup(g, shown: shown)),
+                    ),
+                ],
+              ),
+            ),
           AppCard(
             icon: Icons.today_rounded,
             title: 'Today shows',

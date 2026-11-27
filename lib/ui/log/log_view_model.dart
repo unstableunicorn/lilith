@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lilith/content/dose_presets.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
@@ -81,6 +82,47 @@ class LogViewModel extends ChangeNotifier {
     result == null
         ? _draft.copyWith(clearOvulationTest: true)
         : _draft.copyWith(ovulationTest: result),
+  );
+
+  /// The day's moods and body signs.
+  BodySigns get signs => _draft.signs;
+
+  /// Whether [group] has a section: it is switched on, or the day already
+  /// holds something in it, so nothing logged is ever out of reach.
+  bool shows(LogGroup group) =>
+      _repo.data.shownLogGroups.contains(group) ||
+      _holds(_draft.signs, group) ||
+      _holds(_stored.signs, group);
+
+  bool _holds(BodySigns signs, LogGroup group) => switch (group) {
+    LogGroup.moods => signs.moods.isNotEmpty,
+    LogGroup.sleep => signs.sleep != null,
+    LogGroup.digestion => signs.digestion.isNotEmpty,
+    LogGroup.skin => signs.skin.isNotEmpty,
+    LogGroup.discharge => signs.discharge != null,
+    LogGroup.pregnancyTest => signs.pregnancyTest != null,
+  };
+
+  void _sign(BodySigns signs) => _edit(_draft.copyWith(signs: signs));
+
+  Set<T> _toggled<T>(Set<T> all, T one) =>
+      all.contains(one) ? all.difference({one}) : all.union({one});
+
+  void toggleMood(Mood mood) =>
+      _sign(signs.copyWith(moods: _toggled(signs.moods, mood)));
+  void toggleDigestion(Digestion sign) =>
+      _sign(signs.copyWith(digestion: _toggled(signs.digestion, sign)));
+  void toggleSkin(SkinSign sign) =>
+      _sign(signs.copyWith(skin: _toggled(signs.skin, sign)));
+
+  /// Each records the day's one value, or none with null.
+  void setSleep(SleepQuality? sleep) =>
+      _sign(signs.copyWith(sleep: sleep, clearSleep: sleep == null));
+  void setDischarge(Discharge? discharge) => _sign(
+    signs.copyWith(discharge: discharge, clearDischarge: discharge == null),
+  );
+  void setPregnancyTest(PregnancyTest? result) => _sign(
+    signs.copyWith(pregnancyTest: result, clearPregnancyTest: result == null),
   );
 
   /// The day's note as typed; blank removes it.

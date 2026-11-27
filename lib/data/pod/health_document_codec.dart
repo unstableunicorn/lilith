@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -121,6 +122,8 @@ class HealthDocumentCodec {
     // Optional and absent until chosen: no version bump.
     if (data.mode case final mode?) 'mode': mode.name,
     'following': ?data.following,
+    if (data.logGroups case final groups?)
+      'logGroups': [for (final g in groups) g.name],
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -147,6 +150,7 @@ class HealthDocumentCodec {
             : null,
         mode: AppMode.fromName(doc['mode']),
         following: doc['following'] as String?,
+        logGroups: LogGroup.fromNames(doc['logGroups']),
       );
     } on UnsupportedDocumentVersionException {
       rethrow;

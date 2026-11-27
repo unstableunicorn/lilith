@@ -5,6 +5,7 @@ import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/reminders/reminders_screen.dart';
 import 'package:lilith/ui/settings/security_key_screen.dart';
@@ -110,6 +111,49 @@ void main() {
       await pump(tester);
       expect(find.byKey(SettingsKeys.mode(AppMode.tracker)), findsNothing);
       expect(find.byKey(SettingsKeys.reminders), findsOneWidget);
+    });
+
+    bool on(WidgetTester tester, LogGroup g) => tester
+        .widget<SwitchListTile>(find.byKey(SettingsKeys.logGroup(g)))
+        .value;
+
+    testWidgets('Log shows: a switch per group, only moods on at first', (
+      tester,
+    ) async {
+      await pump(tester, health: health);
+      for (final g in LogGroup.values) {
+        expect(on(tester, g), g == LogGroup.moods, reason: g.name);
+      }
+      await expectAccessible(tester);
+    });
+
+    testWidgets('turning a group on or off is saved to the pod', (
+      tester,
+    ) async {
+      await pump(tester, health: health);
+      await tester.ensureVisible(
+        find.byKey(SettingsKeys.logGroup(LogGroup.sleep)),
+      );
+      await tester.tap(find.byKey(SettingsKeys.logGroup(LogGroup.sleep)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(SettingsKeys.logGroup(LogGroup.moods)));
+      await tester.pumpAndSettle();
+      expect(health.data.shownLogGroups, {LogGroup.sleep});
+      expect(on(tester, LogGroup.sleep), isTrue);
+      expect(on(tester, LogGroup.moods), isFalse);
+    });
+
+    testWidgets('someone who only follows has no Log to set up', (
+      tester,
+    ) async {
+      await health.apply((d) => d.withMode(AppMode.partner));
+      await pump(tester, health: health);
+      expect(find.byKey(SettingsKeys.logGroup(LogGroup.moods)), findsNothing);
+    });
+
+    testWidgets('without the data there are no Log switches', (tester) async {
+      await pump(tester);
+      expect(find.byKey(SettingsKeys.logGroup(LogGroup.moods)), findsNothing);
     });
   });
 

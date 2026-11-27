@@ -2,6 +2,7 @@
 // saved together.
 
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/log/log_view_model.dart';
@@ -28,6 +29,17 @@ abstract final class LogKeys {
   static const Key dose = Key('log.dose');
   static Key ovulationTest(OvulationTest? t) =>
       Key('log.ovulationTest.${t?.name ?? 'none'}');
+
+  /// A group's heading, there only while the group shows.
+  static Key group(LogGroup g) => Key('log.group.${g.name}');
+  static Key mood(Mood m) => Key('log.mood.${m.name}');
+  static Key digestion(Digestion d) => Key('log.digestion.${d.name}');
+  static Key skin(SkinSign s) => Key('log.skin.${s.name}');
+  static Key sleep(SleepQuality? s) => Key('log.sleep.${s?.name ?? 'none'}');
+  static Key discharge(Discharge? d) =>
+      Key('log.discharge.${d?.name ?? 'none'}');
+  static Key pregnancyTest(PregnancyTest? t) =>
+      Key('log.pregnancyTest.${t?.name ?? 'none'}');
 }
 
 class LogScreen extends StatelessWidget {
@@ -168,6 +180,53 @@ class _LogViewState extends State<_LogView> {
               ),
           ],
         ),
+        if (vm.shows(LogGroup.moods))
+          _Many<Mood>(
+            group: LogGroup.moods,
+            values: Mood.values,
+            label: (m) => m.label,
+            keyFor: LogKeys.mood,
+            chosen: vm.signs.moods,
+            onToggle: vm.toggleMood,
+          ),
+        if (vm.shows(LogGroup.sleep))
+          _One<SleepQuality>(
+            group: LogGroup.sleep,
+            values: SleepQuality.values,
+            none: 'Not logged',
+            label: (s) => s.label,
+            keyFor: LogKeys.sleep,
+            chosen: vm.signs.sleep,
+            onChoose: vm.setSleep,
+          ),
+        if (vm.shows(LogGroup.digestion))
+          _Many<Digestion>(
+            group: LogGroup.digestion,
+            values: Digestion.values,
+            label: (d) => d.label,
+            keyFor: LogKeys.digestion,
+            chosen: vm.signs.digestion,
+            onToggle: vm.toggleDigestion,
+          ),
+        if (vm.shows(LogGroup.skin))
+          _Many<SkinSign>(
+            group: LogGroup.skin,
+            values: SkinSign.values,
+            label: (s) => s.label,
+            keyFor: LogKeys.skin,
+            chosen: vm.signs.skin,
+            onToggle: vm.toggleSkin,
+          ),
+        if (vm.shows(LogGroup.discharge))
+          _One<Discharge>(
+            group: LogGroup.discharge,
+            values: Discharge.values,
+            none: 'Not logged',
+            label: (d) => d.label,
+            keyFor: LogKeys.discharge,
+            chosen: vm.signs.discharge,
+            onChoose: vm.setDischarge,
+          ),
         const SectionHeading('Ovulation test'),
         Wrap(
           spacing: Space.sm,
@@ -185,6 +244,16 @@ class _LogViewState extends State<_LogView> {
               ),
           ],
         ),
+        if (vm.shows(LogGroup.pregnancyTest))
+          _One<PregnancyTest>(
+            group: LogGroup.pregnancyTest,
+            values: PregnancyTest.values,
+            none: 'Not taken',
+            label: (t) => t.label,
+            keyFor: LogKeys.pregnancyTest,
+            chosen: vm.signs.pregnancyTest,
+            onChoose: vm.setPregnancyTest,
+          ),
         if (vm.offersDose)
           SwitchListTile(
             key: LogKeys.dose,
@@ -282,3 +351,85 @@ class _DayPicker extends StatelessWidget {
 }
 
 String _capitalise(String s) => s[0].toUpperCase() + s.substring(1);
+
+/// A group where several values can apply to a day: a chip each.
+class _Many<T> extends StatelessWidget {
+  const _Many({
+    required this.group,
+    required this.values,
+    required this.label,
+    required this.keyFor,
+    required this.chosen,
+    required this.onToggle,
+  });
+
+  final LogGroup group;
+  final List<T> values;
+  final String Function(T) label;
+  final Key Function(T) keyFor;
+  final Set<T> chosen;
+  final ValueChanged<T> onToggle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SectionHeading(key: LogKeys.group(group), group.label),
+      Wrap(
+        spacing: Space.sm,
+        runSpacing: Space.xs,
+        children: [
+          for (final v in values)
+            FilterChip(
+              key: keyFor(v),
+              label: Text(label(v)),
+              selected: chosen.contains(v),
+              onSelected: (_) => onToggle(v),
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
+/// A group with one value a day, or none: a chip each, [none] first.
+class _One<T extends Object> extends StatelessWidget {
+  const _One({
+    required this.group,
+    required this.values,
+    required this.none,
+    required this.label,
+    required this.keyFor,
+    required this.chosen,
+    required this.onChoose,
+  });
+
+  final LogGroup group;
+  final List<T> values;
+  final String none;
+  final String Function(T) label;
+  final Key Function(T?) keyFor;
+  final T? chosen;
+  final ValueChanged<T?> onChoose;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SectionHeading(key: LogKeys.group(group), group.label),
+      Wrap(
+        spacing: Space.sm,
+        runSpacing: Space.xs,
+        children: [
+          for (final T? v in [null, ...values])
+            ChoiceChip(
+              key: keyFor(v),
+              label: Text(v == null ? none : label(v)),
+              selected: chosen == v,
+              onSelected: (_) => onChoose(v),
+            ),
+        ],
+      ),
+    ],
+  );
+}

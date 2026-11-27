@@ -6,6 +6,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -19,6 +20,7 @@ import 'package:lilith/domain/wearable_night.dart';
 import 'package:meta/meta.dart';
 
 const _list = ListEquality<Object>();
+const _groups = SetEquality<LogGroup>();
 
 /// The user's cycle data, remedy verdicts, shopping list, profile and shares.
 @immutable
@@ -35,7 +37,9 @@ class HealthData {
     Iterable<WearableNight> wearableNights = const [],
     this.mode,
     this.following,
-  }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
+    Set<LogGroup>? logGroups,
+  }) : logGroups = logGroups == null ? null : Set.unmodifiable(logGroups),
+       readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
        wearableNights = List.unmodifiable(
          wearableNights.sortedBy((d) => d.date),
        ),
@@ -101,6 +105,21 @@ class HealthData {
   HealthData withFollowed(String sharerWebId) =>
       copyWith(following: sharerWebId);
 
+  /// The groups the Log tab shows beyond flow, symptoms and pain: moods
+  /// only until the person chooses.
+  Set<LogGroup> get shownLogGroups => logGroups ?? LogGroup.defaults;
+
+  /// The groups chosen; null until the person has chosen any.
+  final Set<LogGroup>? logGroups;
+
+  /// Shows or hides [group] on the Log tab.
+  HealthData withLogGroup(LogGroup group, {required bool shown}) => copyWith(
+    logGroups: {
+      for (final g in LogGroup.values)
+        if (g == group ? shown : shownLogGroups.contains(g)) g,
+    },
+  );
+
   /// True once any cycle data has been logged.
   bool get hasData =>
       readings.isNotEmpty ||
@@ -120,7 +139,9 @@ class HealthData {
     Iterable<WearableNight>? wearableNights,
     AppMode? mode,
     String? following,
+    Set<LogGroup>? logGroups,
   }) => HealthData(
+    logGroups: logGroups ?? this.logGroups,
     mode: mode ?? this.mode,
     following: following ?? this.following,
     readings: readings ?? this.readings,
@@ -293,7 +314,8 @@ class HealthData {
       _list.equals(other.received, received) &&
       _list.equals(other.wearableNights, wearableNights) &&
       other.mode == mode &&
-      other.following == following;
+      other.following == following &&
+      _groups.equals(other.logGroups, logGroups);
 
   @override
   int get hashCode => Object.hash(
@@ -308,5 +330,6 @@ class HealthData {
     _list.hash(wearableNights),
     mode,
     following,
+    _groups.hash(logGroups),
   );
 }

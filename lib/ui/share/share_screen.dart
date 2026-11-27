@@ -30,6 +30,7 @@ abstract final class ShareKeys {
   static const Key customEndMissing = Key('share.customEndMissing');
   static const Key includeNotes = Key('share.includeNotes');
   static const Key includeContraception = Key('share.includeContraception');
+  static const Key includeSigns = Key('share.includeSigns');
   static Key content(ShareContent c) => Key('share.content.${c.name}');
   static Key range(ExportRange r) => Key('share.range.${r.name}');
   static const Key createdLink = Key('share.createdLink');
@@ -203,6 +204,17 @@ class _ShareViewState extends State<_ShareView> {
             ),
             value: vm.includeContraception,
             onChanged: (on) => vm.setIncludeContraception(on: on),
+          ),
+          SwitchListTile(
+            key: ShareKeys.includeSigns,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Include moods and body signs'),
+            subtitle: const Text(
+              'Off: they do not see your moods, sleep, digestion, skin or '
+              'discharge. A pregnancy test is never shared.',
+            ),
+            value: vm.includeSigns,
+            onChanged: (on) => vm.setIncludeSigns(on: on),
           ),
         ],
         const SectionHeading('For how long'),
