@@ -40,6 +40,7 @@ import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/lock/lock_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
+import 'package:lilith/ui/mode/mode_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:lilith/ui/shell/app_router.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
@@ -393,7 +394,8 @@ class _RootState extends State<_Root> {
                 context.read<SettingsStore>(),
               ),
               dispose: (_, repo) => repo.dispose(),
-              child: const AppShell(),
+              // A new person says how they use Lilith before the tabs.
+              child: const ModeGate(child: AppShell()),
             ),
           ),
         ),

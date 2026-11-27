@@ -11,6 +11,7 @@ import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/wearable/wearable_source.dart';
 import 'package:lilith/domain/app_lock.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -19,9 +20,11 @@ import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/main.dart';
 import 'package:lilith/ui/components/app_menu.dart';
 import 'package:lilith/ui/core/url_opener.dart';
+import 'package:lilith/ui/follow/follow_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
 import 'package:lilith/ui/lock/lock_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
+import 'package:lilith/ui/mode/mode_screen.dart';
 import 'package:lilith/ui/profile/profile_screen.dart';
 import 'package:lilith/ui/reminders/dose_schedule_screen.dart';
 import 'package:lilith/ui/reminders/reminders_screen.dart';
@@ -60,7 +63,13 @@ void main() {
     podSetup = FakePodSetupService();
     session = SessionRepository(auth, FakeSettingsStore());
     setup = SetupRepository(podSetup);
-    pod = FakePodService();
+    // Someone who has already said how they use Lilith; a test of the first
+    // question clears this.
+    pod = FakePodService(
+      documents: {
+        DataProtection.plain.documentPath: '{"version":8,"mode":"tracker"}',
+      },
+    );
   });
 
   LilithApp app() => LilithApp(
@@ -302,6 +311,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SetupScreen), findsOneWidget);
     expect(podSetup.inspections, 1);
+  });
+
+  testWidgets('a new person is asked how they use Lilith; a partner then gets '
+      'three tabs', (tester) async {
+    pod.documents.clear();
+    await openHome(tester);
+    expect(find.byKey(ModeKeys.screen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.tap(find.byKey(ModeKeys.option(AppMode.partner)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ModeKeys.confirm));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ModeKeys.screen), findsNothing);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.byKey(FollowKeys.empty), findsOneWidget);
+    expect(
+      pod.documents[DataProtection.plain.documentPath],
+      contains('"mode":"partner"'),
+    );
+  });
+
+  testWidgets('a partner signing in again is not asked, and gets three tabs', (
+    tester,
+  ) async {
+    pod.documents[DataProtection.plain.documentPath] =
+        '{"version":8,"mode":"partner"}';
+    await openHome(tester);
+    expect(find.byKey(ModeKeys.screen), findsNothing);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
   testWidgets(
