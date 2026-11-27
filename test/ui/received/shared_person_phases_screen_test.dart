@@ -98,6 +98,7 @@ void main() {
     expect(find.byKey(SharedPersonKeys.updated), findsOneWidget);
     expect(find.byKey(SharedPersonKeys.disclaimer), findsOneWidget);
     expect(find.byKey(SharedPersonKeys.stats), findsNothing);
+    expect(find.byKey(SharedPersonKeys.forecast), findsNothing);
     expect(find.byKey(SharedPersonKeys.day(june(1))), findsNothing);
     expect(find.byKey(SharedPersonKeys.cycle(june(1))), findsNothing);
     await expectAccessible(tester);

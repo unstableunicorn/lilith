@@ -3,6 +3,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
@@ -143,5 +144,63 @@ void main() {
     expect(vm.doseText(june(10)), isNull);
     expect(vm.summaryLine(vm.days.last), isNull);
     expect(vm.summaryLine(vm.days[1]), isNotNull);
+  });
+
+  group('their forecast for the week', () {
+    // Cramps and an irritable mood on the first three days of two cycles;
+    // a third cycle starts today.
+    HealthData tracked() {
+      var next = HealthData.empty
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+          .withPeriod(PeriodEvent(startDate: today));
+      for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+        for (var i = 0; i < 3; i++) {
+          next = next.withDailyLog(
+            DailyLog(
+              date: start.add(Duration(days: i)),
+              symptoms: const {Symptom.cramps},
+              painLevel: 4,
+              signs: BodySigns(moods: const {Mood.irritable}),
+            ),
+          );
+        }
+      }
+      return next;
+    }
+
+    test('nothing to forecast from a few shared days', () async {
+      await vm.refresh();
+      expect(vm.forecast.hasData, isFalse);
+      expect(vm.forecastSymptoms, isEmpty);
+      expect(vm.forecastMoods, isEmpty);
+    });
+
+    test('a share with moods forecasts symptoms, pain and moods', () async {
+      reader.documents[copyUrl] = codec.encode(
+        sharedView(tracked(), includeSigns: true),
+      );
+      await vm.refresh();
+      expect(vm.forecast.hasData, isTrue);
+      expect(vm.forecastSymptoms, ['Cramps 100%']);
+      expect(vm.forecastMoods, ['Irritable 100%']);
+      expect(
+        vm.forecastSummary,
+        'From 6 logged days at this point of their past cycles. '
+        'Pain around 4/10 has been typical.',
+      );
+    });
+
+    test('a share without moods forecasts symptoms and pain only', () async {
+      reader.documents[copyUrl] = codec.encode(sharedView(tracked()));
+      await vm.refresh();
+      expect(vm.forecastSymptoms, ['Cramps 100%']);
+      expect(vm.forecastMoods, isEmpty);
+    });
+
+    test('there is none before their copy is fetched', () {
+      expect(vm.forecast.hasData, isFalse);
+      expect(vm.forecastSummary, isEmpty);
+    });
   });
 }

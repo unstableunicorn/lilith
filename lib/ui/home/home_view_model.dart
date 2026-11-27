@@ -15,6 +15,7 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/core/dates.dart';
+import 'package:lilith/ui/core/forecast_text.dart' as text;
 import 'package:lilith/ui/learn/learn_view_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -160,13 +161,13 @@ class HomeViewModel extends ChangeNotifier {
 
   /// E.g. "From 6 logged days at this point of past cycles. Pain around 6/10
   /// has been typical."
-  String get forecastSummary {
-    final f = forecast;
-    final pain = f.typicalPain;
-    return 'From ${f.loggedDays} logged days at this point of past cycles.'
-        '${pain == null ? '' : ' Pain around ${pain.round()}/10 '
-                  'has been typical.'}';
-  }
+  String get forecastSummary => text.forecastSummary(forecast);
+
+  /// The forecast card's symptom badges.
+  List<String> get forecastSymptoms => text.forecastSymptomBadges(forecast);
+
+  /// The forecast card's mood badges.
+  List<String> get forecastMoods => text.forecastMoodBadges(forecast);
 
   int? get daysUntilNextPeriod => prediction.daysUntilNextPeriod(today);
 

@@ -4,6 +4,7 @@
 export 'app_card.dart';
 export 'app_menu.dart';
 export 'busy_indicator.dart';
+export 'forecast_card.dart';
 export 'label_badge.dart';
 export 'month_calendar.dart';
 export 'notice_banner.dart';

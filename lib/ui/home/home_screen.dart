@@ -43,6 +43,7 @@ abstract final class HomeKeys {
   static const Key stats = Key('home.stats');
   static const Key avgPeriod = Key('home.avgPeriod');
   static const Key forecast = Key('home.forecast');
+  static const Key forecastMoods = Key('home.forecastMoods');
   static const Key fact = Key('home.fact');
   static const Key factSource = Key('home.factSource');
   static const Key learn = Key('home.learn');
@@ -166,7 +167,14 @@ class _HomeViewState extends State<_HomeView> {
               ),
             _StatsRow(vm: vm),
             if (shows.showForecast && vm.forecast.hasData)
-              _ForecastCard(vm: vm),
+              ForecastCard(
+                key: HomeKeys.forecast,
+                title: 'Your forecast for the week',
+                summary: vm.forecastSummary,
+                symptoms: vm.forecastSymptoms,
+                moods: vm.forecastMoods,
+                moodsKey: HomeKeys.forecastMoods,
+              ),
           ],
           AppCard(
             icon: Icons.water_drop_rounded,
@@ -504,36 +512,6 @@ class _FertileWindowCard extends StatelessWidget {
           fertileWindowDisclaimer(mode)!,
           style: Theme.of(context).textTheme.bodySmall,
         ),
-      ],
-    ),
-  );
-}
-
-class _ForecastCard extends StatelessWidget {
-  const _ForecastCard({required this.vm});
-
-  final HomeViewModel vm;
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    key: HomeKeys.forecast,
-    icon: Icons.insights_rounded,
-    title: 'Your forecast for the week',
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(vm.forecastSummary),
-        if (vm.forecast.likely.isNotEmpty) ...[
-          const SizedBox(height: Space.md),
-          Wrap(
-            spacing: Space.sm,
-            runSpacing: Space.sm,
-            children: [
-              for (final l in vm.forecast.likely.take(5))
-                LabelBadge(text: '${l.symptom.label} ${l.percent}%'),
-            ],
-          ),
-        ],
       ],
     ),
   );
