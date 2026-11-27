@@ -10,6 +10,7 @@ import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/export/share_file.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/local_biometrics.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/page_settings_repository.dart';
@@ -40,6 +41,7 @@ import 'package:lilith/ui/core/file_sharer.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/lock/lock_screen.dart';
 import 'package:lilith/ui/login/login_screen.dart';
+import 'package:lilith/ui/mode/mode_screen.dart';
 import 'package:lilith/ui/setup/setup_screen.dart';
 import 'package:lilith/ui/shell/app_router.dart';
 import 'package:lilith/ui/shell/app_shell.dart';
@@ -149,6 +151,15 @@ class LilithApp extends StatelessWidget {
       Provider<SettingsStore>.value(value: settings),
       Provider<NotificationService>.value(value: notifications),
       Provider<WearableSource>.value(value: wearable),
+      ChangeNotifierProvider(
+        // Not lazy: read before login, so the right tabs show at once.
+        lazy: false,
+        create: (_) {
+          final memory = ModeMemory(settings);
+          unawaited(memory.load());
+          return memory;
+        },
+      ),
       ChangeNotifierProvider(
         // Not lazy: the tabs read it as soon as they build.
         lazy: false,
@@ -321,6 +332,8 @@ class _RootState extends State<_Root> {
       if (current == null) {
         setup.reset();
         context.read<ShellTabs>().reset();
+        // The next person to sign in here may use the app another way.
+        unawaited(context.read<ModeMemory>().forget());
       } else {
         unawaited(setup.inspect());
       }
@@ -393,7 +406,8 @@ class _RootState extends State<_Root> {
                 context.read<SettingsStore>(),
               ),
               dispose: (_, repo) => repo.dispose(),
-              child: const AppShell(),
+              // A new person says how they use Lilith before the tabs.
+              child: const ModeGate(child: AppShell()),
             ),
           ),
         ),

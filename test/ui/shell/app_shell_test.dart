@@ -1,14 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/follow/follow_screen.dart';
 import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/relief/relief_screen.dart';
@@ -40,7 +44,13 @@ void main() {
     await health.load();
   });
 
-  Future<void> pump(WidgetTester tester) async {
+  // A page that waits for the pod animates forever, so a test of one
+  // cannot settle.
+  Future<void> pump(
+    WidgetTester tester, {
+    ModeMemory? memory,
+    bool settle = true,
+  }) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -53,6 +63,7 @@ void main() {
       harness(
         session: session,
         health: health,
+        modeMemory: memory,
         setup: SetupRepository(FakePodSetupService()),
         shares: ShareRepository(
           health,
@@ -67,11 +78,65 @@ void main() {
         child: AppShell(now: () => today),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   int selected(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+
+  group('before the pod has answered', () {
+    late ModeMemory memory;
+
+    setUp(() {
+      memory = ModeMemory(FakeSettingsStore());
+      health = HealthRepository(
+        FakePodService(),
+        protection: DataProtection.encrypted,
+      );
+    });
+
+    testWidgets('a remembered partner sees the three tabs at once', (
+      tester,
+    ) async {
+      await memory.remember(AppMode.partner);
+      await pump(tester, memory: memory, settle: false);
+      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.byKey(FollowKeys.loading), findsOneWidget);
+      expect(find.byType(HomeScreen, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('with nothing remembered the tracker tabs show', (
+      tester,
+    ) async {
+      await pump(tester, memory: memory, settle: false);
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
+    });
+  });
+
+  testWidgets('the mode the pod gives is remembered on the device', (
+    tester,
+  ) async {
+    final memory = ModeMemory(FakeSettingsStore());
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester, memory: memory);
+    expect(memory.mode, AppMode.partner);
+    await health.apply((d) => d.withMode(AppMode.both));
+    await tester.pumpAndSettle();
+    expect(memory.mode, AppMode.both);
+  });
+
+  testWidgets('the pod decides over what was remembered', (tester) async {
+    final memory = ModeMemory(FakeSettingsStore());
+    await memory.remember(AppMode.partner);
+    await pump(tester, memory: memory);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(memory.mode, AppMode.tracker);
+  });
 
   testWidgets('starts on Today and switches tabs from the bar', (tester) async {
     await pump(tester);
@@ -110,6 +175,85 @@ void main() {
     await tester.tap(find.byKey(HomeKeys.logDay));
     await tester.pumpAndSettle();
     expect(selected(tester), ShellTab.log.index);
+  });
+
+  testWidgets('a tracker has no Learn tab', (tester) async {
+    await pump(tester);
+    expect(find.byKey(ShellKeys.tab(ShellTab.learn)), findsNothing);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+  });
+
+  testWidgets('a partner gets Today, Learn and Pod, and no tracker screens', (
+    tester,
+  ) async {
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    for (final hidden in [ShellTab.log, ShellTab.history, ShellTab.relief]) {
+      expect(find.byKey(ShellKeys.tab(hidden)), findsNothing);
+    }
+    expect(find.byKey(FollowKeys.empty), findsOneWidget);
+    expect(find.byKey(HomeKeys.logPeriod), findsNothing);
+    expect(find.byType(LogScreen, skipOffstage: false), findsNothing);
+    expect(find.byType(HistoryScreen, skipOffstage: false), findsNothing);
+    expect(find.byType(ReliefScreen, skipOffstage: false), findsNothing);
+    await expectAccessible(tester);
+
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.learn)));
+    await tester.pumpAndSettle();
+    expect(selected(tester), 1);
+    expect(find.byKey(LearnKeys.question), findsOneWidget);
+    expect(find.byKey(AppMenuKeys.button), findsOneWidget);
+    await expectAccessible(tester);
+
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.pod)));
+    await tester.pumpAndSettle();
+    expect(selected(tester), 2);
+    expect(find.byKey(PodKeys.logout), findsOneWidget);
+  });
+
+  testWidgets("a partner's menu has Settings and no health profile", (
+    tester,
+  ) async {
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.profile)), findsNothing);
+    expect(
+      find.byKey(AppMenuKeys.item(AppMenuAction.settings)),
+      findsOneWidget,
+    );
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.logout)), findsOneWidget);
+  });
+
+  testWidgets("a tracker's menu keeps the health profile", (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.profile)), findsOneWidget);
+  });
+
+  testWidgets('someone who does both keeps the tracker tabs', (tester) async {
+    await health.apply((d) => d.withMode(AppMode.both));
+    await pump(tester);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.byKey(HomeKeys.logPeriod), findsOneWidget);
+  });
+
+  testWidgets('changing to partner on a tracker tab lands on Today', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
+    await tester.pumpAndSettle();
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await tester.pumpAndSettle();
+    final tabs = tester.element(find.byType(NavigationBar)).read<ShellTabs>();
+    expect(tabs.current, ShellTab.today);
+    expect(tabs.allowed, shellTabsFor(AppMode.partner));
+    expect(selected(tester), 0);
+    expect(find.byKey(FollowKeys.empty), findsOneWidget);
   });
 }
 
@@ -202,7 +346,7 @@ void appMenuTests() {
       ),
     );
     await tester.pumpAndSettle();
-    for (final tab in ShellTab.values) {
+    for (final tab in shellTabsFor(AppMode.tracker)) {
       await tester.tap(find.byKey(ShellKeys.tab(tab)));
       await tester.pumpAndSettle();
       expect(

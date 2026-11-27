@@ -24,17 +24,23 @@ abstract final class LearnKeys {
 }
 
 class LearnScreen extends StatelessWidget {
-  const LearnScreen({super.key});
+  const LearnScreen({this.asTab = false, super.key});
+
+  /// True when Learn is a tab of its own, so it carries the menu the
+  /// other tabs do.
+  final bool asTab;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
     create: (_) => LearnViewModel(),
-    child: const _LearnView(),
+    child: _LearnView(asTab: asTab),
   );
 }
 
 class _LearnView extends StatefulWidget {
-  const _LearnView();
+  const _LearnView({required this.asTab});
+
+  final bool asTab;
 
   @override
   State<_LearnView> createState() => _LearnViewState();
@@ -55,6 +61,7 @@ class _LearnViewState extends State<_LearnView> {
     final openUrl = context.read<UrlOpener>();
     return PageScaffold(
       title: 'Learn',
+      actions: [if (widget.asTab) const AppMenu()],
       children: [
         const Text(
           'A kind, curious place to understand your body. Every answer comes '

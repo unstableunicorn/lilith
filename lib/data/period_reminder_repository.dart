@@ -46,8 +46,11 @@ class PeriodReminderRepository {
   Future<void> _refresh() async {
     if (!_health.isLoaded) return;
     final data = _health.data;
-    final applies = !data.profile.usesHormonalContraception;
+    // Someone who only follows has no cycle of their own to be reminded of.
+    final tracks = data.modeInForce.tracksOwnCycle;
+    final applies = tracks && !data.profile.usesHormonalContraception;
     _reminders.periodApplies = applies;
+    await _reminders.setDailyApplies(applies: tracks);
     await cancelPeriodReminders(_notifications);
     if (!applies || !_notifications.isAvailable) return;
     final at = now();

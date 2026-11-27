@@ -1,8 +1,17 @@
 // The signed-in app: a tab per top-level screen, all kept alive so a
-// half-edited log survives a look at another tab.
+// half-edited log survives a look at another tab. Which tabs there are
+// follows how the person uses the app.
 
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
+import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/ui/follow/follow_screen.dart';
 import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/relief/relief_screen.dart';
@@ -25,6 +34,25 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = context.watch<ShellTabs>();
+    final loaded = context.select<HealthRepository, bool>((h) => h.isLoaded);
+    final fromPod = context.select<HealthRepository, AppMode>(
+      (health) => health.data.modeInForce,
+    );
+    // Until the pod answers, the mode this device saw last time decides,
+    // so someone who follows never sees the tracker tabs first.
+    final memory = context.watch<ModeMemory>();
+    final mode = memory.modeFor(loaded: loaded, fromPod: fromPod);
+    if (loaded && memory.mode != fromPod) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(memory.remember(fromPod)),
+      );
+    }
+    final shown = shellTabsFor(mode);
+    // The mode changed: the tabs learn of it after this frame, which
+    // already draws the new ones.
+    if (!listEquals(tabs.allowed, shown)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => tabs.allow(shown));
+    }
     // Android's back button retraces the tabs; only with none left does it
     // leave. On the web the browser history does this instead.
     return PopScope(
@@ -32,35 +60,52 @@ class AppShell extends StatelessWidget {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) tabs.goBack();
       },
-      child: _Tabs(tabs: tabs, now: now),
+      child: _Tabs(tabs: tabs, shown: shown, mode: mode, now: now),
     );
   }
 }
 
 class _Tabs extends StatelessWidget {
-  const _Tabs({required this.tabs, required this.now});
+  const _Tabs({
+    required this.tabs,
+    required this.shown,
+    required this.mode,
+    required this.now,
+  });
 
   final ShellTabs tabs;
+  final List<ShellTab> shown;
+  final AppMode mode;
   final DateTime Function() now;
+
+  Widget _screen(ShellTab tab) => switch (tab) {
+    ShellTab.today when mode.tracksOwnCycle => HomeScreen(now: now),
+    ShellTab.today => FollowScreen(now: now),
+    ShellTab.log => LogScreen(now: now),
+    ShellTab.history => HistoryScreen(now: now),
+    ShellTab.relief => ReliefScreen(now: now),
+    ShellTab.pod => PodScreen(now: now),
+    ShellTab.learn => const LearnScreen(asTab: true),
+  };
 
   @override
   Widget build(BuildContext context) {
+    final at = shown.indexOf(tabs.current);
+    final index = at < 0 ? 0 : at;
     return Scaffold(
       body: IndexedStack(
-        index: tabs.current.index,
+        index: index,
         children: [
-          HomeScreen(now: now),
-          LogScreen(now: now),
-          HistoryScreen(now: now),
-          ReliefScreen(now: now),
-          PodScreen(now: now),
+          // Keyed, so a tab keeps its state when the tabs around it change.
+          for (final t in shown)
+            KeyedSubtree(key: ValueKey(t), child: _screen(t)),
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: tabs.current.index,
-        onDestinationSelected: (i) => tabs.show(ShellTab.values[i]),
+        selectedIndex: index,
+        onDestinationSelected: (i) => tabs.show(shown[i]),
         destinations: [
-          for (final t in ShellTab.values)
+          for (final t in shown)
             NavigationDestination(
               key: ShellKeys.tab(t),
               icon: Icon(t.icon),

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/app_lock_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/reminder_repository.dart';
@@ -39,6 +40,7 @@ Widget harness({
   WearableRepository? wearable,
   PageSettingsRepository? pageSettings,
   ShellTabs? tabs,
+  ModeMemory? modeMemory,
   AppLockRepository? appLock,
   UrlOpener? openUrl,
   Downloader? download,
@@ -62,6 +64,9 @@ Widget harness({
           ReminderRepository(FakeSettingsStore(), FakeNotificationService()),
     ),
     ChangeNotifierProvider.value(value: tabs ?? ShellTabs()),
+    ChangeNotifierProvider.value(
+      value: modeMemory ?? ModeMemory(FakeSettingsStore()),
+    ),
     Provider<UrlOpener>.value(value: openUrl ?? (_) async {}),
     Provider<Downloader>.value(value: download ?? Downloader((_) async {})),
     Provider<FileSharer>.value(value: shareFile ?? (_) async {}),

@@ -65,6 +65,9 @@ class HomeViewModel extends ChangeNotifier {
   RepositoryError? get error => _repo.error;
   bool get hasData => _repo.data.hasData;
 
+  /// Whether Today also shows the person they follow.
+  bool get followsSomeone => _repo.data.modeInForce.followsSomeone;
+
   CyclePrediction get prediction => predictor.predict(
     readings: _repo.data.readings,
     periods: _repo.data.periods,

@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -117,6 +118,9 @@ class HealthDocumentCodec {
     'shares': [for (final s in data.shares) s.toJson()],
     'received': [for (final r in data.received) r.toJson()],
     'wearableNights': [for (final d in data.wearableNights) d.toJson()],
+    // Optional and absent until chosen: no version bump.
+    if (data.mode case final mode?) 'mode': mode.name,
+    'following': ?data.following,
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -141,6 +145,8 @@ class HealthDocumentCodec {
         profile: profile is Map<String, dynamic>
             ? HealthProfile.fromJson(profile)
             : null,
+        mode: AppMode.fromName(doc['mode']),
+        following: doc['following'] as String?,
       );
     } on UnsupportedDocumentVersionException {
       rethrow;

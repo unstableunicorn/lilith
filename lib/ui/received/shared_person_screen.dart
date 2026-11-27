@@ -45,6 +45,28 @@ class SharedPersonScreen extends StatelessWidget {
   final DateTime Function() now;
 
   @override
+  Widget build(BuildContext context) => SharedPersonScope(
+    share: share,
+    now: now,
+    child: const _SharedPersonView(),
+  );
+}
+
+/// Gives [child] the view model of one sharer, fetching their copy the
+/// first time it is looked at.
+class SharedPersonScope extends StatelessWidget {
+  const SharedPersonScope({
+    required this.share,
+    required this.child,
+    this.now = DateTime.now,
+    super.key,
+  });
+
+  final ReceivedShare share;
+  final DateTime Function() now;
+  final Widget child;
+
+  @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
     create: (context) {
       final repo = context.read<ReceivedShareRepository>();
@@ -54,7 +76,7 @@ class SharedPersonScreen extends StatelessWidget {
       }
       return vm;
     },
-    child: const _SharedPersonView(),
+    child: child,
   );
 }
 
@@ -64,8 +86,6 @@ class _SharedPersonView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<SharedPersonViewModel>();
-    final theme = Theme.of(context);
-    String date(DateTime d) => formatShortDate(d, today: vm.today);
     return PageScaffold(
       title: vm.share.label,
       onRefresh: vm.refresh,
@@ -77,6 +97,23 @@ class _SharedPersonView extends StatelessWidget {
           onPressed: vm.isLoading ? null : vm.refresh,
         ),
       ],
+      children: const [SharedPersonBody()],
+    );
+  }
+}
+
+/// What one sharer shares, below whatever heads the page. Needs a
+/// [SharedPersonScope] above it.
+class SharedPersonBody extends StatelessWidget {
+  const SharedPersonBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<SharedPersonViewModel>();
+    final theme = Theme.of(context);
+    String date(DateTime d) => formatShortDate(d, today: vm.today);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Read-only, from their pod. Shared with you by ${vm.share.label}.',
