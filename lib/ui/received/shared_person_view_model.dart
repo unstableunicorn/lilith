@@ -17,6 +17,7 @@ import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 import 'package:lilith/ui/log/dose_summary.dart' as dose;
 import 'package:lilith/ui/log/log_summary.dart';
+import 'package:lilith/ui/received/received_view_model.dart';
 
 class SharedPersonViewModel extends ChangeNotifier {
   SharedPersonViewModel(
@@ -52,6 +53,19 @@ class SharedPersonViewModel extends ChangeNotifier {
 
   bool get isLoading => view is SharedViewLoading;
   bool get hasData => data?.hasData ?? phases?.hasData ?? false;
+
+  /// True when their copy could not be fetched or read.
+  bool get hasProblem => view is SharedViewFailed;
+
+  /// One line about them for a card: their next period, or why there is
+  /// none to show.
+  String get headline => switch (view) {
+    SharedViewLoading() => 'Fetching from their pod',
+    SharedViewFailed(error: ReceivedShareError.ended) => 'This share has ended',
+    SharedViewFailed(:final error) => describeReceivedError(error),
+    _ when !hasData => 'Nothing logged yet',
+    _ => nextPeriodText ?? 'Not enough logged yet to predict.',
+  };
 
   /// "Cycle day 12, since 3 Jun", from their phases; null without a period.
   String? get phasesCycleLine {

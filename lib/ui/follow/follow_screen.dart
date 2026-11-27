@@ -19,6 +19,7 @@ abstract final class FollowKeys {
   static Key person(String webId) => Key('follow.person.$webId');
   static const Key card = Key('follow.card');
   static const Key open = Key('follow.open');
+  static const Key cardProblem = Key('follow.cardProblem');
 }
 
 class FollowScreen extends StatelessWidget {

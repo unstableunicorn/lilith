@@ -10,6 +10,7 @@ import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/url_opener.dart';
+import 'package:lilith/ui/follow/follow_card.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
 import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_summary.dart';
@@ -150,6 +151,7 @@ class _HomeViewState extends State<_HomeView> {
         if (!vm.isLoaded)
           const BusyIndicator(key: HomeKeys.loading, label: 'Loading your data')
         else ...[
+          if (vm.followsSomeone) FollowCard(now: vm.now),
           if (!vm.hasData)
             _WelcomeCard(vm: vm)
           else ...[
