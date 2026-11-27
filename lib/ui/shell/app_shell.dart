@@ -2,8 +2,11 @@
 // half-edited log survives a look at another tab. Which tabs there are
 // follows how the person uses the app.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/ui/follow/follow_screen.dart';
 import 'package:lilith/ui/history/history_screen.dart';
@@ -31,9 +34,19 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = context.watch<ShellTabs>();
-    final mode = context.select<HealthRepository, AppMode>(
+    final loaded = context.select<HealthRepository, bool>((h) => h.isLoaded);
+    final fromPod = context.select<HealthRepository, AppMode>(
       (health) => health.data.modeInForce,
     );
+    // Until the pod answers, the mode this device saw last time decides,
+    // so someone who follows never sees the tracker tabs first.
+    final memory = context.watch<ModeMemory>();
+    final mode = memory.modeFor(loaded: loaded, fromPod: fromPod);
+    if (loaded && memory.mode != fromPod) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(memory.remember(fromPod)),
+      );
+    }
     final shown = shellTabsFor(mode);
     // The mode changed: the tabs learn of it after this frame, which
     // already draws the new ones.

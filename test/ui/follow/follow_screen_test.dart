@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
@@ -137,6 +138,26 @@ void main() {
     expect(find.textContaining('29 Jun'), findsNothing);
     expect(health.data.following, bea.sharerWebId);
     await expectAccessible(tester);
+  });
+
+  testWidgets('a pod that cannot be read says so instead of waiting', (
+    tester,
+  ) async {
+    health = HealthRepository(
+      FakePodService()..failReads = const PodUnavailableException('timeout'),
+      protection: DataProtection.plain,
+    );
+    await health.load();
+    received = ReceivedShareRepository(health, reader, ownWebId: auth.webId);
+    await pump(tester);
+    expect(find.byKey(FollowKeys.error), findsOneWidget);
+    expect(find.byKey(FollowKeys.loading), findsNothing);
+    expect(find.byKey(AppMenuKeys.button), findsOneWidget);
+  });
+
+  testWidgets('with no error there is no error banner', (tester) async {
+    await pump(tester);
+    expect(find.byKey(FollowKeys.error), findsNothing);
   });
 
   testWidgets('an invite the app was opened with is offered here too', (

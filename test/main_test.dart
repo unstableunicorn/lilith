@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/app_lock_repository.dart';
 import 'package:lilith/data/export/pdf_report.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/pod/pod_session_service.dart';
 import 'package:lilith/data/session_repository.dart';
@@ -385,6 +386,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(setup.state, const SetupState.unknown());
+  });
+
+  testWidgets('the mode is remembered on the device while signed in, and '
+      'forgotten on logging out', (tester) async {
+    pod.documents[DataProtection.plain.documentPath] =
+        '{"version":8,"mode":"partner"}';
+    await openHome(tester);
+    expect(store.mode, AppMode.partner);
+    await session.logout();
+    await tester.pumpAndSettle();
+    expect(store.mode, isNull);
+  });
+
+  testWidgets('a mode remembered on the device is read at start', (
+    tester,
+  ) async {
+    store.mode = AppMode.partner;
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    expect(
+      tester.element(find.byType(LoginScreen)).read<ModeMemory>().mode,
+      AppMode.partner,
+    );
   });
 
   testWidgets('shows a wait indicator while restoring', (tester) async {

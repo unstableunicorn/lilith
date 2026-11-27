@@ -14,6 +14,14 @@ class FollowViewModel extends ChangeNotifier {
 
   bool get isLoaded => _health.isLoaded;
 
+  /// Why the pod document could not be loaded or saved, if it could not.
+  RepositoryError? get error => _health.error;
+
+  /// True while the pod is still being read: not loaded, and not failed.
+  bool get isWaiting => !isLoaded && error == null;
+
+  void clearError() => _health.clearError();
+
   /// Everyone who shares with this person, in the order they were added.
   List<ReceivedShare> get people => _health.data.received;
 

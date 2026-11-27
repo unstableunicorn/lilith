@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:lilith/domain/app_lock.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/page_settings.dart';
@@ -49,6 +50,14 @@ abstract interface class SettingsStore {
   Future<AppLock> readAppLock();
 
   Future<void> writeAppLock(AppLock lock);
+
+  /// How the person last signed in on this device uses the app, so the
+  /// right tabs show before the pod has answered; none until known.
+  Future<AppMode?> readMode();
+
+  Future<void> writeMode(AppMode mode);
+
+  Future<void> clearMode();
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
@@ -59,6 +68,25 @@ class SharedPreferencesSettingsStore implements SettingsStore {
   static const String snoozeKey = 'check_in_snoozed_through';
   static const String doseCacheKey = 'dose_cache';
   static const String appLockKey = 'app_lock';
+  static const String modeKey = 'app_mode';
+
+  @override
+  Future<AppMode?> readMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return AppMode.fromName(prefs.getString(modeKey));
+  }
+
+  @override
+  Future<void> writeMode(AppMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(modeKey, mode.name);
+  }
+
+  @override
+  Future<void> clearMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(modeKey);
+  }
 
   @override
   Future<AppLock> readAppLock() async {

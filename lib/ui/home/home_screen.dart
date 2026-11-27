@@ -9,6 +9,7 @@ import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/core/data_route.dart';
 import 'package:lilith/ui/core/dates.dart';
+import 'package:lilith/ui/core/repository_errors.dart';
 import 'package:lilith/ui/core/url_opener.dart';
 import 'package:lilith/ui/follow/follow_card.dart';
 import 'package:lilith/ui/home/home_view_model.dart';
@@ -141,7 +142,7 @@ class _HomeViewState extends State<_HomeView> {
         if (vm.error case final error?)
           NoticeBanner(
             key: HomeKeys.error,
-            message: _describe(error),
+            message: describeRepositoryError(error),
             dismissKey: HomeKeys.dismissError,
             onDismiss: vm.clearError,
           ),
@@ -258,19 +259,6 @@ class _HomeViewState extends State<_HomeView> {
       ],
     );
   }
-
-  String _describe(RepositoryError error) => switch (error) {
-    RepositoryError.notLoggedIn => 'Your session has ended. Log in again.',
-    RepositoryError.loadFailed =>
-      'Your data could not be loaded from your pod.',
-    RepositoryError.malformed => 'The data on your pod could not be read.',
-    RepositoryError.newerVersion =>
-      'The data on your pod comes from a newer version of Lilith. '
-          'Update the app.',
-    RepositoryError.saveFailed =>
-      'Your change is kept here but could not be saved to your pod.',
-    RepositoryError.notLoaded => 'Your data has not loaded yet.',
-  };
 }
 
 class _StatsRow extends StatelessWidget {

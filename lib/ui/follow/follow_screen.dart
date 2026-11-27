@@ -4,6 +4,7 @@
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/repository_errors.dart';
 import 'package:lilith/ui/follow/follow_view_model.dart';
 import 'package:lilith/ui/received/invite_card.dart';
 import 'package:lilith/ui/received/shared_person_screen.dart';
@@ -13,6 +14,8 @@ import 'package:provider/provider.dart';
 
 abstract final class FollowKeys {
   static const Key loading = Key('follow.loading');
+  static const Key error = Key('follow.error');
+  static const Key dismissError = Key('follow.dismissError');
   static const Key empty = Key('follow.empty');
   static const Key add = Key('follow.add');
   static const Key chooser = Key('follow.chooser');
@@ -52,8 +55,17 @@ class _FollowView extends StatelessWidget {
       children: [
         if (received.pendingInvite case final invite?)
           InviteCard(invite: invite, now: now),
-        if (!vm.isLoaded)
+        if (vm.error case final error?)
+          NoticeBanner(
+            key: FollowKeys.error,
+            message: describeRepositoryError(error),
+            dismissKey: FollowKeys.dismissError,
+            onDismiss: vm.clearError,
+          ),
+        if (vm.isWaiting)
           const BusyIndicator(key: FollowKeys.loading, label: 'Loading')
+        else if (!vm.isLoaded)
+          const SizedBox.shrink()
         else if (followed == null)
           _NobodyCard(now: now)
         else ...[

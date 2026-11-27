@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/data/mode_memory.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
@@ -43,7 +44,13 @@ void main() {
     await health.load();
   });
 
-  Future<void> pump(WidgetTester tester) async {
+  // A page that waits for the pod animates forever, so a test of one
+  // cannot settle.
+  Future<void> pump(
+    WidgetTester tester, {
+    ModeMemory? memory,
+    bool settle = true,
+  }) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -56,6 +63,7 @@ void main() {
       harness(
         session: session,
         health: health,
+        modeMemory: memory,
         setup: SetupRepository(FakePodSetupService()),
         shares: ShareRepository(
           health,
@@ -70,11 +78,65 @@ void main() {
         child: AppShell(now: () => today),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   int selected(WidgetTester tester) =>
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+
+  group('before the pod has answered', () {
+    late ModeMemory memory;
+
+    setUp(() {
+      memory = ModeMemory(FakeSettingsStore());
+      health = HealthRepository(
+        FakePodService(),
+        protection: DataProtection.encrypted,
+      );
+    });
+
+    testWidgets('a remembered partner sees the three tabs at once', (
+      tester,
+    ) async {
+      await memory.remember(AppMode.partner);
+      await pump(tester, memory: memory, settle: false);
+      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.byKey(FollowKeys.loading), findsOneWidget);
+      expect(find.byType(HomeScreen, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('with nothing remembered the tracker tabs show', (
+      tester,
+    ) async {
+      await pump(tester, memory: memory, settle: false);
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
+    });
+  });
+
+  testWidgets('the mode the pod gives is remembered on the device', (
+    tester,
+  ) async {
+    final memory = ModeMemory(FakeSettingsStore());
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester, memory: memory);
+    expect(memory.mode, AppMode.partner);
+    await health.apply((d) => d.withMode(AppMode.both));
+    await tester.pumpAndSettle();
+    expect(memory.mode, AppMode.both);
+  });
+
+  testWidgets('the pod decides over what was remembered', (tester) async {
+    final memory = ModeMemory(FakeSettingsStore());
+    await memory.remember(AppMode.partner);
+    await pump(tester, memory: memory);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(memory.mode, AppMode.tracker);
+  });
 
   testWidgets('starts on Today and switches tabs from the bar', (tester) async {
     await pump(tester);
