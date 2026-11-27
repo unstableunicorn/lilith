@@ -57,6 +57,7 @@ class ContraceptionReminderRepository {
     final profile = data.profile;
     _reminders.setDose(profile.contraception, profile.contraceptionSchedule);
     final applies =
+        data.modeInForce.tracksOwnCycle &&
         _reminders.setting.contraception &&
         _notifications.isAvailable &&
         scheduledMethods.contains(profile.contraception);

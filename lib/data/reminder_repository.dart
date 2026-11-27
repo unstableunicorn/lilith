@@ -46,6 +46,20 @@ class ReminderRepository extends ChangeNotifier {
   /// while it unmounts and nothing that shows it can be on screen.
   void forgetPeriod() => _periodApplies = false;
 
+  /// Whether the daily reminder to log makes sense for the person signed
+  /// in: not for someone who only follows.
+  bool get dailyApplies => _dailyApplies;
+  bool _dailyApplies = true;
+
+  /// Sets [dailyApplies], scheduling or cancelling the reminder to match.
+  /// The setting itself is kept, so tracking again brings the reminder back.
+  Future<void> setDailyApplies({required bool applies}) async {
+    if (applies == _dailyApplies) return;
+    _dailyApplies = applies;
+    await _apply();
+    notifyListeners();
+  }
+
   Contraception? _doseMethod;
   ContraceptionSchedule? _doseSchedule;
 
@@ -176,7 +190,7 @@ class ReminderRepository extends ChangeNotifier {
   }
 
   Future<void> _apply() async {
-    if (_setting.enabled && isAvailable) {
+    if (_setting.enabled && isAvailable && _dailyApplies) {
       await _notifications.scheduleDaily(_setting.reminderAfter(now()));
     } else {
       await _notifications.cancel(dailyReminderId);
