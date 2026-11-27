@@ -2,6 +2,7 @@
 // user needs from anywhere, starting with logging out.
 
 import 'package:flutter/foundation.dart';
+import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/ui/about/about_screen.dart';
 import 'package:lilith/ui/core/app_links.dart';
@@ -42,15 +43,18 @@ class AppMenu extends StatelessWidget {
       AppMenuAction.logout => context.read<SessionRepository>().logout(),
     },
     itemBuilder: (context) => [
-      PopupMenuItem(
-        key: AppMenuKeys.item(AppMenuAction.profile),
-        value: AppMenuAction.profile,
-        child: const ListTile(
-          leading: Icon(Icons.favorite_border_rounded),
-          title: Text('Health profile'),
-          contentPadding: EdgeInsets.zero,
+      // Someone who only follows has no health profile to keep.
+      if (context.read<HealthRepository?>()?.data.modeInForce.tracksOwnCycle ??
+          true)
+        PopupMenuItem(
+          key: AppMenuKeys.item(AppMenuAction.profile),
+          value: AppMenuAction.profile,
+          child: const ListTile(
+            leading: Icon(Icons.favorite_border_rounded),
+            title: Text('Health profile'),
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
-      ),
       PopupMenuItem(
         key: AppMenuKeys.item(AppMenuAction.settings),
         value: AppMenuAction.settings,

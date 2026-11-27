@@ -1,14 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/page_settings_repository.dart';
 import 'package:lilith/data/reminder_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
+import 'package:lilith/domain/app_mode.dart';
+import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/ui/reminders/reminders_screen.dart';
 import 'package:lilith/ui/settings/security_key_screen.dart';
 import 'package:lilith/ui/settings/settings_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../fakes/fake_notification_service.dart';
+import '../../fakes/fake_pod_service.dart';
 import '../../fakes/fake_pod_session_service.dart';
 import '../../fakes/fake_pod_setup_service.dart';
 import '../../fakes/fake_settings_store.dart';
@@ -28,14 +32,15 @@ void main() {
     await setup.chooseEncrypted('old key 1');
   });
 
-  Future<void> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
+  Future<void> pump(WidgetTester tester, {HealthRepository? health}) async {
+    tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       harness(
         session: SessionRepository(FakePodSessionService(), store),
         setup: setup,
+        health: health,
         pageSettings: pageSettings,
         reminders: ReminderRepository(store, FakeNotificationService()),
         child: const SettingsScreen(),
@@ -43,6 +48,70 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  group('how you use Lilith', () {
+    late HealthRepository health;
+
+    setUp(() async {
+      health = HealthRepository(
+        FakePodService(),
+        protection: DataProtection.plain,
+      );
+      await health.load();
+    });
+
+    bool chosen(WidgetTester tester, AppMode mode) =>
+        tester
+            .widget<RadioGroup<AppMode>>(find.byType(RadioGroup<AppMode>))
+            .groupValue ==
+        mode;
+
+    testWidgets('offers the three ways, a tracker until changed', (
+      tester,
+    ) async {
+      await pump(tester, health: health);
+      for (final mode in AppMode.values) {
+        expect(find.byKey(SettingsKeys.mode(mode)), findsOneWidget);
+      }
+      expect(chosen(tester, AppMode.tracker), isTrue);
+      await expectAccessible(tester);
+    });
+
+    testWidgets('choosing one is saved to the pod', (tester) async {
+      await pump(tester, health: health);
+      await tester.tap(find.byKey(SettingsKeys.mode(AppMode.both)));
+      await tester.pumpAndSettle();
+      expect(health.data.mode, AppMode.both);
+      expect(chosen(tester, AppMode.both), isTrue);
+    });
+
+    testWidgets('a partner sees no settings for tracker screens', (
+      tester,
+    ) async {
+      await health.apply((d) => d.withMode(AppMode.partner));
+      await pump(tester, health: health);
+      expect(chosen(tester, AppMode.partner), isTrue);
+      for (final key in [
+        SettingsKeys.reminders,
+        SettingsKeys.showFact,
+        SettingsKeys.showForecast,
+        SettingsKeys.showCalendar,
+        SettingsKeys.showTemperatureChart,
+        SettingsKeys.tryingToConceive,
+        SettingsKeys.showFertileWindow,
+      ]) {
+        expect(find.byKey(key), findsNothing);
+      }
+      expect(find.byKey(SettingsKeys.securityKey), findsOneWidget);
+      await expectAccessible(tester);
+    });
+
+    testWidgets('without the data there is no choice to make', (tester) async {
+      await pump(tester);
+      expect(find.byKey(SettingsKeys.mode(AppMode.tracker)), findsNothing);
+      expect(find.byKey(SettingsKeys.reminders), findsOneWidget);
+    });
+  });
 
   testWidgets('shows a switch per card, all on by default, accessibly', (
     tester,

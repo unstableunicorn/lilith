@@ -5,6 +5,7 @@ import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/design/design_screen.dart';
@@ -84,6 +85,29 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('a partner sees who shares with them, and nothing of their own '
+      'to share, export or profile', (tester) async {
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester);
+    expect(find.byKey(PodKeys.received), findsOneWidget);
+    expect(find.byKey(PodKeys.receivedSummary), findsOneWidget);
+    expect(find.byKey(PodKeys.manage), findsOneWidget);
+    expect(find.byKey(PodKeys.logout), findsOneWidget);
+    expect(find.byKey(PodKeys.sharing), findsNothing);
+    expect(find.byKey(PodKeys.sharingSummary), findsNothing);
+    expect(find.byKey(PodKeys.export), findsNothing);
+    expect(find.byKey(PodKeys.profile), findsNothing);
+    await expectAccessible(tester);
+  });
+
+  testWidgets('someone who does both keeps every card', (tester) async {
+    await health.apply((d) => d.withMode(AppMode.both));
+    await pump(tester);
+    expect(find.byKey(PodKeys.sharing), findsOneWidget);
+    expect(find.byKey(PodKeys.export), findsOneWidget);
+    expect(find.byKey(PodKeys.profile), findsOneWidget);
+  });
 
   testWidgets('shows who, where and how the data is protected', (tester) async {
     await pump(tester);

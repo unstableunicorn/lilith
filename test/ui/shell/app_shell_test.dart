@@ -150,6 +150,28 @@ void main() {
     expect(find.byKey(PodKeys.logout), findsOneWidget);
   });
 
+  testWidgets("a partner's menu has Settings and no health profile", (
+    tester,
+  ) async {
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.profile)), findsNothing);
+    expect(
+      find.byKey(AppMenuKeys.item(AppMenuAction.settings)),
+      findsOneWidget,
+    );
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.logout)), findsOneWidget);
+  });
+
+  testWidgets("a tracker's menu keeps the health profile", (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(AppMenuKeys.button));
+    await tester.pumpAndSettle();
+    expect(find.byKey(AppMenuKeys.item(AppMenuAction.profile)), findsOneWidget);
+  });
+
   testWidgets('someone who does both keeps the tracker tabs', (tester) async {
     await health.apply((d) => d.withMode(AppMode.both));
     await pump(tester);

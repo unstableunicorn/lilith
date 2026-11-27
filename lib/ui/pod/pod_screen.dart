@@ -54,6 +54,11 @@ class PodScreen extends StatelessWidget {
     final setup = context.watch<SetupRepository>();
     final openUrl = context.read<UrlOpener>();
     final current = session.session;
+    // Someone who only follows has no cycle data to profile, share or
+    // export.
+    final tracks = context.select<HealthRepository, bool>(
+      (health) => health.data.modeInForce.tracksOwnCycle,
+    );
     if (current == null) {
       return const PageScaffold(title: 'Your pod', children: []);
     }
@@ -98,43 +103,48 @@ class PodScreen extends StatelessWidget {
             ],
           ),
         ),
-        AppCard(
-          icon: Icons.favorite_border_rounded,
-          title: 'Your health profile',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                key: PodKeys.profileSummary,
-                profileSummary(context.watch<HealthRepository>().data.profile),
-              ),
-              const SizedBox(height: Space.sm),
-              TextButton.icon(
-                key: PodKeys.profile,
-                onPressed: () => _openProfile(context),
-                icon: const Icon(Icons.edit_rounded),
-                label: const Text('Edit your health profile'),
-              ),
-            ],
+        if (tracks)
+          AppCard(
+            icon: Icons.favorite_border_rounded,
+            title: 'Your health profile',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  key: PodKeys.profileSummary,
+                  profileSummary(
+                    context.watch<HealthRepository>().data.profile,
+                  ),
+                ),
+                const SizedBox(height: Space.sm),
+                TextButton.icon(
+                  key: PodKeys.profile,
+                  onPressed: () => _openProfile(context),
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('Edit your health profile'),
+                ),
+              ],
+            ),
           ),
-        ),
         AppCard(
           icon: Icons.people_outline_rounded,
           title: 'Sharing',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                key: PodKeys.sharingSummary,
-                sharingSummary(context.watch<ShareRepository>().shares),
-              ),
-              const SizedBox(height: Space.sm),
-              TextButton.icon(
-                key: PodKeys.sharing,
-                onPressed: () => _openSharing(context),
-                icon: const Icon(Icons.person_add_alt_rounded),
-                label: const Text('Share read-only with someone'),
-              ),
+              if (tracks) ...[
+                Text(
+                  key: PodKeys.sharingSummary,
+                  sharingSummary(context.watch<ShareRepository>().shares),
+                ),
+                const SizedBox(height: Space.sm),
+                TextButton.icon(
+                  key: PodKeys.sharing,
+                  onPressed: () => _openSharing(context),
+                  icon: const Icon(Icons.person_add_alt_rounded),
+                  label: const Text('Share read-only with someone'),
+                ),
+              ],
               Text(
                 key: PodKeys.receivedSummary,
                 receivedSummary(
@@ -151,25 +161,26 @@ class PodScreen extends StatelessWidget {
             ],
           ),
         ),
-        AppCard(
-          icon: Icons.ios_share_rounded,
-          title: 'Export your data',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'A PDF report for your doctor, or a CSV for a spreadsheet.',
-              ),
-              const SizedBox(height: Space.sm),
-              TextButton.icon(
-                key: PodKeys.export,
-                onPressed: () => _openExport(context),
-                icon: const Icon(Icons.download_rounded),
-                label: const Text('Export as PDF or CSV'),
-              ),
-            ],
+        if (tracks)
+          AppCard(
+            icon: Icons.ios_share_rounded,
+            title: 'Export your data',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'A PDF report for your doctor, or a CSV for a spreadsheet.',
+                ),
+                const SizedBox(height: Space.sm),
+                TextButton.icon(
+                  key: PodKeys.export,
+                  onPressed: () => _openExport(context),
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('Export as PDF or CSV'),
+                ),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: Space.lg),
         FilledButton.tonalIcon(
           key: PodKeys.logout,
