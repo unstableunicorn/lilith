@@ -1,6 +1,7 @@
 // One day's flow, symptoms and pain rating.
 
 import 'package:collection/collection.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:meta/meta.dart';
 
@@ -69,10 +70,12 @@ class DailyLog {
     this.ovulationTest,
     String? note,
     this.contraceptionDoneAt,
+    BodySigns? signs,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
        painLevel = painLevel?.clamp(0, 10),
-       note = (note == null || note.trim().isEmpty) ? null : note.trim();
+       note = (note == null || note.trim().isEmpty) ? null : note.trim(),
+       signs = signs ?? BodySigns.none;
 
   factory DailyLog.fromJson(Map<String, dynamic> json) => DailyLog(
     date: DateTime.parse(json['date'] as String),
@@ -87,6 +90,7 @@ class DailyLog {
     contraceptionDoneAt: DateTime.tryParse(
       json['contraceptionDoneAt'] as String? ?? '',
     ),
+    signs: BodySigns.fromJson(json['signs']),
   );
 
   final DateTime date;
@@ -106,6 +110,9 @@ class DailyLog {
   /// not marked.
   final DateTime? contraceptionDoneAt;
 
+  /// The day's moods and other body signs; empty when none were logged.
+  final BodySigns signs;
+
   /// The longest note the Log tab takes.
   static const int maxNoteLength = 1000;
 
@@ -116,7 +123,8 @@ class DailyLog {
       painLevel == null &&
       ovulationTest == null &&
       note == null &&
-      contraceptionDoneAt == null;
+      contraceptionDoneAt == null &&
+      signs.isEmpty;
 
   /// A copy with the given fields replaced. [clearPain],
   /// [clearOvulationTest], [clearNote] and [clearContraceptionDone] unset a
@@ -132,11 +140,13 @@ class DailyLog {
     bool clearNote = false,
     DateTime? contraceptionDoneAt,
     bool clearContraceptionDone = false,
+    BodySigns? signs,
   }) => DailyLog(
     contraceptionDoneAt: clearContraceptionDone
         ? null
         : (contraceptionDoneAt ?? this.contraceptionDoneAt),
     note: clearNote ? null : (note ?? this.note),
+    signs: signs ?? this.signs,
     date: date,
     flow: flow ?? this.flow,
     symptoms: symptoms ?? this.symptoms,
@@ -155,6 +165,7 @@ class DailyLog {
     'note': ?note,
     if (contraceptionDoneAt case final at?)
       'contraceptionDoneAt': at.toIso8601String(),
+    if (!signs.isEmpty) 'signs': signs.toJson(),
   };
 
   @override
@@ -166,7 +177,8 @@ class DailyLog {
       other.painLevel == painLevel &&
       other.ovulationTest == ovulationTest &&
       other.note == note &&
-      other.contraceptionDoneAt == contraceptionDoneAt;
+      other.contraceptionDoneAt == contraceptionDoneAt &&
+      other.signs == signs;
 
   @override
   int get hashCode => Object.hash(
@@ -177,5 +189,6 @@ class DailyLog {
     ovulationTest,
     note,
     contraceptionDoneAt,
+    signs,
   );
 }
