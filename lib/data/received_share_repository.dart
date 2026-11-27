@@ -2,6 +2,7 @@
 // and forgetting it. The list lives in the user's own pod document.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
@@ -13,6 +14,7 @@ import 'package:lilith/data/pod/share_reader.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/shared_phases.dart';
 
 /// Why a share could not be read.
 enum ReceivedShareError {
@@ -39,6 +41,12 @@ class SharedViewLoading extends SharedView {
 class SharedViewReady extends SharedView {
   const SharedViewReady(this.data);
   final HealthData data;
+}
+
+/// A "phases only" share: period days and dates, nothing else.
+class SharedViewPhases extends SharedView {
+  const SharedViewPhases(this.phases);
+  final SharedPhases phases;
 }
 
 class SharedViewFailed extends SharedView {
@@ -164,8 +172,11 @@ class ReceivedShareRepository extends ChangeNotifier {
     try {
       final root = await _reader.podRootOf(share.sharerWebId);
       final url = SharePlan.forRecipient(ownWebId).documentUrl(root);
-      final content = await _reader.readDocument(url);
-      return SharedViewReady(codec.decode(_open(content, share.code)));
+      final json = _open(await _reader.readDocument(url), share.code);
+      return switch (_phasesIn(json)) {
+        final phases? => SharedViewPhases(phases),
+        null => SharedViewReady(codec.decode(json)),
+      };
     } on PodNotLoggedInException {
       return const SharedViewFailed(ReceivedShareError.notLoggedIn);
     } on PodAccessException {
@@ -188,6 +199,23 @@ class ReceivedShareRepository extends ChangeNotifier {
       return SharedViewFailed(ReceivedShareError.malformed, detail: '$e');
     } on UnsupportedDocumentVersionException catch (e) {
       return SharedViewFailed(ReceivedShareError.malformed, detail: '$e');
+    }
+  }
+
+  /// The phases in [json] when it is a phases copy; null for anything else,
+  /// which the health document codec then reads.
+  static SharedPhases? _phasesIn(String json) {
+    final Object? doc;
+    try {
+      doc = jsonDecode(json);
+    } on FormatException {
+      return null;
+    }
+    if (doc is! Map<String, dynamic> || !isPhasesJson(doc)) return null;
+    try {
+      return SharedPhases.fromJson(doc);
+    } on Object catch (e) {
+      throw MalformedDocumentException(e);
     }
   }
 

@@ -3,11 +3,14 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/received_share_repository.dart';
+import 'package:lilith/domain/calendar.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
+import 'package:lilith/domain/shared_phases.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
@@ -41,8 +44,58 @@ class SharedPersonViewModel extends ChangeNotifier {
     _ => null,
   };
 
+  /// Their phases, for a "phases only" share; else null.
+  SharedPhases? get phases => switch (view) {
+    SharedViewPhases(:final phases) => phases,
+    _ => null,
+  };
+
   bool get isLoading => view is SharedViewLoading;
-  bool get hasData => data?.hasData ?? false;
+  bool get hasData => data?.hasData ?? phases?.hasData ?? false;
+
+  /// "Cycle day 12, since 3 Jun", from their phases; null without a period.
+  String? get phasesCycleLine {
+    final p = phases;
+    final start = p?.periods.lastOrNull?.startDate;
+    if (p == null || start == null) return null;
+    return 'Cycle day ${p.cycleDayOn(today)}, since '
+        '${formatShortDate(start, today: today)}';
+  }
+
+  /// "Updated today", "Updated 8 Jun": when their app last wrote the copy.
+  String? get phasesUpdatedText => switch (phases) {
+    final p? => 'Updated ${formatShortDate(p.updatedOn, today: today)}',
+    null => null,
+  };
+
+  /// The sentence that goes with their ovulation or fertile window.
+  String? get phasesDisclaimer => switch (phases) {
+    SharedPhases(fertileWindow: _?, :final fertileMode) =>
+      fertileWindowDisclaimer(fertileMode),
+    SharedPhases(ovulation: _?) => estimateDisclaimer,
+    _ => null,
+  };
+
+  DateTime? _month;
+
+  /// The month the calendar shows: this month until moved.
+  DateTime get month => _month ?? DateTime(today.year, today.month);
+
+  void previousMonth() => _showMonth(DateTime(month.year, month.month - 1));
+
+  void nextMonth() => _showMonth(DateTime(month.year, month.month + 1));
+
+  void _showMonth(DateTime m) {
+    _month = m;
+    notifyListeners();
+  }
+
+  /// The shown month's days, from their phases.
+  List<CalendarDay> get phasesDays =>
+      phases?.month(year: month.year, month: month.month) ?? const [];
+
+  int get calendarLeadingBlanks =>
+      leadingBlanks(year: month.year, month: month.month);
 
   CyclePrediction? get prediction => switch (data) {
     final d? => predictor.predict(
@@ -56,10 +109,9 @@ class SharedPersonViewModel extends ChangeNotifier {
 
   /// "Period expected today", "… in 4 days, around 12 Jun", or null.
   String? get nextPeriodText {
-    final p = prediction;
-    final date = p?.predictedNextPeriod;
-    final days = p?.daysUntilNextPeriod(today);
-    if (p == null || date == null || days == null) return null;
+    final date = prediction?.predictedNextPeriod ?? phases?.nextPeriod;
+    if (date == null) return null;
+    final days = daysBetween(today, dateOnly(date));
     final when = formatShortDate(date, today: today);
     return switch (days) {
       0 => 'Period expected today',

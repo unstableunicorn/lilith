@@ -354,6 +354,7 @@ class _RootState extends State<_Root> {
           context.read<ShareService>(),
           protection: protection,
           notifications: context.read<NotificationService>(),
+          pageSettings: context.read<PageSettingsRepository>(),
         );
         unawaited(health.load().then((_) => shares.sweep(DateTime.now())));
         return shares;

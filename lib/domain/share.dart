@@ -84,6 +84,14 @@ enum ShareContent {
     'For someone with Lilith: their app shows your cycle, read-only.',
   ),
 
+  /// For a partner with Lilith: period days and the dates worked out from
+  /// the rest, encrypted when the sharer's data is.
+  phases(
+    'Phases only',
+    'For a partner with Lilith: your period days, next period and '
+        'ovulation, nothing else.',
+  ),
+
   /// A PDF report and a CSV, readable without the app, never encrypted.
   report(
     'A PDF report and CSV',
