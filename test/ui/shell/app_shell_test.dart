@@ -4,11 +4,14 @@ import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
 import 'package:lilith/data/setup_repository.dart';
 import 'package:lilith/data/share_repository.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/data_protection.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/follow/follow_screen.dart';
 import 'package:lilith/ui/history/history_screen.dart';
 import 'package:lilith/ui/home/home_screen.dart';
+import 'package:lilith/ui/learn/learn_screen.dart';
 import 'package:lilith/ui/log/log_screen.dart';
 import 'package:lilith/ui/pod/pod_screen.dart';
 import 'package:lilith/ui/relief/relief_screen.dart';
@@ -111,6 +114,63 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected(tester), ShellTab.log.index);
   });
+
+  testWidgets('a tracker has no Learn tab', (tester) async {
+    await pump(tester);
+    expect(find.byKey(ShellKeys.tab(ShellTab.learn)), findsNothing);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+  });
+
+  testWidgets('a partner gets Today, Learn and Pod, and no tracker screens', (
+    tester,
+  ) async {
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await pump(tester);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    for (final hidden in [ShellTab.log, ShellTab.history, ShellTab.relief]) {
+      expect(find.byKey(ShellKeys.tab(hidden)), findsNothing);
+    }
+    expect(find.byKey(FollowKeys.empty), findsOneWidget);
+    expect(find.byKey(HomeKeys.logPeriod), findsNothing);
+    expect(find.byType(LogScreen, skipOffstage: false), findsNothing);
+    expect(find.byType(HistoryScreen, skipOffstage: false), findsNothing);
+    expect(find.byType(ReliefScreen, skipOffstage: false), findsNothing);
+    await expectAccessible(tester);
+
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.learn)));
+    await tester.pumpAndSettle();
+    expect(selected(tester), 1);
+    expect(find.byKey(LearnKeys.question), findsOneWidget);
+    expect(find.byKey(AppMenuKeys.button), findsOneWidget);
+    await expectAccessible(tester);
+
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.pod)));
+    await tester.pumpAndSettle();
+    expect(selected(tester), 2);
+    expect(find.byKey(PodKeys.logout), findsOneWidget);
+  });
+
+  testWidgets('someone who does both keeps the tracker tabs', (tester) async {
+    await health.apply((d) => d.withMode(AppMode.both));
+    await pump(tester);
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.byKey(HomeKeys.logPeriod), findsOneWidget);
+  });
+
+  testWidgets('changing to partner on a tracker tab lands on Today', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.byKey(ShellKeys.tab(ShellTab.history)));
+    await tester.pumpAndSettle();
+    await health.apply((d) => d.withMode(AppMode.partner));
+    await tester.pumpAndSettle();
+    final tabs = tester.element(find.byType(NavigationBar)).read<ShellTabs>();
+    expect(tabs.current, ShellTab.today);
+    expect(tabs.allowed, shellTabsFor(AppMode.partner));
+    expect(selected(tester), 0);
+    expect(find.byKey(FollowKeys.empty), findsOneWidget);
+  });
 }
 
 void appMenuTests() {
@@ -202,7 +262,7 @@ void appMenuTests() {
       ),
     );
     await tester.pumpAndSettle();
-    for (final tab in ShellTab.values) {
+    for (final tab in shellTabsFor(AppMode.tracker)) {
       await tester.tap(find.byKey(ShellKeys.tab(tab)));
       await tester.pumpAndSettle();
       expect(
