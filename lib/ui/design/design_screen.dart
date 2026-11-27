@@ -74,6 +74,12 @@ class _Samples extends StatelessWidget {
           LabelBadge(text: 'Plain badge'),
         ],
       ),
+      const ForecastCard(
+        title: 'Forecast card',
+        summary: 'A sentence on what the forecast is drawn from.',
+        symptoms: ['Cramps 60%', 'Fatigue 40%'],
+        moods: ['Irritable 55%'],
+      ),
       const Row(
         children: [
           Expanded(
