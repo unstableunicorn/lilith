@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/export_file.dart';
 import 'package:lilith/domain/export_rows.dart';
@@ -48,6 +49,14 @@ class CsvExport {
     'contraception',
     'dose',
     'dose_done_at',
+    // Added after the others, so a spreadsheet built on the earlier
+    // columns still lines up.
+    'moods',
+    'sleep',
+    'digestion',
+    'skin',
+    'discharge',
+    'pregnancy_test',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -100,6 +109,18 @@ class CsvExport {
         '${isoDay(at)}T${clockTime(at)}'
       else
         '',
+      ..._signs(log?.signs ?? BodySigns.none),
     ];
   }
+
+  List<String> _signs(BodySigns s) => [
+    _names(Mood.values.where(s.moods.contains)),
+    s.sleep?.name ?? '',
+    _names(Digestion.values.where(s.digestion.contains)),
+    _names(SkinSign.values.where(s.skin.contains)),
+    s.discharge?.name ?? '',
+    s.pregnancyTest?.name ?? '',
+  ];
+
+  String _names(Iterable<Enum> values) => values.map((v) => v.name).join('; ');
 }

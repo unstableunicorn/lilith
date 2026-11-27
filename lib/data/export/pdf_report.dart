@@ -178,6 +178,8 @@ List<String> reportDayCells(ExportRow r) {
       [
         for (final s in Symptom.values.where(log.symptoms.contains)) s.label,
         if (log.ovulationTest case final t?) 'Ovulation test ${t.name}',
+        for (final part in log.signs.summaryParts)
+          part[0].toUpperCase() + part.substring(1),
       ].join(', '),
     switch ((r.dose, log?.contraceptionDoneAt)) {
       (DoseStatus.missed, _) => 'missed',
