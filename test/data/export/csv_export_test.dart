@@ -95,10 +95,11 @@ void main() {
         'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes,'
         'contraception,dose,dose_done_at,'
         'moods,sleep,digestion,skin,discharge,pregnancy_test';
-    const noSigns = ',,,,,,';
+    const day1 =
+        '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,,,,';
     expect(lines, [
       header,
-      '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,,,,$noSigns',
+      '$day1,,,,,,',
       '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very""",,,,,,,,,',
       '2026-06-03,37.0,ring,,,,,,,,,,,,,,,,,,',
       '',
