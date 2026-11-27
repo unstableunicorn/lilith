@@ -94,6 +94,7 @@ class ShareRepository extends ChangeNotifier {
     ExportRange? range,
     bool includeNotes = false,
     bool includeContraception = false,
+    bool includeSigns = false,
   }) => _run(() async {
     final share = Share(
       recipientWebId: recipientWebId.trim(),
@@ -110,6 +111,7 @@ class ShareRepository extends ChangeNotifier {
       includeNotes: content != ShareContent.phases && includeNotes,
       includeContraception:
           content != ShareContent.phases && includeContraception,
+      includeSigns: content != ShareContent.phases && includeSigns,
     );
     await _pod.open(SharePlan.forRecipient(share.recipientWebId));
     await _writeCopy(share, _health.data);
@@ -174,6 +176,7 @@ class ShareRepository extends ChangeNotifier {
       _health.data,
       includeNotes: true,
       includeContraception: true,
+      includeSigns: true,
     );
     final previous = _lastCopied;
     final previousProfile = _lastProfile;
@@ -229,6 +232,7 @@ class ShareRepository extends ChangeNotifier {
       data,
       includeNotes: share.includeNotes,
       includeContraception: share.includeContraception,
+      includeSigns: share.includeSigns,
     );
     final plan = SharePlan.forRecipient(share.recipientWebId);
     if (!share.isReport) {

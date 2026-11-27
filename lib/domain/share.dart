@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/health_data.dart';
@@ -22,10 +23,13 @@ String shareId(String recipientWebId) => sha256
 /// profile, remedy verdicts, shopping list, the shares and doses marked done
 /// stay with the owner, and so do day notes unless [includeNotes]. With
 /// [includeContraception], the method, its schedule and the doses go too.
+/// Moods and body signs stay too unless [includeSigns], and a pregnancy
+/// test always does.
 HealthData sharedView(
   HealthData data, {
   bool includeNotes = false,
   bool includeContraception = false,
+  bool includeSigns = false,
 }) => HealthData(
   readings: data.readings,
   periods: data.periods,
@@ -34,6 +38,7 @@ HealthData sharedView(
       if (l.copyWith(
             clearNote: !includeNotes,
             clearContraceptionDone: !includeContraception,
+            signs: includeSigns ? l.signs.shared : BodySigns.none,
           )
           case final bare when !bare.isEmpty)
         bare,
@@ -121,6 +126,7 @@ class Share {
     ExportRange? range,
     this.includeNotes = false,
     this.includeContraception = false,
+    this.includeSigns = false,
   }) : createdOn = dateOnly(createdOn),
        expiresOn = expiresOn == null ? null : dateOnly(expiresOn),
        range = content == ShareContent.report
@@ -143,6 +149,7 @@ class Share {
     },
     includeNotes: json['includeNotes'] == true,
     includeContraception: json['includeContraception'] == true,
+    includeSigns: json['includeSigns'] == true,
   );
 
   final String recipientWebId;
@@ -171,6 +178,10 @@ class Share {
   /// chosen.
   final bool includeContraception;
 
+  /// Whether the recipient also sees moods and body signs; off unless
+  /// chosen. A pregnancy test is never shared.
+  final bool includeSigns;
+
   String get id => shareId(recipientWebId);
   bool get isEncrypted => code != null;
   bool get isReport => content == ShareContent.report;
@@ -189,6 +200,7 @@ class Share {
     if (range != null) 'range': range!.name,
     if (includeNotes) 'includeNotes': true,
     if (includeContraception) 'includeContraception': true,
+    if (includeSigns) 'includeSigns': true,
   };
 
   @override
@@ -202,7 +214,8 @@ class Share {
       other.content == content &&
       other.range == range &&
       other.includeNotes == includeNotes &&
-      other.includeContraception == includeContraception;
+      other.includeContraception == includeContraception &&
+      other.includeSigns == includeSigns;
 
   @override
   int get hashCode => Object.hash(
@@ -215,6 +228,7 @@ class Share {
     range,
     includeNotes,
     includeContraception,
+    includeSigns,
   );
 }
 

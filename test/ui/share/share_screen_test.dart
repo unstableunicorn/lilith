@@ -121,6 +121,27 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
+    testWidgets('moods and body signs are off by default and go when on', (
+      tester,
+    ) async {
+      await pump(tester);
+      await fillIn(tester);
+      final signs = find.byKey(ShareKeys.includeSigns);
+      expect(signs, findsOneWidget);
+      await tester.ensureVisible(signs);
+      expect(tester.widget<SwitchListTile>(signs).value, isFalse);
+      await tester.tap(signs);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(signs).value, isTrue);
+      await expectAccessible(tester);
+      await tester.ensureVisible(find.byKey(ShareKeys.submit));
+      await tester.tap(find.byKey(ShareKeys.submit));
+      await tester.pumpAndSettle();
+      expect(shares.shares.single.includeSigns, isTrue);
+      expect(shares.shares.single.includeNotes, isFalse);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
     testWidgets('phases only hides the notes and contraception switches', (
       tester,
     ) async {
@@ -131,6 +152,7 @@ void main() {
       await tester.ensureVisible(phases);
       await tester.tap(phases);
       await tester.pumpAndSettle();
+      expect(find.byKey(ShareKeys.includeSigns), findsNothing);
       expect(find.byKey(ShareKeys.includeNotes), findsNothing);
       expect(find.byKey(ShareKeys.includeContraception), findsNothing);
       await expectAccessible(tester);
