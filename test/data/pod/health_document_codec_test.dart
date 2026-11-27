@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/pod/health_document_codec.dart';
+import 'package:lilith/domain/app_mode.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
@@ -263,6 +264,33 @@ void v8Tests() {
       codec.decode(codec.encode(data)).wearableNights,
       data.wearableNights,
     );
+  });
+
+  test('the app mode round-trips at v8 without a version bump', () {
+    const codec = HealthDocumentCodec();
+    final data = HealthData.empty.withMode(AppMode.partner);
+    final json = jsonDecode(codec.encode(data)) as Map<String, dynamic>;
+    expect(json['version'], 8);
+    expect(json['mode'], 'partner');
+    expect(codec.decode(codec.encode(data)).mode, AppMode.partner);
+  });
+
+  test('a v8 document written before app modes loads with none', () {
+    const codec = HealthDocumentCodec();
+    expect(codec.decode('{"version":8}').mode, isNull);
+    expect(codec.decode('{"version":8,"mode":"coach"}').mode, isNull);
+  });
+
+  test('a document read with a mode keeps it', () {
+    const codec = HealthDocumentCodec();
+    expect(codec.decode('{"version":8,"mode":"both"}').mode, AppMode.both);
+  });
+
+  test('an unchosen mode is not written', () {
+    const codec = HealthDocumentCodec();
+    final json =
+        jsonDecode(codec.encode(HealthData.empty)) as Map<String, dynamic>;
+    expect(json.containsKey('mode'), isFalse);
   });
 
   test('an ovulation test round-trips at v8 without a version bump', () {
