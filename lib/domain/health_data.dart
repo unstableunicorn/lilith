@@ -34,6 +34,7 @@ class HealthData {
     Iterable<ReceivedShare> received = const [],
     Iterable<WearableNight> wearableNights = const [],
     this.mode,
+    this.following,
   }) : readings = List.unmodifiable(readings.sortedBy((r) => r.date)),
        wearableNights = List.unmodifiable(
          wearableNights.sortedBy((d) => d.date),
@@ -87,6 +88,19 @@ class HealthData {
 
   HealthData withMode(AppMode mode) => copyWith(mode: mode);
 
+  /// Whose share Today shows for someone who follows: the one chosen, else
+  /// the first; null when nobody shares with them.
+  ReceivedShare? get followedShare =>
+      received.firstWhereOrNull((r) => r.sharerWebId == following) ??
+      received.firstOrNull;
+
+  /// The WebID of the sharer chosen for Today; null until one is chosen.
+  final String? following;
+
+  /// Chooses whose share Today shows.
+  HealthData withFollowed(String sharerWebId) =>
+      copyWith(following: sharerWebId);
+
   /// True once any cycle data has been logged.
   bool get hasData =>
       readings.isNotEmpty ||
@@ -105,8 +119,10 @@ class HealthData {
     Iterable<ReceivedShare>? received,
     Iterable<WearableNight>? wearableNights,
     AppMode? mode,
+    String? following,
   }) => HealthData(
     mode: mode ?? this.mode,
+    following: following ?? this.following,
     readings: readings ?? this.readings,
     periods: periods ?? this.periods,
     dailyLogs: dailyLogs ?? this.dailyLogs,
@@ -276,7 +292,8 @@ class HealthData {
       _list.equals(other.shares, shares) &&
       _list.equals(other.received, received) &&
       _list.equals(other.wearableNights, wearableNights) &&
-      other.mode == mode;
+      other.mode == mode &&
+      other.following == following;
 
   @override
   int get hashCode => Object.hash(
@@ -290,5 +307,6 @@ class HealthData {
     _list.hash(received),
     _list.hash(wearableNights),
     mode,
+    following,
   );
 }

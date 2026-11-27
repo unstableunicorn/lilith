@@ -8,6 +8,7 @@ import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
+import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shopping_item.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
@@ -291,6 +292,25 @@ void v8Tests() {
     final json =
         jsonDecode(codec.encode(HealthData.empty)) as Map<String, dynamic>;
     expect(json.containsKey('mode'), isFalse);
+    expect(json.containsKey('following'), isFalse);
+  });
+
+  test('who is followed round-trips at v8 without a version bump', () {
+    const codec = HealthDocumentCodec();
+    ReceivedShare from(String name) => ReceivedShare(
+      sharerWebId: 'https://pod.example.org/$name/profile/card#me',
+      label: name,
+      addedOn: DateTime(2026, 6),
+    );
+    final bea = from('bea');
+    final data = HealthData.empty
+        .withReceived(from('ada'))
+        .withReceived(bea)
+        .withFollowed(bea.sharerWebId);
+    final json = jsonDecode(codec.encode(data)) as Map<String, dynamic>;
+    expect(json['version'], 8);
+    expect(json['following'], bea.sharerWebId);
+    expect(codec.decode(codec.encode(data)).followedShare, bea);
   });
 
   test('an ovulation test round-trips at v8 without a version bump', () {

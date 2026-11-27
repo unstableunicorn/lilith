@@ -120,6 +120,7 @@ class HealthDocumentCodec {
     'wearableNights': [for (final d in data.wearableNights) d.toJson()],
     // Optional and absent until chosen: no version bump.
     if (data.mode case final mode?) 'mode': mode.name,
+    if (data.following case final following?) 'following': following,
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -145,6 +146,7 @@ class HealthDocumentCodec {
             ? HealthProfile.fromJson(profile)
             : null,
         mode: AppMode.fromName(doc['mode']),
+        following: doc['following'] as String?,
       );
     } on UnsupportedDocumentVersionException {
       rethrow;

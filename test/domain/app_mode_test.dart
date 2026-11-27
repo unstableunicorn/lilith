@@ -72,4 +72,37 @@ void main() {
       expect(HealthData.empty.withMode(AppMode.tracker).needsMode, isFalse);
     });
   });
+
+  group('HealthData.followedShare', () {
+    ReceivedShare from(String name) => ReceivedShare(
+      sharerWebId: 'https://pod.example.org/$name/profile/card#me',
+      label: name,
+      addedOn: DateTime(2026, 6),
+    );
+    final ada = from('ada');
+    final bea = from('bea');
+    final two = HealthData.empty.withReceived(ada).withReceived(bea);
+
+    test('is nobody when nobody shares', () {
+      expect(HealthData.empty.followedShare, isNull);
+    });
+
+    test('is the first share until one is chosen', () {
+      expect(two.followedShare, ada);
+    });
+
+    test('is the one chosen, and the choice is part of the value', () {
+      final chosen = two.withFollowed(bea.sharerWebId);
+      expect(chosen.followedShare, bea);
+      expect(chosen, isNot(two));
+      expect(chosen.hashCode, isNot(two.hashCode));
+    });
+
+    test('falls back to the first when the chosen share is removed', () {
+      final chosen = two
+          .withFollowed(bea.sharerWebId)
+          .withoutReceived(bea.sharerWebId);
+      expect(chosen.followedShare, ada);
+    });
+  });
 }
