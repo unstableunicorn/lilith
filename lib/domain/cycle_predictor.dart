@@ -187,7 +187,7 @@ class CyclePredictor {
     final now = dateOnly(today);
     final sorted = [...periods]
       ..sort((a, b) => a.startDate.compareTo(b.startDate));
-    final pausedBy = activeFactor(factors, sorted, today: now);
+    final pausedBy = activeFactor(factors, today: now);
     if (sorted.isEmpty && pausedBy == null) {
       return const CyclePrediction(
         method: PredictionMethod.insufficientData,
@@ -198,7 +198,7 @@ class CyclePredictor {
     // A cycle that overlaps a life factor says nothing about a usual one.
     final cycleLengths = [
       for (var i = 1; i < starts.length; i++)
-        if (!cycleOverlapsFactor(starts[i - 1], starts[i], factors, sorted))
+        if (!cycleOverlapsFactor(starts[i - 1], starts[i], factors))
           daysBetween(starts[i - 1], starts[i]),
     ].where((d) => d > 10 && d < 90).toList();
     if (pausedBy != null ||

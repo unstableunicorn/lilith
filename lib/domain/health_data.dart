@@ -234,6 +234,12 @@ class HealthData {
     return dailyLogs.firstWhereOrNull((l) => l.date == day);
   }
 
+  // STUB
+  List<DateTime> get miscarriageDays => const [];
+
+  // STUB
+  HealthData withMiscarriageDays(Iterable<DateTime> days) => this;
+
   RemedyRating ratingFor(String symptomKey, String remedyTitle) {
     final id = RemedyFeedback.idFor(symptomKey, remedyTitle);
     return remedyFeedback.firstWhereOrNull((f) => f.id == id)?.rating ??

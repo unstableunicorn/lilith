@@ -97,6 +97,15 @@ class LogViewModel extends ChangeNotifier {
         : _draft.copyWith(ovulationTest: result),
   );
 
+  // STUB
+  bool get miscarriage => false;
+
+  // STUB
+  bool get offersMiscarriage => false;
+
+  // STUB
+  void setMiscarriage(bool on) {}
+
   /// The day's moods and body signs.
   BodySigns get signs => _draft.signs;
 

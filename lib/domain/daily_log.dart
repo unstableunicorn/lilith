@@ -71,6 +71,9 @@ class DailyLog {
     String? note,
     this.contraceptionDoneAt,
     BodySigns? signs,
+    // STUB
+    // ignore: avoid_unused_constructor_parameters
+    bool miscarriage = false,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
        painLevel = painLevel?.clamp(0, 10),
@@ -113,6 +116,9 @@ class DailyLog {
   /// The day's moods and other body signs; empty when none were logged.
   final BodySigns signs;
 
+  // STUB
+  bool get miscarriage => false;
+
   /// The longest note the Log tab takes.
   static const int maxNoteLength = 1000;
 
@@ -141,6 +147,7 @@ class DailyLog {
     DateTime? contraceptionDoneAt,
     bool clearContraceptionDone = false,
     BodySigns? signs,
+    bool? miscarriage,
   }) => DailyLog(
     contraceptionDoneAt: clearContraceptionDone
         ? null

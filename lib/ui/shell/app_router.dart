@@ -63,6 +63,9 @@ class AppRouterDelegate extends RouterDelegate<AppLocation>
     onDidRemovePage: (_) {},
   );
 
+  // STUB
+  void openLog(DateTime day) {}
+
   /// The browser moved to [configuration]: close pages and change tab to
   /// match. A page closed earlier cannot be opened again, so going forward
   /// to one leaves the app where it is.

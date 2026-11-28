@@ -15,31 +15,23 @@ String? pauseText(
   bool theirs = false,
 }) {
   if (!prediction.isOnHold) return null;
-  final again = theirs ? 'with their next period.' : 'when you log a period.';
   final who = theirs ? 'they are' : 'you are';
+  // Only a pregnancy pauses predictions, so that is what a pause names.
   return switch (prediction.pausedBy) {
     null when theirs => 'Predictions start again with their next period.',
     null => 'Predictions start again when you log your next period.',
-    LifeFactor(kind: LifeFactorKind.pregnant, :final dueDate) =>
+    LifeFactor(:final dueDate) =>
       'Predictions are paused while $who pregnant.'
           '${dueDate == null ? '' : ' ${theirs ? 'Their' : 'Your'} due date '
                     'is ${formatShortDate(dueDate, today: today)}.'}',
-    LifeFactor(kind: LifeFactorKind.breastfeeding) =>
-      'Predictions are paused while $who breastfeeding. They start again '
-          '$again',
-    LifeFactor(kind: LifeFactorKind.miscarriage) =>
-      'Predictions are paused after a miscarriage. They start again $again',
   };
 }
 
-/// One line for [factor]: "Pregnant since 20 Mar, due 20 Dec", "Pregnant,
-/// 20 Mar to 2 Apr", "Miscarriage on 20 Mar".
+/// One line for [factor]: "Pregnant since 20 Mar, due 20 Dec",
+/// "Breastfeeding, 20 Mar to 2 Sep".
 String factorLine(LifeFactor factor, {required DateTime today}) {
   String day(DateTime d) => formatShortDate(d, today: today);
   final label = factor.kind.label;
-  if (factor.kind == LifeFactorKind.miscarriage) {
-    return '$label on ${day(factor.start)}';
-  }
   if (factor.end case final end?) {
     return '$label, ${day(factor.start)} to ${day(end)}';
   }

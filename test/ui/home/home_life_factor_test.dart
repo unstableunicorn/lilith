@@ -86,22 +86,17 @@ void main() {
     expect(vm.forecast.hasData, isFalse);
   });
 
-  test(
-    'logging a period after breastfeeding restarts the prediction',
-    () async {
-      await seed(
-        factors: [
-          LifeFactor(
-            kind: LifeFactorKind.breastfeeding,
-            start: DateTime(2026, 5, 20),
-          ),
-        ],
-      );
-      expect(vm.prediction.method, PredictionMethod.paused);
-      await vm.logPeriodStart();
-      expect(vm.prediction.method, PredictionMethod.cycleAverage);
-      expect(vm.prediction.currentCycleDay, 1);
-      expect(vm.prediction.cycleCount, 2);
-    },
-  );
+  test('breastfeeding pauses nothing on Today', () async {
+    await seed(
+      factors: [
+        LifeFactor(
+          kind: LifeFactorKind.breastfeeding,
+          start: DateTime(2026, 5, 20),
+        ),
+      ],
+    );
+    expect(vm.prediction.method, PredictionMethod.cycleAverage);
+    expect(vm.prediction.isOnHold, isFalse);
+    expect(vm.daysUntilNextPeriod, isNotNull);
+  });
 }

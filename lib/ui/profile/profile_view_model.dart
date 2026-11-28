@@ -21,6 +21,15 @@ class ProfileViewModel extends ChangeNotifier {
 
   DateTime get today => dateOnly(now());
 
+  // STUB
+  List<DateTime> get miscarriageDays => const [];
+
+  // STUB
+  void addMiscarriage(DateTime day) {}
+
+  // STUB
+  void removeMiscarriage(DateTime day) {}
+
   /// Starts a factor of [kind] today, unless one of that kind is still
   /// open.
   void startFactor(LifeFactorKind kind) {

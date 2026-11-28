@@ -36,6 +36,14 @@ abstract final class ProfileKeys {
   static Key factorDue(int i) => Key('profile.factor.$i.due');
   static Key endFactor(int i) => Key('profile.factor.$i.end');
   static Key removeFactor(int i) => Key('profile.factor.$i.remove');
+
+  /// What the life factors do, said above them.
+  static const Key factorsNote = Key('profile.factorsNote');
+
+  /// The [i]th miscarriage day, oldest first, and its remove button.
+  static Key miscarriage(int i) => Key('profile.miscarriage.$i');
+  static Key removeMiscarriage(int i) => Key('profile.miscarriage.$i.remove');
+  static const Key addMiscarriage = Key('profile.addMiscarriage');
 }
 
 class ProfileScreen extends StatelessWidget {

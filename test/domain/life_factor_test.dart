@@ -1,5 +1,5 @@
-// Life factors: when one is in force, what ends it, and what it does to
-// predictions, statistics and the profile.
+// Life factors: a pregnancy pauses predictions and statistics while it is
+// in force; breastfeeding is a record with dates and pauses nothing.
 
 import 'dart:convert';
 
@@ -37,18 +37,26 @@ void main() {
     start: start ?? DateTime(2026, 3, 20),
     end: end,
   );
-  LifeFactor miscarriage(DateTime start) =>
-      LifeFactor(kind: LifeFactorKind.miscarriage, start: start);
 
   group('LifeFactor', () {
-    test('names its kinds, and only pregnancy outlasts a period', () {
+    test('names its kinds, and only pregnancy pauses predictions', () {
       expect(
         [for (final k in LifeFactorKind.values) k.label],
-        ['Pregnant', 'Breastfeeding', 'Miscarriage'],
+        ['Pregnant', 'Breastfeeding'],
       );
       expect(
-        [for (final k in LifeFactorKind.values) k.endsWithPeriod],
-        [false, true, true],
+        [for (final k in LifeFactorKind.values) k.pausesPredictions],
+        [true, false],
+      );
+    });
+
+    test('a miscarriage is not a factor any more', () {
+      expect(
+        LifeFactor.tryFromJson(const {
+          'kind': 'miscarriage',
+          'start': '2026-03-20',
+        }),
+        isNull,
       );
     });
 
@@ -132,103 +140,72 @@ void main() {
     });
   });
 
-  group('lastDayOf', () {
-    test('an open pregnancy has none, whatever is logged', () {
-      expect(lastDayOf(pregnant(), regular), isNull);
-      expect(lastDayOf(pregnant(), periodsOn([DateTime(2026, 5)])), isNull);
-    });
-
-    test('is the end that was set', () {
+  group('legacyMiscarriageDays', () {
+    test('gives the start day of each miscarriage once kept as a factor', () {
       expect(
-        lastDayOf(pregnant(end: DateTime(2026, 11, 30)), regular),
-        DateTime(2026, 11, 30),
+        legacyMiscarriageDays(const [
+          {'kind': 'pregnant', 'start': '2026-03-20'},
+          {'kind': 'miscarriage', 'start': '2026-04-02', 'end': '2026-04-20'},
+          {'kind': 'miscarriage', 'start': '2025-11-03T10:00:00.000'},
+          {'kind': 'breastfeeding', 'start': '2026-01-01'},
+        ]),
+        [DateTime(2026, 4, 2), DateTime(2025, 11, 3)],
       );
     });
 
-    test('breastfeeding and a miscarriage last until the day before the '
-        'first period that starts after them', () {
-      final later = periodsOn([
-        jan,
-        DateTime(2026, 6, 1),
-        DateTime(2026, 7, 1),
-      ]);
-      expect(lastDayOf(feeding(), later), DateTime(2026, 5, 31));
+    test('gives nothing for what it cannot read', () {
+      expect(legacyMiscarriageDays(null), isEmpty);
+      expect(legacyMiscarriageDays('miscarriage'), isEmpty);
       expect(
-        lastDayOf(miscarriage(DateTime(2026, 3, 20)), later),
-        DateTime(2026, 5, 31),
-      );
-      expect(lastDayOf(feeding(), regular), isNull);
-    });
-
-    test('a period on the very day it starts does not end it', () {
-      expect(
-        lastDayOf(
-          miscarriage(DateTime(2026, 3, 20)),
-          periodsOn([DateTime(2026, 3, 20)]),
-        ),
-        isNull,
-      );
-    });
-
-    test('the earlier of a set end and a period wins', () {
-      final later = periodsOn([DateTime(2026, 6, 1)]);
-      expect(
-        lastDayOf(feeding(end: DateTime(2026, 4, 30)), later),
-        DateTime(2026, 4, 30),
-      );
-      expect(
-        lastDayOf(feeding(end: DateTime(2026, 8, 30)), later),
-        DateTime(2026, 5, 31),
+        legacyMiscarriageDays(const [
+          'miscarriage',
+          {'kind': 'miscarriage'},
+          {'kind': 'miscarriage', 'start': 'soon'},
+        ]),
+        isEmpty,
       );
     });
   });
 
   group('activeFactor', () {
     test('none without factors', () {
-      expect(activeFactor(const [], regular, today: mar), isNull);
+      expect(activeFactor(const [], today: mar), isNull);
     });
 
     test('from its first day to its last, both included', () {
       final f = pregnant(end: DateTime(2026, 11, 30));
-      LifeFactor? on(DateTime day) => activeFactor([f], regular, today: day);
+      LifeFactor? on(DateTime day) => activeFactor([f], today: day);
       expect(on(DateTime(2026, 3, 19)), isNull);
       expect(on(DateTime(2026, 3, 20, 22)), f);
       expect(on(DateTime(2026, 11, 30)), f);
       expect(on(DateTime(2026, 12, 1)), isNull);
     });
 
-    test('an open one stays in force', () {
-      expect(
-        activeFactor([pregnant()], regular, today: DateTime(2028)),
-        pregnant(),
-      );
+    test('an open pregnancy stays in force, whatever is logged', () {
+      expect(activeFactor([pregnant()], today: DateTime(2028)), pregnant());
     });
 
-    test('breastfeeding stops being in force once a period is logged', () {
-      final later = [...regular, PeriodEvent(startDate: DateTime(2026, 6, 1))];
+    test('breastfeeding is never in force', () {
+      expect(activeFactor([feeding()], today: DateTime(2026, 5)), isNull);
       expect(
-        activeFactor([feeding()], later, today: DateTime(2026, 5, 31)),
-        feeding(),
-      );
-      expect(
-        activeFactor([feeding()], later, today: DateTime(2026, 6, 1)),
+        activeFactor([
+          feeding(end: DateTime(2026, 8)),
+        ], today: DateTime(2026, 5)),
         isNull,
       );
     });
 
-    test('a pregnancy stays in force though a period is logged', () {
-      final later = [...regular, PeriodEvent(startDate: DateTime(2026, 6, 1))];
-      expect(
-        activeFactor([pregnant()], later, today: DateTime(2026, 6, 10)),
-        pregnant(),
-      );
-    });
-
-    test('of two in force, the one that began last', () {
+    test('a pregnancy is in force though breastfeeding began after it', () {
       final a = pregnant(start: DateTime(2026, 3, 20));
       final b = feeding(start: DateTime(2026, 4, 20));
-      expect(activeFactor([a, b], regular, today: DateTime(2026, 5)), b);
-      expect(activeFactor([b, a], regular, today: DateTime(2026, 5)), b);
+      expect(activeFactor([a, b], today: DateTime(2026, 5)), a);
+      expect(activeFactor([b, a], today: DateTime(2026, 5)), a);
+    });
+
+    test('of two pregnancies in force, the one that began last', () {
+      final a = pregnant(start: DateTime(2026, 3, 20));
+      final b = pregnant(start: DateTime(2026, 4, 20));
+      expect(activeFactor([b, a], today: DateTime(2026, 5)), b);
     });
   });
 
@@ -342,17 +319,33 @@ void main() {
       expect(p.predictedNextPeriod, addDays(back, 28));
     });
 
-    test('a short cycle around a miscarriage is left out of the average', () {
+    test('breastfeeding changes nothing: dates, cycle day and every cycle '
+        'in the average', () {
       final periods = periodsOn([jan, feb, mar, DateTime(2026, 4, 20)]);
       final p = predictor.predict(
         readings: const [],
         periods: periods,
         today: DateTime(2026, 4, 25),
-        factors: [miscarriage(DateTime(2026, 3, 25))],
+        factors: [feeding(start: DateTime(2026, 3, 25))],
       );
       expect(p.method, PredictionMethod.cycleAverage);
-      expect(p.cycleCount, 2);
-      expect(p.averageCycleLength, 28);
+      expect(p.isOnHold, isFalse);
+      expect(p.pausedBy, isNull);
+      expect(p.cycleCount, 3);
+      expect(p.lastPeriodStart, DateTime(2026, 4, 20));
+      expect(p.currentCycleDay, 6);
+      expect(p.predictedNextPeriod, isNotNull);
+    });
+
+    test('breastfeeding that has ended leaves nothing to wait for', () {
+      final p = predictor.predict(
+        readings: const [],
+        periods: regular,
+        today: today,
+        factors: [feeding(start: mar, end: DateTime(2026, 4))],
+      );
+      expect(p.method, PredictionMethod.cycleAverage);
+      expect(p.predictedNextPeriod, DateTime(2026, 3, 30));
     });
 
     test('a capped confidence leaves a pause as it is', () {
@@ -434,6 +427,16 @@ void main() {
       expect(s.flags, isEmpty);
     });
 
+    test('count every cycle while breastfeeding', () {
+      final periods = periodsOn([jan, feb, mar, DateTime(2026, 4, 1)]);
+      final s = cycleStatisticsFor(
+        periods,
+        today: today,
+        factors: [feeding(start: jan)],
+      )!;
+      expect(s.cycleCount, 3);
+    });
+
     test('without factors every cycle counts', () {
       final periods = periodsOn([jan, feb, mar, DateTime(2027, 2, 1)]);
       final s = cycleStatisticsFor(periods, today: today)!;
@@ -454,26 +457,24 @@ void main() {
     test('a factor inside the cycle, or reaching into it, overlaps', () {
       final f = pregnant(end: DateTime(2026, 11, 30));
       final back = DateTime(2027, 2, 1);
-      expect(cycleOverlapsFactor(mar, back, [f], regular), isTrue);
-      expect(cycleOverlapsFactor(feb, mar, [f], regular), isFalse);
-      expect(
-        cycleOverlapsFactor(back, DateTime(2027, 3, 1), [f], regular),
-        isFalse,
-      );
+      expect(cycleOverlapsFactor(mar, back, [f]), isTrue);
+      expect(cycleOverlapsFactor(feb, mar, [f]), isFalse);
+      expect(cycleOverlapsFactor(back, DateTime(2027, 3, 1), [f]), isFalse);
     });
 
     test('a factor that begins on the day the next period starts does '
         'not', () {
-      expect(
-        cycleOverlapsFactor(feb, mar, [pregnant(start: mar)], regular),
-        isFalse,
-      );
+      expect(cycleOverlapsFactor(feb, mar, [pregnant(start: mar)]), isFalse);
     });
 
     test('an open factor overlaps every cycle that ends after it began', () {
+      expect(cycleOverlapsFactor(mar, DateTime(2028), [pregnant()]), isTrue);
+    });
+
+    test('breastfeeding overlaps nothing', () {
       expect(
-        cycleOverlapsFactor(mar, DateTime(2028), [pregnant()], regular),
-        isTrue,
+        cycleOverlapsFactor(mar, DateTime(2028), [feeding(start: jan)]),
+        isFalse,
       );
     });
   });

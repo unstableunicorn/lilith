@@ -28,6 +28,7 @@ abstract final class LogKeys {
   static Key symptom(Symptom s) => Key('log.symptom.${s.name}');
   static const Key note = Key('log.note');
   static const Key dose = Key('log.dose');
+  static const Key miscarriage = Key('log.miscarriage');
   static Key ovulationTest(OvulationTest? t) =>
       Key('log.ovulationTest.${t?.name ?? 'none'}');
 

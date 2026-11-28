@@ -7,18 +7,19 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:meta/meta.dart';
 
 enum LifeFactorKind {
-  pregnant('Pregnant', endsWithPeriod: false),
-  breastfeeding('Breastfeeding', endsWithPeriod: true),
-  miscarriage('Miscarriage', endsWithPeriod: true);
+  pregnant('Pregnant'),
+  breastfeeding('Breastfeeding');
 
-  LifeFactorKind(this.label, {required this.endsWithPeriod});
+  const LifeFactorKind(this.label);
 
   final String label;
 
-  /// Whether the first period logged after it starts ends it. A pregnancy
-  /// ends only when the person says so.
-  final bool endsWithPeriod;
+  // STUB
+  bool get pausesPredictions => true;
 }
+
+// STUB
+List<DateTime> legacyMiscarriageDays(Object? lifeFactorsJson) => const [];
 
 /// One factor from [start], in force until [end] when one is set. Days are
 /// midnight.
@@ -96,32 +97,15 @@ class LifeFactor {
 /// The last day [factor] is in force, or null while it is open: the end
 /// that was set, or for a kind that ends with a period the day before the
 /// first period that starts after it, whichever comes first.
-DateTime? lastDayOf(LifeFactor factor, List<PeriodEvent> periods) {
-  final byPeriod = factor.kind.endsWithPeriod
-      ? periods
-            .map((p) => p.startDate)
-            .where((s) => s.isAfter(factor.start))
-            .sorted((a, b) => a.compareTo(b))
-            .firstOrNull
-      : null;
-  final dayBefore = byPeriod == null ? null : addDays(byPeriod, -1);
-  return switch ((factor.end, dayBefore)) {
-    (final e?, final p?) => e.isBefore(p) ? e : p,
-    (final e, final p) => e ?? p,
-  };
-}
+DateTime? _lastDayOf(LifeFactor factor) => factor.end;
 
 /// The factor in force on [today], or null; of several, the one that
 /// began last.
-LifeFactor? activeFactor(
-  List<LifeFactor> factors,
-  List<PeriodEvent> periods, {
-  required DateTime today,
-}) {
+LifeFactor? activeFactor(List<LifeFactor> factors, {required DateTime today}) {
   final day = dateOnly(today);
   return factors
       .where((f) {
-        final last = lastDayOf(f, periods);
+        final last = _lastDayOf(f);
         return !f.start.isAfter(day) && (last == null || !last.isBefore(day));
       })
       .sorted((a, b) => a.start.compareTo(b.start))
@@ -134,9 +118,8 @@ bool cycleOverlapsFactor(
   DateTime from,
   DateTime to,
   List<LifeFactor> factors,
-  List<PeriodEvent> periods,
 ) => factors.any((f) {
-  final last = lastDayOf(f, periods);
+  final last = _lastDayOf(f);
   return f.start.isBefore(to) && (last == null || !last.isBefore(from));
 });
 

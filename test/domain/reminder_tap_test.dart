@@ -41,12 +41,18 @@ void main() {
     }
   });
 
+  test('every pill, patch or ring reminder opens Log', () {
+    expect(contraceptionReminderIds, isNotEmpty);
+    for (final id in contraceptionReminderIds) {
+      expect(tapOpensLog(id), isTrue, reason: '$id');
+    }
+  });
+
   test('the others leave the app where it was', () {
     for (final id in [
       null,
       testReminderId,
-      contraceptionReminderBaseId,
-      contraceptionReminderBaseId + 7,
+      contraceptionReminderIds.last + 1,
       shareReminderBaseId,
       shareReminderBaseId + 3,
     ]) {

@@ -301,12 +301,9 @@ List<(String, String)> _profile(HealthProfile profile) {
 }
 
 /// "Pregnant from 2026-05-10 (ongoing), due 2027-02-08", "Pregnant from
-/// 2026-05-10 to 2026-05-15", "Miscarriage on 2025-11-03".
+/// 2026-05-10 to 2026-05-15".
 String _factor(LifeFactor f) {
   final label = f.kind.label;
-  if (f.kind == LifeFactorKind.miscarriage) {
-    return '$label on ${isoDay(f.start)}';
-  }
   if (f.end case final end?) {
     return '$label from ${isoDay(f.start)} to ${isoDay(end)}';
   }

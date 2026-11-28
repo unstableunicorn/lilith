@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/period_reminders.dart';
 import 'package:lilith/domain/reminder_setting.dart';
 
@@ -83,6 +84,20 @@ void main() {
       expect(
         LocalNotificationService.opens(body(dailyReminderId)),
         ReminderAction.log,
+      );
+    });
+
+    test('a pill, patch or ring reminder itself opens Log, and its Taken '
+        'button still works without the app', () {
+      expect(
+        LocalNotificationService.opens(body(contraceptionReminderBaseId)),
+        ReminderAction.log,
+      );
+      expect(
+        LocalNotificationService.opens(
+          button(contraceptionReminderBaseId, ReminderAction.taken),
+        ),
+        isNull,
       );
     });
 

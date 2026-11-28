@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/ui/shell/app_router.dart';
@@ -78,6 +80,7 @@ void main() {
   late ShellTabs tabs;
   late FakeBrowserHistory history;
   late List<(String, bool)> reported;
+  late AppRouterDelegate router;
 
   Future<void> pump(WidgetTester tester, {bool web = true}) async {
     tabs = ShellTabs();
@@ -104,6 +107,7 @@ void main() {
       history: history,
       child: _Shell(tabs),
     );
+    router = delegate;
     addTearDown(delegate.dispose);
     await tester.pumpWidget(
       MaterialApp.router(
@@ -137,6 +141,61 @@ void main() {
   bool onTab(ShellTab t) =>
       find.byKey(Key('tab.${t.name}')).evaluate().isNotEmpty;
   bool pageOpen() => find.byKey(_page).evaluate().isNotEmpty;
+
+  group('openLog', () {
+    final day = DateTime(2026, 6, 10);
+
+    testWidgets('closes the page on top and shows Log on the day', (
+      tester,
+    ) async {
+      await pump(tester, web: false);
+      await tap(tester, _open);
+      expect(pageOpen(), isTrue);
+      router.openLog(day);
+      await tester.pumpAndSettle();
+      expect(pageOpen(), isFalse);
+      expect(onTab(ShellTab.log), isTrue);
+      expect(tabs.logDate, day);
+    });
+
+    testWidgets('closes every page, however many are open', (tester) async {
+      await pump(tester, web: false);
+      await tap(tester, _open);
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(key: Key('second')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('second')), findsOneWidget);
+      router.openLog(day);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('second')), findsNothing);
+      expect(pageOpen(), isFalse);
+      expect(onTab(ShellTab.log), isTrue);
+    });
+
+    testWidgets('closes a menu or dialog too', (tester) async {
+      await pump(tester, web: false);
+      await tap(tester, _menu);
+      expect(find.byKey(_menuOpen), findsOneWidget);
+      router.openLog(day);
+      await tester.pumpAndSettle();
+      expect(find.byKey(_menuOpen), findsNothing);
+      expect(onTab(ShellTab.log), isTrue);
+    });
+
+    testWidgets('with nothing on top just shows Log', (tester) async {
+      await pump(tester, web: false);
+      router.openLog(day);
+      await tester.pumpAndSettle();
+      expect(onTab(ShellTab.log), isTrue);
+      expect(tester.takeException(), isNull);
+    });
+  });
 
   testWidgets('a tab switch adds a browser entry for the tab', (tester) async {
     await pump(tester);

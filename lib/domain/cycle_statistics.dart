@@ -63,7 +63,6 @@ CycleStatistics? cycleStatisticsFor(
         sorted[i - 1].startDate,
         sorted[i].startDate,
         factors,
-        sorted,
       ))
         daysBetween(sorted[i - 1].startDate, sorted[i].startDate),
   ];
