@@ -16,6 +16,7 @@ import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/forecast_text.dart' as text;
+import 'package:lilith/ui/core/life_factor_text.dart';
 import 'package:lilith/ui/learn/learn_view_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -77,6 +78,7 @@ class HomeViewModel extends ChangeNotifier {
     usualCycleLength: _repo.data.profile.usualCycleLength,
     suppressShift: _repo.data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(_repo.data.profile.regularity),
+    factors: _repo.data.profile.lifeFactors,
   );
 
   static String _riseText(CyclePrediction p) =>
@@ -101,7 +103,8 @@ class HomeViewModel extends ChangeNotifier {
           '${p.averageCycleLength!.toStringAsFixed(1)} days over '
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
-    PredictionMethod.paused || PredictionMethod.awaitingPeriod => 'stub',
+    PredictionMethod.paused ||
+    PredictionMethod.awaitingPeriod => pauseText(p, today: today)!,
   }.withSuppressionNote(p);
 
   /// Today's cycle day and phase.
@@ -154,11 +157,18 @@ class HomeViewModel extends ChangeNotifier {
 
   PeriodFact get fact => factOfTheDay(today);
 
-  SymptomForecast get forecast => symptomPredictor.predict(
-    logs: _repo.data.dailyLogs,
-    periods: _repo.data.periods,
-    today: today,
-  );
+  /// Empty while a life factor holds the prediction: there is no cycle day
+  /// to forecast from.
+  SymptomForecast get forecast => prediction.isOnHold
+      ? SymptomForecast(
+          likely: const [],
+          loggedDays: _repo.data.dailyLogs.length,
+        )
+      : symptomPredictor.predict(
+          logs: _repo.data.dailyLogs,
+          periods: _repo.data.periods,
+          today: today,
+        );
 
   /// E.g. "From 6 logged days at this point of past cycles. Pain around 6/10
   /// has been typical."

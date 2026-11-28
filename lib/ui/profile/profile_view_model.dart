@@ -3,13 +3,70 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:lilith/data/health_repository.dart';
+import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/life_factor.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel(this._repo) {
+  ProfileViewModel(this._repo, {this.now = DateTime.now}) {
     _repo.addListener(notifyListeners);
     _draft = _repo.data.profile;
   }
+
+  /// The clock, injected so tests pick the day.
+  final DateTime Function() now;
+
+  /// Pregnancy, breastfeeding and miscarriage, oldest first.
+  List<LifeFactor> get lifeFactors => _draft.lifeFactors;
+
+  DateTime get today => dateOnly(now());
+
+  /// Starts a factor of [kind] today, unless one of that kind is still
+  /// open.
+  void startFactor(LifeFactorKind kind) {
+    if (lifeFactors.any((f) => f.kind == kind && f.end == null)) return;
+    _factors([...lifeFactors, LifeFactor(kind: kind, start: today)]);
+  }
+
+  /// Moves the start of [factor] to [day]; a day after today is ignored.
+  void setFactorStart(LifeFactor factor, DateTime day) {
+    if (dateOnly(day).isAfter(today)) return;
+    _replace(
+      factor,
+      LifeFactor(
+        kind: factor.kind,
+        start: day,
+        end: factor.end,
+        dueDate: factor.dueDate,
+      ),
+    );
+  }
+
+  /// Sets the due date of [factor], or clears it with null.
+  void setFactorDue(LifeFactor factor, DateTime? day) => _replace(
+    factor,
+    LifeFactor(
+      kind: factor.kind,
+      start: factor.start,
+      end: factor.end,
+      dueDate: day,
+    ),
+  );
+
+  /// Ends [factor] with today as its last day.
+  void endFactor(LifeFactor factor) => _replace(factor, factor.endedOn(today));
+
+  /// Takes [factor] out of the profile.
+  void removeFactor(LifeFactor factor) => _replace(factor, null);
+
+  void _replace(LifeFactor old, LifeFactor? next) {
+    final i = lifeFactors.indexOf(old);
+    if (i < 0) return;
+    _factors([...lifeFactors.take(i), ?next, ...lifeFactors.skip(i + 1)]);
+  }
+
+  void _factors(List<LifeFactor> factors) =>
+      _edit(_draft.copyWith(lifeFactors: factors));
 
   final HealthRepository _repo;
   late HealthProfile _draft;

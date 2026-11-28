@@ -3,7 +3,9 @@
 
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/life_factor_text.dart';
 import 'package:lilith/ui/profile/profile_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
 import 'package:material_ui/material_ui.dart';
@@ -25,14 +27,27 @@ abstract final class ProfileKeys {
       Key('profile.regularity.${r.name}');
   static const Key birthYear = Key('profile.birthYear');
   static Key history(String field) => Key('profile.history.$field');
+  static Key startFactor(LifeFactorKind k) =>
+      Key('profile.startFactor.${k.name}');
+
+  /// The [i]th life factor's card and its buttons, oldest first.
+  static Key factor(int i) => Key('profile.factor.$i');
+  static Key factorStart(int i) => Key('profile.factor.$i.start');
+  static Key factorDue(int i) => Key('profile.factor.$i.due');
+  static Key endFactor(int i) => Key('profile.factor.$i.end');
+  static Key removeFactor(int i) => Key('profile.factor.$i.remove');
 }
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({this.now = DateTime.now, super.key});
+
+  /// The clock, injected so tests pick the day.
+  final DateTime Function() now;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-    create: (context) => ProfileViewModel(context.read<HealthRepository>()),
+    create: (context) =>
+        ProfileViewModel(context.read<HealthRepository>(), now: now),
     child: const _ProfileView(),
   );
 }
@@ -168,6 +183,28 @@ class _ProfileViewState extends State<_ProfileView> {
           decoration: const InputDecoration(labelText: 'Year of birth'),
           onChanged: vm.setBirthYear,
         ),
+        const SectionHeading('Pregnancy and breastfeeding'),
+        const Text(
+          'While you are pregnant or breastfeeding, or after a miscarriage, '
+          'predictions and the fertile window pause. Anyone you share your '
+          'cycle data with sees why.',
+        ),
+        const SizedBox(height: Space.sm),
+        for (final (i, f) in vm.lifeFactors.indexed)
+          _FactorCard(index: i, factor: f, vm: vm),
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xs,
+          children: [
+            for (final k in LifeFactorKind.values)
+              ActionChip(
+                key: ProfileKeys.startFactor(k),
+                avatar: const Icon(Icons.add_rounded),
+                label: Text(k.label),
+                onPressed: () => vm.startFactor(k),
+              ),
+          ],
+        ),
         const SectionHeading('Pregnancies (optional)'),
         for (final (field, label) in const [
           ('pregnancies', 'Pregnancies in all'),
@@ -224,4 +261,93 @@ class _ProfileViewState extends State<_ProfileView> {
     RepositoryError.notLoggedIn => 'Your session has ended. Log in again.',
     _ => 'Your data could not be read from your pod.',
   };
+}
+
+/// One life factor: its line, and while it is open the buttons that date
+/// and end it. Dates are picked here and handed to the view model.
+class _FactorCard extends StatelessWidget {
+  const _FactorCard({
+    required this.index,
+    required this.factor,
+    required this.vm,
+  });
+
+  final int index;
+  final LifeFactor factor;
+  final ProfileViewModel vm;
+
+  Future<void> _pickStart(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: factor.start,
+      firstDate: DateTime(vm.today.year - 3),
+      lastDate: vm.today,
+    );
+    if (picked != null) vm.setFactorStart(factor, picked);
+  }
+
+  Future<void> _pickDue(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: switch (factor.dueDate) {
+        final d? when !d.isBefore(vm.today) => d,
+        _ => vm.today,
+      },
+      firstDate: vm.today,
+      lastDate: DateTime(vm.today.year + 1, vm.today.month, vm.today.day),
+    );
+    if (picked != null) vm.setFactorDue(factor, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final open = factor.end == null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.sm),
+      child: AppCard(
+        key: ProfileKeys.factor(index),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              factorLine(factor, today: vm.today),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Wrap(
+              spacing: Space.sm,
+              children: [
+                if (open)
+                  TextButton(
+                    key: ProfileKeys.factorStart(index),
+                    onPressed: () => _pickStart(context),
+                    child: const Text('Change the start'),
+                  ),
+                if (open && factor.kind == LifeFactorKind.pregnant)
+                  TextButton(
+                    key: ProfileKeys.factorDue(index),
+                    onPressed: () => _pickDue(context),
+                    child: Text(
+                      factor.dueDate == null
+                          ? 'Set the due date'
+                          : 'Change the due date',
+                    ),
+                  ),
+                if (open)
+                  TextButton(
+                    key: ProfileKeys.endFactor(index),
+                    onPressed: () => vm.endFactor(factor),
+                    child: const Text('It has ended'),
+                  ),
+                TextButton(
+                  key: ProfileKeys.removeFactor(index),
+                  onPressed: () => vm.removeFactor(factor),
+                  child: const Text('Remove'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

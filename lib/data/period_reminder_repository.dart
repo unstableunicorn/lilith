@@ -61,10 +61,18 @@ class PeriodReminderRepository {
       today: today,
       nights: data.wearableNights,
       usualCycleLength: data.profile.usualCycleLength,
+      factors: data.profile.lifeFactors,
     );
+    // Under a life factor nothing is predicted, so nothing is scheduled.
     final plan = periodRemindersFor(
       predictedStart: prediction.predictedNextPeriod,
-      spread: windowSpreadDays(cycleStatisticsFor(data.periods, today: today)),
+      spread: windowSpreadDays(
+        cycleStatisticsFor(
+          data.periods,
+          today: today,
+          factors: data.profile.lifeFactors,
+        ),
+      ),
       setting: _reminders.setting,
       now: at,
       snoozedThrough: await _settings.readSnoozedThrough(),
