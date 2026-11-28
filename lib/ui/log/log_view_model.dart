@@ -97,6 +97,18 @@ class LogViewModel extends ChangeNotifier {
         : _draft.copyWith(ovulationTest: result),
   );
 
+  /// Whether a miscarriage is marked on the day.
+  bool get miscarriage => _draft.miscarriage;
+
+  /// Whether the day has a switch for a miscarriage: with the pregnancy
+  /// test group, or when the day already holds one, so it stays in reach.
+  bool get offersMiscarriage =>
+      _repo.data.shownLogGroups.contains(LogGroup.pregnancyTest) ||
+      _draft.miscarriage ||
+      _stored.miscarriage;
+
+  void setMiscarriage(bool on) => _edit(_draft.copyWith(miscarriage: on));
+
   /// The day's moods and body signs.
   BodySigns get signs => _draft.signs;
 

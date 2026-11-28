@@ -16,10 +16,43 @@ class ProfileViewModel extends ChangeNotifier {
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
 
-  /// Pregnancy, breastfeeding and miscarriage, oldest first.
+  /// Pregnancy and breastfeeding, oldest first.
   List<LifeFactor> get lifeFactors => _draft.lifeFactors;
 
   DateTime get today => dateOnly(now());
+
+  // The miscarriage days added and removed here and not yet saved. Kept as
+  // changes, not as a list, so a day marked on Log meanwhile is not undone.
+  final Set<DateTime> _addedMiscarriages = {};
+  final Set<DateTime> _removedMiscarriages = {};
+
+  /// The days a miscarriage is logged on, oldest first, with the changes
+  /// made here.
+  List<DateTime> get miscarriageDays => {
+    ..._repo.data.miscarriageDays,
+    ..._addedMiscarriages,
+  }.difference(_removedMiscarriages).toList()..sort();
+
+  /// Marks a miscarriage on [day]; a day after today, or one already
+  /// listed, is ignored.
+  void addMiscarriage(DateTime day) {
+    final d = dateOnly(day);
+    if (d.isAfter(today) || miscarriageDays.contains(d)) return;
+    // Adding back a day removed here is no change at all.
+    if (!_removedMiscarriages.remove(d)) _addedMiscarriages.add(d);
+    notifyListeners();
+  }
+
+  /// Takes the miscarriage off [day].
+  void removeMiscarriage(DateTime day) {
+    final d = dateOnly(day);
+    if (!miscarriageDays.contains(d)) return;
+    if (!_addedMiscarriages.remove(d)) _removedMiscarriages.add(d);
+    notifyListeners();
+  }
+
+  bool get _miscarriagesChanged =>
+      _addedMiscarriages.isNotEmpty || _removedMiscarriages.isNotEmpty;
 
   /// Starts a factor of [kind] today, unless one of that kind is still
   /// open.
@@ -81,7 +114,7 @@ class ProfileViewModel extends ChangeNotifier {
   HealthProfile get _trimmed => _draft.copyWith(notes: _draft.notes.trim());
 
   /// True when saving would change what the pod holds.
-  bool get isDirty => _trimmed != _repo.data.profile;
+  bool get isDirty => _trimmed != _repo.data.profile || _miscarriagesChanged;
 
   void toggleCondition(ReproductiveCondition c) => _edit(
     _draft.copyWith(
@@ -151,8 +184,18 @@ class ProfileViewModel extends ChangeNotifier {
     _saving = true;
     notifyListeners();
     try {
-      await _repo.apply((d) => d.withProfile(profile));
+      final added = {..._addedMiscarriages};
+      final removed = {..._removedMiscarriages};
+      await _repo.apply(
+        (d) => d
+            .withProfile(profile)
+            .withMiscarriageDays(
+              {...d.miscarriageDays, ...added}.difference(removed),
+            ),
+      );
       _draft = profile;
+      _addedMiscarriages.clear();
+      _removedMiscarriages.clear();
     } finally {
       _saving = false;
       notifyListeners();

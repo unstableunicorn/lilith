@@ -209,6 +209,20 @@ void main() {
       expect(find.byKey(ProfileKeys.save), findsOneWidget);
     });
 
+    testWidgets('a reminder tapped while a page is on top closes the page '
+        'and shows Log', (tester) async {
+      await openHome(tester);
+      await tapMenu(tester, AppMenuAction.profile);
+      expect(find.byKey(ProfileKeys.save), findsOneWidget);
+      notifications.open(ReminderAction.log);
+      await tester.pumpAndSettle();
+      expect(find.byKey(ProfileKeys.save), findsNothing);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        ShellTab.log.index,
+      );
+    });
+
     testWidgets('the health profile, from Today', (tester) async {
       await openHome(tester);
       await tester.ensureVisible(find.byKey(HomeKeys.profile));

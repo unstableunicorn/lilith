@@ -56,34 +56,6 @@ void main() {
       );
     });
 
-    test('breastfeeding says what starts them again', () {
-      final p = paused(of(LifeFactorKind.breastfeeding));
-      expect(
-        mine(p),
-        'Predictions are paused while you are breastfeeding. They start '
-        'again when you log a period.',
-      );
-      expect(
-        theirs(p),
-        'Predictions are paused while they are breastfeeding. They start '
-        'again with their next period.',
-      );
-    });
-
-    test('a miscarriage says what starts them again', () {
-      final p = paused(of(LifeFactorKind.miscarriage));
-      expect(
-        mine(p),
-        'Predictions are paused after a miscarriage. They start again when '
-        'you log a period.',
-      );
-      expect(
-        theirs(p),
-        'Predictions are paused after a miscarriage. They start again with '
-        'their next period.',
-      );
-    });
-
     test('after a factor has ended, waits for a period', () {
       const p = CyclePrediction(
         method: PredictionMethod.awaitingPeriod,
@@ -126,11 +98,10 @@ void main() {
       );
     });
 
-    test('a miscarriage is a day, ended or not', () {
-      expect(line(of(LifeFactorKind.miscarriage)), 'Miscarriage on 20 Mar');
+    test('breastfeeding that has ended gives both days', () {
       expect(
-        line(of(LifeFactorKind.miscarriage, end: DateTime(2026, 4, 2))),
-        'Miscarriage on 20 Mar',
+        line(of(LifeFactorKind.breastfeeding, end: DateTime(2026, 9, 2))),
+        'Breastfeeding, 20 Mar to 2 Sep',
       );
     });
 

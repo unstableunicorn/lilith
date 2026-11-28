@@ -71,6 +71,7 @@ class DailyLog {
     String? note,
     this.contraceptionDoneAt,
     BodySigns? signs,
+    this.miscarriage = false,
   }) : date = dateOnly(date),
        symptoms = Set.unmodifiable(symptoms),
        painLevel = painLevel?.clamp(0, 10),
@@ -91,6 +92,7 @@ class DailyLog {
       json['contraceptionDoneAt'] as String? ?? '',
     ),
     signs: BodySigns.fromJson(json['signs']),
+    miscarriage: json['miscarriage'] == true,
   );
 
   final DateTime date;
@@ -113,6 +115,9 @@ class DailyLog {
   /// The day's moods and other body signs; empty when none were logged.
   final BodySigns signs;
 
+  /// Whether a miscarriage is logged on the day. Never sent to a follower.
+  final bool miscarriage;
+
   /// The longest note the Log tab takes.
   static const int maxNoteLength = 1000;
 
@@ -124,7 +129,8 @@ class DailyLog {
       ovulationTest == null &&
       note == null &&
       contraceptionDoneAt == null &&
-      signs.isEmpty;
+      signs.isEmpty &&
+      !miscarriage;
 
   /// A copy with the given fields replaced. [clearPain],
   /// [clearOvulationTest], [clearNote] and [clearContraceptionDone] unset a
@@ -141,12 +147,14 @@ class DailyLog {
     DateTime? contraceptionDoneAt,
     bool clearContraceptionDone = false,
     BodySigns? signs,
+    bool? miscarriage,
   }) => DailyLog(
     contraceptionDoneAt: clearContraceptionDone
         ? null
         : (contraceptionDoneAt ?? this.contraceptionDoneAt),
     note: clearNote ? null : (note ?? this.note),
     signs: signs ?? this.signs,
+    miscarriage: miscarriage ?? this.miscarriage,
     date: date,
     flow: flow ?? this.flow,
     symptoms: symptoms ?? this.symptoms,
@@ -166,6 +174,7 @@ class DailyLog {
     if (contraceptionDoneAt case final at?)
       'contraceptionDoneAt': at.toIso8601String(),
     if (!signs.isEmpty) 'signs': signs.toJson(),
+    if (miscarriage) 'miscarriage': true,
   };
 
   @override
@@ -178,7 +187,8 @@ class DailyLog {
       other.ovulationTest == ovulationTest &&
       other.note == note &&
       other.contraceptionDoneAt == contraceptionDoneAt &&
-      other.signs == signs;
+      other.signs == signs &&
+      other.miscarriage == miscarriage;
 
   @override
   int get hashCode => Object.hash(
@@ -190,5 +200,6 @@ class DailyLog {
     note,
     contraceptionDoneAt,
     signs,
+    miscarriage,
   );
 }

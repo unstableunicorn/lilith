@@ -5,6 +5,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/health_profile.dart';
 import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/ui/components/components.dart';
+import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/life_factor_text.dart';
 import 'package:lilith/ui/profile/profile_view_model.dart';
 import 'package:lilith/ui/theme/lilith_theme.dart';
@@ -36,6 +37,14 @@ abstract final class ProfileKeys {
   static Key factorDue(int i) => Key('profile.factor.$i.due');
   static Key endFactor(int i) => Key('profile.factor.$i.end');
   static Key removeFactor(int i) => Key('profile.factor.$i.remove');
+
+  /// What the life factors do, said above them.
+  static const Key factorsNote = Key('profile.factorsNote');
+
+  /// The [i]th miscarriage day, oldest first, and its remove button.
+  static Key miscarriage(int i) => Key('profile.miscarriage.$i');
+  static Key removeMiscarriage(int i) => Key('profile.miscarriage.$i.remove');
+  static const Key addMiscarriage = Key('profile.addMiscarriage');
 }
 
 class ProfileScreen extends StatelessWidget {
@@ -185,9 +194,11 @@ class _ProfileViewState extends State<_ProfileView> {
         ),
         const SectionHeading('Pregnancy and breastfeeding'),
         const Text(
-          'While you are pregnant or breastfeeding, or after a miscarriage, '
-          'predictions and the fertile window pause. Anyone you share your '
-          'cycle data with sees why.',
+          key: ProfileKeys.factorsNote,
+          'While you are pregnant, predictions, the fertile window and '
+          'period reminders pause, and anyone you share your cycle data '
+          'with sees why. Breastfeeding is kept here with its dates and '
+          'changes nothing else.',
         ),
         const SizedBox(height: Space.sm),
         for (final (i, f) in vm.lifeFactors.indexed)
@@ -222,6 +233,7 @@ class _ProfileViewState extends State<_ProfileView> {
               onChanged: (text) => vm.setHistory(field, text),
             ),
           ),
+        _Miscarriages(vm: vm),
         const SectionHeading('Notes'),
         TextField(
           key: ProfileKeys.notes,
@@ -261,6 +273,62 @@ class _ProfileViewState extends State<_ProfileView> {
     RepositoryError.notLoggedIn => 'Your session has ended. Log in again.',
     _ => 'Your data could not be read from your pod.',
   };
+}
+
+/// The days a miscarriage is logged on, each with a way to take it off,
+/// and a button that adds one by its date. The days live in the day logs,
+/// so the same ones show on Log and in History.
+class _Miscarriages extends StatelessWidget {
+  const _Miscarriages({required this.vm});
+
+  final ProfileViewModel vm;
+
+  Future<void> _add(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: vm.today,
+      firstDate: DateTime(vm.today.year - 60),
+      lastDate: vm.today,
+    );
+    if (picked != null) vm.addMiscarriage(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'A miscarriage you log is listed here by its date, and shows on '
+          'that day in Log and History. It is never shared.',
+          style: theme.textTheme.bodySmall,
+        ),
+        for (final (i, day) in vm.miscarriageDays.indexed)
+          Row(
+            key: ProfileKeys.miscarriage(i),
+            children: [
+              Expanded(child: Text(formatShortDate(day, today: vm.today))),
+              IconButton(
+                key: ProfileKeys.removeMiscarriage(i),
+                tooltip: 'Remove',
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () => vm.removeMiscarriage(day),
+              ),
+            ],
+          ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            key: ProfileKeys.addMiscarriage,
+            onPressed: () => _add(context),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add a miscarriage'),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// One life factor: its line, and while it is open the buttons that date

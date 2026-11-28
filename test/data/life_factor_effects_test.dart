@@ -114,6 +114,21 @@ void main() {
       );
     });
 
+    test('is not paused by breastfeeding', () {
+      final p = phases(
+        history(
+          factors: [
+            LifeFactor(
+              kind: LifeFactorKind.breastfeeding,
+              start: DateTime(2026, 5, 10),
+            ),
+          ],
+        ),
+      );
+      expect(p.paused, isFalse);
+      expect(p.nextPeriod, isNotNull);
+    });
+
     test('waiting for a period after a factor counts as paused', () {
       final p = phases(
         history(factors: [pregnant.endedOn(DateTime(2026, 5, 15))]),
@@ -140,7 +155,7 @@ void main() {
         history(
           factors: [
             LifeFactor(
-              kind: LifeFactorKind.miscarriage,
+              kind: LifeFactorKind.breastfeeding,
               start: DateTime(2025, 11, 3),
               end: DateTime(2025, 12, 1),
             ),
@@ -150,7 +165,7 @@ void main() {
       );
       expect(
         row(c.profile, 'Pregnancy and breastfeeding'),
-        'Miscarriage on 2025-11-03; '
+        'Breastfeeding from 2025-11-03 to 2025-12-01; '
         'Pregnant from 2026-05-10 (ongoing), due 2027-02-08',
       );
     });
@@ -209,7 +224,21 @@ void main() {
       expect(notifications.scheduled, isNotEmpty);
     });
 
-    test('are not scheduled while a factor is in force', () async {
+    test('are scheduled while breastfeeding', () async {
+      await start(
+        history(
+          factors: [
+            LifeFactor(
+              kind: LifeFactorKind.breastfeeding,
+              start: DateTime(2026, 5, 10),
+            ),
+          ],
+        ),
+      );
+      expect(notifications.scheduled, isNotEmpty);
+    });
+
+    test('are not scheduled while a pregnancy is in force', () async {
       await start(history(factors: [pregnant]));
       expect(notifications.scheduled, isEmpty);
     });

@@ -58,6 +58,7 @@ class CsvExport {
     'discharge',
     'pregnancy_test',
     'tags',
+    'miscarriage',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -111,6 +112,7 @@ class CsvExport {
       else
         '',
       ..._signs(log?.signs ?? BodySigns.none),
+      if (log?.miscarriage ?? false) 'yes' else '',
     ];
   }
 

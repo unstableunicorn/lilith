@@ -104,7 +104,7 @@ void main() {
               HealthProfile(
                 lifeFactors: [
                   LifeFactor(
-                    kind: LifeFactorKind.breastfeeding,
+                    kind: LifeFactorKind.pregnant,
                     start: DateTime(2026, 5, 20),
                   ),
                 ],
@@ -115,8 +115,7 @@ void main() {
       expect(find.byKey(HomeKeys.prediction), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(HomeKeys.paused)).data,
-        'Predictions are paused while you are breastfeeding. They start '
-        'again when you log a period.',
+        'Predictions are paused while you are pregnant.',
       );
       expect(find.byKey(HomeKeys.daysUntil), findsNothing);
       expect(find.byKey(HomeKeys.lastPeriod), findsNothing);

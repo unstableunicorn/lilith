@@ -111,10 +111,10 @@ void main() {
     test('saving stores them with the rest of the profile', () async {
       vm
         ..toggleCondition(ReproductiveCondition.pcos)
-        ..startFactor(LifeFactorKind.miscarriage);
+        ..startFactor(LifeFactorKind.breastfeeding);
       await vm.save();
       expect(health.data.profile.lifeFactors, [
-        factor(LifeFactorKind.miscarriage),
+        factor(LifeFactorKind.breastfeeding),
       ]);
       expect(health.data.profile.conditions, {ReproductiveCondition.pcos});
       expect(vm.isDirty, isFalse);
@@ -152,10 +152,8 @@ void main() {
       for (final k in LifeFactorKind.values) {
         expect(find.byKey(ProfileKeys.startFactor(k)), findsOneWidget);
       }
-      expect(
-        find.textContaining('predictions and the fertile window pause'),
-        findsOneWidget,
-      );
+      expect(LifeFactorKind.values, hasLength(2));
+      expect(find.byKey(ProfileKeys.factorsNote), findsOneWidget);
       expect(find.byKey(ProfileKeys.factor(0)), findsNothing);
       await expectAccessible(tester);
     });
@@ -242,8 +240,11 @@ void main() {
 
     testWidgets('removing one takes its card away', (tester) async {
       await pump(tester);
-      await tapOn(tester, ProfileKeys.startFactor(LifeFactorKind.miscarriage));
-      expect(find.text('Miscarriage on 10 Jun'), findsOneWidget);
+      await tapOn(
+        tester,
+        ProfileKeys.startFactor(LifeFactorKind.breastfeeding),
+      );
+      expect(find.text('Breastfeeding since 10 Jun'), findsOneWidget);
       await tapOn(tester, ProfileKeys.removeFactor(0));
       expect(find.byKey(ProfileKeys.factor(0)), findsNothing);
     });

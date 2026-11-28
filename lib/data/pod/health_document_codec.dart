@@ -7,6 +7,7 @@ import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/remedy_feedback.dart';
 import 'package:lilith/domain/share.dart';
@@ -136,7 +137,11 @@ class HealthDocumentCodec {
     try {
       final doc = migrate(jsonDecode(content) as Map<String, dynamic>);
       final profile = doc['profile'];
-      return HealthData(
+      // A miscarriage was once a life factor; it is now logged on its day.
+      final onceFactors = legacyMiscarriageDays(
+        profile is Map ? profile['lifeFactors'] : null,
+      );
+      final data = HealthData(
         readings: _section(doc, 'readings', TemperatureReading.fromJson),
         periods: _section(doc, 'periods', PeriodEvent.fromJson),
         dailyLogs: _section(doc, 'dailyLogs', DailyLog.fromJson),
@@ -159,6 +164,9 @@ class HealthDocumentCodec {
           offered: doc['logGroupsOffered'],
         ),
       );
+      return onceFactors.isEmpty
+          ? data
+          : data.withMiscarriageDays([...data.miscarriageDays, ...onceFactors]);
     } on UnsupportedDocumentVersionException {
       rethrow;
     } on FormatException catch (e) {

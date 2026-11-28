@@ -38,14 +38,13 @@ void main() {
 
   group('CSV', () {
     test('has a tags column, after the columns it already had', () {
-      expect(CsvExport.header.last, 'tags');
+      expect(CsvExport.header.indexOf('tags'), 21);
       expect(CsvExport.header.indexOf('pregnancy_test'), 20);
-      expect(CsvExport.header, hasLength(22));
     });
 
     test('writes the tags as written, joined like symptoms', () {
       final line = csv.text([ExportRow(date: day, log: log)]).split('\r\n')[1];
-      expect(line, '2026-06-02,,,,,,2,,,,,,,,,calm,,,,,,Night shift; travel');
+      expect(line, '2026-06-02,,,,,,2,,,,,,,,,calm,,,,,,Night shift; travel,');
     });
 
     test('a day without tags leaves the column blank', () {
@@ -57,7 +56,7 @@ void main() {
             ),
           ])
           .split('\r\n')[1];
-      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,,');
+      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,,,');
     });
   });
 
