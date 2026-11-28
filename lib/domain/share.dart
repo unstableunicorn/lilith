@@ -22,11 +22,11 @@ String shareId(String recipientWebId) => sha256
 /// The part of [data] a recipient sees: the cycle data only. The health
 /// profile, remedy verdicts, shopping list, the shares and doses marked done
 /// stay with the owner, and so do day notes unless [includeNotes]. Of the
-/// profile only the life factors go, so the recipient sees why predictions
-/// are paused. With [includeContraception], the method, its schedule and the
-/// doses go too.
-/// Moods and body signs stay too unless [includeSigns], and a pregnancy
-/// test always does.
+/// profile only a pregnancy goes, so the recipient sees why predictions
+/// are paused; breastfeeding stays. With [includeContraception], the
+/// method, its schedule and the doses go too.
+/// Moods and body signs stay too unless [includeSigns]; a pregnancy test
+/// and a miscarriage always stay.
 HealthData sharedView(
   HealthData data, {
   bool includeNotes = false,
@@ -41,6 +41,7 @@ HealthData sharedView(
             clearNote: !includeNotes,
             clearContraceptionDone: !includeContraception,
             signs: includeSigns ? l.signs.shared : BodySigns.none,
+            miscarriage: false,
           )
           case final bare when !bare.isEmpty)
         bare,
@@ -51,7 +52,10 @@ HealthData sharedView(
     contraceptionSchedule: includeContraception
         ? data.profile.contraceptionSchedule
         : null,
-    lifeFactors: data.profile.lifeFactors,
+    lifeFactors: [
+      for (final f in data.profile.lifeFactors)
+        if (f.kind.pausesPredictions) f,
+    ],
   ),
 );
 

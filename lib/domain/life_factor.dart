@@ -1,5 +1,6 @@
-// Times of life when cycles do not follow the usual pattern, so
-// predictions pause: pregnancy, breastfeeding, after a miscarriage.
+// Times of life kept on the profile with their dates. A pregnancy pauses
+// predictions, since cycles stop; breastfeeding is a record and pauses
+// nothing. A miscarriage is logged on its day (`DailyLog.miscarriage`).
 
 import 'package:collection/collection.dart';
 import 'package:lilith/domain/day.dart';
@@ -7,19 +8,27 @@ import 'package:lilith/domain/period_event.dart';
 import 'package:meta/meta.dart';
 
 enum LifeFactorKind {
-  pregnant('Pregnant'),
-  breastfeeding('Breastfeeding');
+  pregnant('Pregnant', pausesPredictions: true),
+  breastfeeding('Breastfeeding', pausesPredictions: false);
 
-  const LifeFactorKind(this.label);
+  LifeFactorKind(this.label, {required this.pausesPredictions});
 
   final String label;
 
-  // STUB
-  bool get pausesPredictions => true;
+  /// Whether predictions, statistics and period reminders stop while it is
+  /// in force.
+  final bool pausesPredictions;
 }
 
-// STUB
-List<DateTime> legacyMiscarriageDays(Object? lifeFactorsJson) => const [];
+/// The start days of the miscarriages in a profile's stored life factors,
+/// from when a miscarriage was kept as one. They load as day entries.
+List<DateTime> legacyMiscarriageDays(Object? lifeFactorsJson) => [
+  if (lifeFactorsJson is List)
+    for (final f in lifeFactorsJson)
+      if (f is Map && f['kind'] == 'miscarriage')
+        if (f['start'] case final String iso)
+          if (DateTime.tryParse(iso) case final start?) dateOnly(start),
+];
 
 /// One factor from [start], in force until [end] when one is set. Days are
 /// midnight.
@@ -94,37 +103,36 @@ class LifeFactor {
   int get hashCode => Object.hash(kind, start, end, dueDate);
 }
 
-/// The last day [factor] is in force, or null while it is open: the end
-/// that was set, or for a kind that ends with a period the day before the
-/// first period that starts after it, whichever comes first.
-DateTime? _lastDayOf(LifeFactor factor) => factor.end;
+Iterable<LifeFactor> _pausing(List<LifeFactor> factors) =>
+    factors.where((f) => f.kind.pausesPredictions);
 
-/// The factor in force on [today], or null; of several, the one that
-/// began last.
+/// The factor pausing predictions on [today], or null; of several, the one
+/// that began last. It is in force from its start to the end that was set.
 LifeFactor? activeFactor(List<LifeFactor> factors, {required DateTime today}) {
   final day = dateOnly(today);
-  return factors
-      .where((f) {
-        final last = _lastDayOf(f);
-        return !f.start.isAfter(day) && (last == null || !last.isBefore(day));
-      })
+  return _pausing(factors)
+      .where(
+        (f) =>
+            !f.start.isAfter(day) && (f.end == null || !f.end!.isBefore(day)),
+      )
       .sorted((a, b) => a.start.compareTo(b.start))
       .lastOrNull;
 }
 
 /// Whether the cycle from the period start [from] to the next one, [to],
-/// overlaps a factor, so its length says nothing about a usual cycle.
+/// overlaps a pausing factor, so its length says nothing about a usual
+/// cycle.
 bool cycleOverlapsFactor(
   DateTime from,
   DateTime to,
   List<LifeFactor> factors,
-) => factors.any((f) {
-  final last = _lastDayOf(f);
-  return f.start.isBefore(to) && (last == null || !last.isBefore(from));
-});
+) => _pausing(
+  factors,
+).any((f) => f.start.isBefore(to) && (f.end == null || !f.end!.isBefore(from)));
 
-/// Whether a factor has begun, by [today], on or after the latest period
-/// start: there is then no period to predict from until one is logged.
+/// Whether a pausing factor has begun, by [today], on or after the latest
+/// period start: there is then no period to predict from until one is
+/// logged.
 bool factorSinceLastPeriod(
   List<LifeFactor> factors,
   List<PeriodEvent> periods, {
@@ -135,7 +143,7 @@ bool factorSinceLastPeriod(
       .map((p) => p.startDate)
       .sorted((a, b) => a.compareTo(b))
       .lastOrNull;
-  return factors.any(
+  return _pausing(factors).any(
     (f) =>
         !f.start.isAfter(day) &&
         (lastStart == null || !f.start.isBefore(lastStart)),

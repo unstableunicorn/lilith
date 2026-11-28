@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/ui/shell/app_router.dart';
@@ -162,11 +160,9 @@ void main() {
       await pump(tester, web: false);
       await tap(tester, _open);
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
-      unawaited(
-        navigator.push(
-          MaterialPageRoute<void>(
-            builder: (_) => const Scaffold(key: Key('second')),
-          ),
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(key: Key('second')),
         ),
       );
       await tester.pumpAndSettle();

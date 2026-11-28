@@ -234,11 +234,26 @@ class HealthData {
     return dailyLogs.firstWhereOrNull((l) => l.date == day);
   }
 
-  // STUB
-  List<DateTime> get miscarriageDays => const [];
+  /// The days a miscarriage is logged on, oldest first.
+  List<DateTime> get miscarriageDays => dailyLogs
+      .where((l) => l.miscarriage)
+      .map((l) => l.date)
+      .sorted((a, b) => a.compareTo(b));
 
-  // STUB
-  HealthData withMiscarriageDays(Iterable<DateTime> days) => this;
+  /// Marks a miscarriage on each of [days] and on no other day, keeping
+  /// whatever else those days hold. Periods are left as they are.
+  HealthData withMiscarriageDays(Iterable<DateTime> days) {
+    final wanted = {for (final d in days) dateOnly(d)};
+    final changed = {...wanted, ...miscarriageDays};
+    return changed.fold(
+      this,
+      (data, day) => data.withDailyLog(
+        (data.logFor(day) ?? DailyLog(date: day)).copyWith(
+          miscarriage: wanted.contains(day),
+        ),
+      ),
+    );
+  }
 
   RemedyRating ratingFor(String symptomKey, String remedyTitle) {
     final id = RemedyFeedback.idFor(symptomKey, remedyTitle);

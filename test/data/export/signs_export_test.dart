@@ -70,7 +70,7 @@ void main() {
       expect(
         line,
         '2026-06-02,,,,,,2,cramps,,,positive,,,,,'
-        'happy; calm,poor,constipation; gas,acne,eggWhite,negative,',
+        'happy; calm,poor,constipation; gas,acne,eggWhite,negative,,',
       );
     });
 
@@ -83,7 +83,7 @@ void main() {
             ),
           ])
           .split('\r\n')[1];
-      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,,');
+      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,,,');
     });
   });
 

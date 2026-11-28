@@ -134,7 +134,7 @@ ReportContent reportContent(
       if (window != null)
         ('Likely fertile', '${isoDay(window.start)} to ${isoDay(window.end)}'),
     ],
-    profile: _profile(data.profile),
+    profile: _profile(data.profile, data.miscarriageDays),
     cycles: _cycles(data, rows),
     chart: _chart(rows),
     rows: rows,
@@ -180,6 +180,7 @@ List<String> reportDayCells(ExportRow r) {
       [
         for (final s in Symptom.values.where(log.symptoms.contains)) s.label,
         if (log.ovulationTest case final t?) 'Ovulation test ${t.name}',
+        if (log.miscarriage) 'Miscarriage',
         for (final part in log.signs.summaryParts)
           part[0].toUpperCase() + part.substring(1),
       ].join(', '),
@@ -251,8 +252,17 @@ List<(String, String)> _summary(
 int _count(List<ExportRow> rows, DoseStatus s) =>
     rows.where((r) => r.dose == s).length;
 
-List<(String, String)> _profile(HealthProfile profile) {
-  if (profile.isEmpty) return const [];
+/// The profile's rows. [miscarriages] are the days one is logged on, from
+/// the whole record whatever span the report covers: they are history.
+List<(String, String)> _profile(
+  HealthProfile profile,
+  List<DateTime> miscarriages,
+) {
+  final logged = [
+    if (miscarriages.isNotEmpty)
+      ('Miscarriages logged', miscarriages.map(isoDay).join(', ')),
+  ];
+  if (profile.isEmpty) return logged;
   String list(Iterable<String> labels) =>
       labels.isEmpty ? 'None recorded' : labels.join(', ');
   return [
@@ -291,6 +301,7 @@ List<(String, String)> _profile(HealthProfile profile) {
           if (profile.history.lastPregnancyYear case final y?) 'last in $y',
         ].join(', '),
       ),
+    ...logged,
     if (profile.lifeFactors.isNotEmpty)
       (
         'Pregnancy and breastfeeding',

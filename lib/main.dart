@@ -262,7 +262,9 @@ class _RoutedAppState extends State<_RoutedApp> {
   void initState() {
     super.initState();
     _opened = context.read<NotificationService>().opened.listen((action) {
-      if (action == ReminderAction.log) _tabs.openLog(dateOnly(DateTime.now()));
+      if (action == ReminderAction.log) {
+        _router.openLog(dateOnly(DateTime.now()));
+      }
     });
   }
 

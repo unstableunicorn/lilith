@@ -2,6 +2,7 @@
 // once it is late, and a daily check-in until a start is logged.
 
 import 'package:lilith/data/notifications/notification_service.dart';
+import 'package:lilith/domain/contraception_reminders.dart';
 import 'package:lilith/domain/cycle_statistics.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/reminder_setting.dart';
@@ -17,14 +18,18 @@ const int _lateId = 14;
 const int checkInReminderId = 15;
 
 /// Whether a tap on the reminder itself, not on one of its buttons, opens
-/// Log on today: true for the reminders that ask for something to be logged.
-bool tapOpensLog(int? reminderId) => const {
-  dailyReminderId,
-  _dueTodayId,
-  _possiblyLateId,
-  _lateId,
-  checkInReminderId,
-}.contains(reminderId);
+/// Log on today: true for the reminders that ask for something to be
+/// logged, and for a pill, patch or ring reminder, whose dose is marked
+/// there (owner, 2026-11-28: "Open Log on today").
+bool tapOpensLog(int? reminderId) =>
+    const {
+      dailyReminderId,
+      _dueTodayId,
+      _possiblyLateId,
+      _lateId,
+      checkInReminderId,
+    }.contains(reminderId) ||
+    contraceptionReminderIds.contains(reminderId);
 
 /// Every id a period reminder may hold, apart from the daily (1) and
 /// share (1000+) reminders.

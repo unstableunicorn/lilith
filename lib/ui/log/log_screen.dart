@@ -259,6 +259,17 @@ class _LogViewState extends State<_LogView> {
             chosen: vm.signs.pregnancyTest,
             onChoose: vm.setPregnancyTest,
           ),
+        if (vm.offersMiscarriage)
+          SwitchListTile(
+            key: LogKeys.miscarriage,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Miscarriage on this day'),
+            subtitle: const Text(
+              'Kept in your pregnancy history. Never shared.',
+            ),
+            value: vm.miscarriage,
+            onChanged: vm.setMiscarriage,
+          ),
         if (vm.offersDose)
           SwitchListTile(
             key: LogKeys.dose,

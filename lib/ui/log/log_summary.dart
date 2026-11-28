@@ -10,6 +10,7 @@ String logSummary(DailyLog log) {
       s.label.toLowerCase(),
     if (log.painLevel case final pain?) 'pain $pain/10',
     if (log.ovulationTest case final t?) 'ovulation test ${t.name}',
+    if (log.miscarriage) 'miscarriage',
     ...log.signs.summaryParts,
   ];
   return parts.isEmpty ? 'nothing logged' : parts.join(', ');

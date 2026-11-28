@@ -63,8 +63,13 @@ class AppRouterDelegate extends RouterDelegate<AppLocation>
     onDidRemovePage: (_) {},
   );
 
-  // STUB
-  void openLog(DateTime day) {}
+  /// Shows the Log tab on [day], closing whatever is on top of the tabs,
+  /// pages, menus and dialogs alike, so Log is what is seen. Asked for by
+  /// a tap on a reminder (owner, 2026-11-28: "Close it and show Log").
+  void openLog(DateTime day) {
+    navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    tabs.openLog(day);
+  }
 
   /// The browser moved to [configuration]: close pages and change tab to
   /// match. A page closed earlier cannot be opened again, so going forward
