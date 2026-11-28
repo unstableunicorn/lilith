@@ -11,9 +11,11 @@ import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/share.dart';
 import 'package:lilith/domain/shared_phases.dart';
+import 'package:lilith/domain/symptom_predictor.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
+import 'package:lilith/ui/core/forecast_text.dart' as text;
 import 'package:lilith/ui/history/history_view_model.dart';
 import 'package:lilith/ui/log/dose_summary.dart' as dose;
 import 'package:lilith/ui/log/log_summary.dart';
@@ -25,6 +27,7 @@ class SharedPersonViewModel extends ChangeNotifier {
     this.share, {
     required this.now,
     this.predictor = const CyclePredictor(),
+    this.symptomPredictor = const SymptomPredictor(),
   }) {
     _repo.addListener(notifyListeners);
   }
@@ -35,6 +38,7 @@ class SharedPersonViewModel extends ChangeNotifier {
   /// The clock, injected so tests pick the day.
   final DateTime Function() now;
   final CyclePredictor predictor;
+  final SymptomPredictor symptomPredictor;
 
   DateTime get today => dateOnly(now());
   SharedView get view => _repo.viewOf(share);
@@ -134,6 +138,28 @@ class SharedPersonViewModel extends ChangeNotifier {
       _ => 'Period expected in $days days, around $when',
     };
   }
+
+  /// What their shared days say about the week ahead.
+  SymptomForecast get forecast => switch (data) {
+    final d? => symptomPredictor.predict(
+      logs: d.dailyLogs,
+      periods: d.periods,
+      today: today,
+    ),
+    null => const SymptomForecast(likely: [], loggedDays: 0),
+  };
+
+  /// The forecast card's sentence; empty with nothing to forecast.
+  String get forecastSummary => switch (forecast) {
+    final f when f.hasData => text.forecastSummary(f, theirs: true),
+    _ => '',
+  };
+
+  /// The forecast card's symptom badges.
+  List<String> get forecastSymptoms => text.forecastSymptomBadges(forecast);
+
+  /// The forecast card's mood badges; none unless they share their moods.
+  List<String> get forecastMoods => text.forecastMoodBadges(forecast);
 
   TemperatureReading? get latestReading => data?.readings.lastOrNull;
 

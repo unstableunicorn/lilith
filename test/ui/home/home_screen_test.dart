@@ -3,6 +3,7 @@ import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
@@ -126,7 +127,63 @@ void main() {
       expect(find.byKey(HomeKeys.forecast), findsOneWidget);
       expect(find.text('Cramps 100%'), findsOneWidget);
       expect(find.text('Fatigue 100%'), findsOneWidget);
+      expect(find.byKey(HomeKeys.forecastMoods), findsNothing);
       await expectAccessible(tester);
+    });
+
+    testWidgets('likely moods get their own labelled row in the forecast', (
+      tester,
+    ) async {
+      await health.apply((d) {
+        var next = d
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+            .withPeriod(PeriodEvent(startDate: today));
+        for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+          for (var i = 0; i < 3; i++) {
+            next = next.withDailyLog(
+              DailyLog(
+                date: start.add(Duration(days: i)),
+                symptoms: const {Symptom.cramps},
+                signs: BodySigns(moods: const {Mood.irritable, Mood.calm}),
+              ),
+            );
+          }
+        }
+        return next;
+      });
+      await pump(tester);
+      final card = find.byKey(HomeKeys.forecast);
+      expect(card, findsOneWidget);
+      expect(find.byKey(HomeKeys.forecastMoods), findsOneWidget);
+      expect(
+        find.descendant(of: card, matching: find.text('Moods')),
+        findsOneWidget,
+      );
+      expect(find.text('Cramps 100%'), findsOneWidget);
+      expect(find.text('Irritable 100%'), findsOneWidget);
+      expect(find.text('Calm 100%'), findsOneWidget);
+      await expectAccessible(tester);
+    });
+
+    testWidgets('moods alone are enough for a forecast card', (tester) async {
+      await health.apply((d) {
+        var next = d
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+            .withPeriod(PeriodEvent(startDate: today));
+        for (var i = 0; i < 3; i++) {
+          next = next.withDailyLog(
+            DailyLog(
+              date: DateTime(2026, 5, 13 + i),
+              signs: BodySigns(moods: const {Mood.low}),
+            ),
+          );
+        }
+        return next;
+      });
+      await pump(tester);
+      expect(find.byKey(HomeKeys.forecast), findsOneWidget);
+      expect(find.text('Low 100%'), findsOneWidget);
     });
 
     testWidgets("summarises today's log and opens the log screen", (

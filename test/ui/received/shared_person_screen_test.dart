@@ -6,6 +6,7 @@ import 'package:lilith/data/pod/health_document_codec.dart';
 import 'package:lilith/data/pod/share_plan.dart';
 import 'package:lilith/data/received_share_repository.dart';
 import 'package:lilith/data/session_repository.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
@@ -138,5 +139,75 @@ void main() {
     expect(find.byKey(SharedPersonKeys.dayDose(june(9))), findsOneWidget);
     expect(find.byKey(SharedPersonKeys.daySummary(june(9))), findsNothing);
     await expectAccessible(tester);
+  });
+
+  group('their forecast for the week', () {
+    HealthData tracked() {
+      var next = HealthData.empty
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+          .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+          .withPeriod(PeriodEvent(startDate: today));
+      for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+        for (var i = 0; i < 3; i++) {
+          next = next.withDailyLog(
+            DailyLog(
+              date: start.add(Duration(days: i)),
+              symptoms: const {Symptom.cramps},
+              painLevel: 4,
+              signs: BodySigns(moods: const {Mood.irritable}),
+            ),
+          );
+        }
+      }
+      return next;
+    }
+
+    void serve(HealthData copy) =>
+        reader.documents[SharePlan.forRecipient(auth.webId)
+            .documentUrl(ownerRoot)] = codec.encode(
+          copy,
+        );
+
+    testWidgets('no card while there is too little to go on', (tester) async {
+      await pump(tester);
+      expect(find.byKey(SharedPersonKeys.prediction), findsOneWidget);
+      expect(find.byKey(SharedPersonKeys.forecast), findsNothing);
+    });
+
+    testWidgets('a share with moods shows symptoms, pain and moods', (
+      tester,
+    ) async {
+      serve(sharedView(tracked(), includeSigns: true));
+      await pump(tester);
+      final card = find.byKey(SharedPersonKeys.forecast);
+      expect(card, findsOneWidget);
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.text('Their forecast for the week'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'From 6 logged days at this point of their past cycles. '
+          'Pain around 4/10 has been typical.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Cramps 100%'), findsOneWidget);
+      expect(find.byKey(SharedPersonKeys.forecastMoods), findsOneWidget);
+      expect(find.text('Irritable 100%'), findsOneWidget);
+      await expectAccessible(tester);
+    });
+
+    testWidgets('a share without moods shows no mood row', (tester) async {
+      serve(sharedView(tracked()));
+      await pump(tester);
+      expect(find.byKey(SharedPersonKeys.forecast), findsOneWidget);
+      expect(find.text('Cramps 100%'), findsOneWidget);
+      expect(find.byKey(SharedPersonKeys.forecastMoods), findsNothing);
+      expect(find.text('Irritable 100%'), findsNothing);
+    });
   });
 }

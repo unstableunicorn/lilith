@@ -11,6 +11,7 @@ import 'package:lilith/data/notifications/notification_service.dart';
 import 'package:lilith/data/period_reminder_repository.dart';
 import 'package:lilith/data/settings_store.dart';
 import 'package:lilith/domain/contraception_reminders.dart';
+import 'package:lilith/domain/period_reminders.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -78,9 +79,20 @@ class LocalNotificationService implements NotificationService {
     }
   }();
 
+  /// What a tap asks the open app to do, or null when it asks nothing of
+  /// it: the "Log it" button, or the body of a reminder to log.
+  static ReminderAction? opens(NotificationResponse r) {
+    final button = r.actionId;
+    final asksToLog = button == null || button.isEmpty
+        ? tapOpensLog(r.id)
+        : button == ReminderAction.log.name;
+    return asksToLog ? ReminderAction.log : null;
+  }
+
   void _tapped(NotificationResponse r) {
-    if (r.actionId == ReminderAction.log.name) _opened.add(ReminderAction.log);
-    if (r.actionId != ReminderAction.log.name) {
+    if (opens(r) case final action?) {
+      _opened.add(action);
+    } else {
       unawaited(onBackgroundNotificationAction(r));
     }
   }

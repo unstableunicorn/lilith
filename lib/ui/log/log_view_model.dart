@@ -13,9 +13,9 @@ import 'package:lilith/ui/core/dates.dart';
 
 class LogViewModel extends ChangeNotifier {
   LogViewModel(this._repo, {required this.now, DateTime? date}) {
-    _repo.addListener(notifyListeners);
+    _repo.addListener(_onPodChanged);
     _date = _clamp(date ?? today);
-    _draft = _stored;
+    _draft = _base = _stored;
   }
 
   final HealthRepository _repo;
@@ -25,6 +25,9 @@ class LogViewModel extends ChangeNotifier {
 
   late DateTime _date;
   late DailyLog _draft;
+
+  /// What the pod held for the day when the draft was last taken from it.
+  late DailyLog _base;
   bool _saving = false;
 
   DateTime get today => dateOnly(now());
@@ -56,7 +59,16 @@ class LogViewModel extends ChangeNotifier {
   /// Moves to [day], no later than today, and starts from what is logged there.
   void pickDate(DateTime day) {
     _date = _clamp(day);
-    _draft = _stored;
+    _draft = _base = _stored;
+    notifyListeners();
+  }
+
+  /// The pod's data changed, as when it first arrives after this screen
+  /// was built: a draft nobody has touched follows it, an edited one stays.
+  void _onPodChanged() {
+    final stored = _stored;
+    if (_draft == _base) _draft = stored;
+    _base = stored;
     notifyListeners();
   }
 
@@ -193,7 +205,7 @@ class LogViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    _repo.removeListener(notifyListeners);
+    _repo.removeListener(_onPodChanged);
     super.dispose();
   }
 }

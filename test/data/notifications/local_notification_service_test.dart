@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/notifications/local_notification_service.dart';
 import 'package:lilith/data/notifications/notification_service.dart';
+import 'package:lilith/domain/period_reminders.dart';
+import 'package:lilith/domain/reminder_setting.dart';
 
 void main() {
   Reminder reminder(List<ReminderAction> actions) => Reminder(
@@ -62,5 +64,59 @@ void main() {
     final details = LocalNotificationService.detailsFor(reminder(const []));
     expect(details.iOS?.categoryIdentifier, isNull);
     expect(details.android?.actions, isEmpty);
+  });
+
+  group('what a tap asks of the open app', () {
+    NotificationResponse body(int id) => NotificationResponse(
+      notificationResponseType: NotificationResponseType.selectedNotification,
+      id: id,
+    );
+    NotificationResponse button(int id, ReminderAction a) =>
+        NotificationResponse(
+          notificationResponseType:
+              NotificationResponseType.selectedNotificationAction,
+          id: id,
+          actionId: a.name,
+        );
+
+    test('the daily reminder itself opens Log', () {
+      expect(
+        LocalNotificationService.opens(body(dailyReminderId)),
+        ReminderAction.log,
+      );
+    });
+
+    test('the "Log it" button opens Log, whatever the reminder', () {
+      expect(
+        LocalNotificationService.opens(
+          button(checkInReminderId, ReminderAction.log),
+        ),
+        ReminderAction.log,
+      );
+      expect(
+        LocalNotificationService.opens(button(999, ReminderAction.log)),
+        ReminderAction.log,
+      );
+    });
+
+    test('a reminder that asks for nothing to be logged opens nothing', () {
+      expect(LocalNotificationService.opens(body(testReminderId)), isNull);
+    });
+
+    test('a button that works without the app opens nothing, even on a '
+        'reminder whose body would', () {
+      expect(
+        LocalNotificationService.opens(
+          button(checkInReminderId, ReminderAction.snooze),
+        ),
+        isNull,
+      );
+      expect(
+        LocalNotificationService.opens(
+          button(dailyReminderId, ReminderAction.taken),
+        ),
+        isNull,
+      );
+    });
   });
 }

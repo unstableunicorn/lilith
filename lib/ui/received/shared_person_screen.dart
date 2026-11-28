@@ -19,6 +19,8 @@ abstract final class SharedPersonKeys {
   static const Key empty = Key('sharedPerson.empty');
   static const Key prediction = Key('sharedPerson.prediction');
   static const Key stats = Key('sharedPerson.stats');
+  static const Key forecast = Key('sharedPerson.forecast');
+  static const Key forecastMoods = Key('sharedPerson.forecastMoods');
   static const Key refresh = Key('sharedPerson.refresh');
   static Key cycle(DateTime d) => Key('sharedPerson.cycle.$d');
   static Key day(DateTime d) => Key('sharedPerson.day.$d');
@@ -301,6 +303,15 @@ class _Data extends StatelessWidget {
             ),
           ],
         ),
+        if (vm.forecast.hasData)
+          ForecastCard(
+            key: SharedPersonKeys.forecast,
+            title: 'Their forecast for the week',
+            summary: vm.forecastSummary,
+            symptoms: vm.forecastSymptoms,
+            moods: vm.forecastMoods,
+            moodsKey: SharedPersonKeys.forecastMoods,
+          ),
         if (vm.chartReadings.isNotEmpty)
           AppCard(
             icon: Icons.thermostat_rounded,

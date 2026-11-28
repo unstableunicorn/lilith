@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/data/pod/pod_service.dart';
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/cycle_predictor.dart';
 import 'package:lilith/domain/daily_log.dart';
@@ -198,6 +199,33 @@ void forecastTests() {
     expect(vm.forecast.likely.first.symptom, Symptom.cramps);
     expect(vm.forecastSummary, contains('6 logged days'));
     expect(vm.forecastSummary, contains('6/10'));
+    expect(vm.forecastSymptoms, ['Cramps 100%']);
+    expect(vm.forecastMoods, isEmpty);
+  });
+
+  test('moods tagged in past cycles are forecast too', () async {
+    final repo = await twoCycles();
+    await repo.apply((d) {
+      var next = d;
+      for (final start in [DateTime(2026, 4, 15), DateTime(2026, 5, 13)]) {
+        for (var i = 0; i < 3; i++) {
+          final day = start.add(Duration(days: i));
+          next = next.withDailyLog(
+            next
+                .logFor(day)!
+                .copyWith(
+                  signs: BodySigns(
+                    moods: {Mood.irritable, if (i == 0) Mood.low},
+                  ),
+                ),
+          );
+        }
+      }
+      return next;
+    });
+    final vm = HomeViewModel(repo, now: () => today);
+    expect(vm.forecastMoods, ['Irritable 100%', 'Low 50%']);
+    expect(vm.forecastSymptoms, ['Cramps 100%']);
   });
 }
 

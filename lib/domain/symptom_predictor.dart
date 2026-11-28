@@ -1,9 +1,11 @@
-// Forecast likely symptoms and pain from the user's own logged history.
+// Forecast likely symptoms, moods and pain from the logged history.
 //
 // Each logged day is placed on its cycle day (days since the period start
 // before it). For the days ahead, the logs on the same cycle day, give or
-// take one, say how often each symptom appeared and how bad the pain was.
+// take one, say how often each symptom and mood appeared and how bad the
+// pain was.
 
+import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/period_event.dart';
@@ -31,16 +33,43 @@ class SymptomLikelihood {
   int get percent => (probability * 100).round();
 }
 
+/// How often [mood] was tagged at this point of past cycles.
+class MoodLikelihood {
+  const MoodLikelihood({
+    required this.mood,
+    required this.probability,
+    required this.occurrences,
+    required this.sampleDays,
+  });
+
+  final Mood mood;
+
+  /// 0.0–1.0 share of the matching past days tagged with the mood.
+  final double probability;
+
+  /// Matching past days tagged with the mood.
+  final int occurrences;
+
+  /// Matching past days consulted.
+  final int sampleDays;
+
+  int get percent => (probability * 100).round();
+}
+
 /// The outcome of [SymptomPredictor.predict].
 class SymptomForecast {
   const SymptomForecast({
     required this.likely,
     required this.loggedDays,
+    this.likelyMoods = const [],
     this.typicalPain,
   });
 
   /// Symptoms likely in the window, most likely first.
   final List<SymptomLikelihood> likely;
+
+  /// Moods likely in the window, most likely first.
+  final List<MoodLikelihood> likelyMoods;
 
   /// Mean 0–10 pain rating over the matching past days, when any was rated.
   final double? typicalPain;
@@ -48,7 +77,8 @@ class SymptomForecast {
   /// Days the user has logged in total.
   final int loggedDays;
 
-  bool get hasData => likely.isNotEmpty || typicalPain != null;
+  bool get hasData =>
+      likely.isNotEmpty || likelyMoods.isNotEmpty || typicalPain != null;
 }
 
 /// Pure forecast over daily logs and period starts.
@@ -82,6 +112,7 @@ class SymptomPredictor {
 
     final currentCycleDay = daysBetween(starts.last, dateOnly(today)) + 1;
     final best = <Symptom, SymptomLikelihood>{};
+    final bestMoods = <Mood, MoodLikelihood>{};
     final consulted = <DailyLog>{};
     for (var offset = 0; offset < windowDays; offset++) {
       final day = currentCycleDay + offset;
@@ -106,8 +137,27 @@ class SymptomPredictor {
           );
         }
       }
+      for (final mood in Mood.values) {
+        final occurrences = bucket
+            .where((l) => l.signs.moods.contains(mood))
+            .length;
+        final probability = occurrences / bucket.length;
+        if (probability > (bestMoods[mood]?.probability ?? -1)) {
+          bestMoods[mood] = MoodLikelihood(
+            mood: mood,
+            probability: probability,
+            occurrences: occurrences,
+            sampleDays: bucket.length,
+          );
+        }
+      }
     }
 
+    final likelyMoods =
+        bestMoods.values
+            .where((l) => l.probability >= minProbability && l.occurrences > 0)
+            .toList()
+          ..sort((a, b) => b.probability.compareTo(a.probability));
     final likely =
         best.values
             .where((l) => l.probability >= minProbability && l.occurrences > 0)
@@ -116,6 +166,7 @@ class SymptomPredictor {
     final pains = [for (final l in consulted) ?l.painLevel];
     return SymptomForecast(
       likely: likely,
+      likelyMoods: likelyMoods,
       loggedDays: logs.length,
       typicalPain: pains.isEmpty
           ? null

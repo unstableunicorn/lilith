@@ -16,6 +16,16 @@ const int _lateId = 14;
 /// The repeating check-in, the one a snooze moves.
 const int checkInReminderId = 15;
 
+/// Whether a tap on the reminder itself, not on one of its buttons, opens
+/// Log on today: true for the reminders that ask for something to be logged.
+bool tapOpensLog(int? reminderId) => const {
+  dailyReminderId,
+  _dueTodayId,
+  _possiblyLateId,
+  _lateId,
+  checkInReminderId,
+}.contains(reminderId);
+
 /// Every id a period reminder may hold, apart from the daily (1) and
 /// share (1000+) reminders.
 const List<int> periodReminderIds = [
