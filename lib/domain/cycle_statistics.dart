@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:meta/meta.dart';
 
@@ -47,16 +48,24 @@ class CycleStatistics {
 }
 
 /// Statistics over the finished cycles in [periods]; null with fewer than
-/// two. Every cycle counts, however unlikely its length.
+/// two. Every cycle counts, however unlikely its length, but one that
+/// overlaps a life factor in [factors].
 CycleStatistics? cycleStatisticsFor(
   List<PeriodEvent> periods, {
   required DateTime today,
+  List<LifeFactor> factors = const [],
 }) {
   final sorted = [...periods]
     ..sort((a, b) => a.startDate.compareTo(b.startDate));
   final cycles = [
     for (var i = 1; i < sorted.length; i++)
-      daysBetween(sorted[i - 1].startDate, sorted[i].startDate),
+      if (!cycleOverlapsFactor(
+        sorted[i - 1].startDate,
+        sorted[i].startDate,
+        factors,
+        sorted,
+      ))
+        daysBetween(sorted[i - 1].startDate, sorted[i].startDate),
   ];
   if (cycles.length < 2) return null;
   final mean = cycles.reduce((a, b) => a + b) / cycles.length;

@@ -224,7 +224,7 @@ List<(String, String)> _summary(
           PredictionMethod.temperatureShift => 'from the temperature shift',
           PredictionMethod.usualCycleLength => 'from your usual cycle length',
           PredictionMethod.cycleAverage => 'from the average cycle length',
-          PredictionMethod.insufficientData => 'no basis',
+          PredictionMethod.insufficientData || PredictionMethod.paused || PredictionMethod.awaitingPeriod => 'no basis',
         }})',
       ),
     ('Days in this export', '${rows.length}'),

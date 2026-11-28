@@ -101,6 +101,7 @@ class HomeViewModel extends ChangeNotifier {
           '${p.averageCycleLength!.toStringAsFixed(1)} days over '
           '${p.cycleCount} recorded ${p.cycleCount == 1 ? 'cycle' : 'cycles'}.',
     PredictionMethod.insufficientData => 'Not enough data yet.',
+    PredictionMethod.paused || PredictionMethod.awaitingPeriod => 'stub',
   }.withSuppressionNote(p);
 
   /// Today's cycle day and phase.

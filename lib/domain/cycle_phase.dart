@@ -34,7 +34,8 @@ class CycleStatus {
 }
 
 /// Day and phase of [today] from [prediction] and the logged [periods].
-/// A late period stays luteal until the next start is logged.
+/// A late period stays luteal until the next start is logged. Neither is
+/// given while a life factor holds the prediction.
 CycleStatus cycleStatusFor(
   CyclePrediction prediction,
   List<PeriodEvent> periods, {
@@ -44,7 +45,9 @@ CycleStatus cycleStatusFor(
   final latest = periods.isEmpty
       ? null
       : periods.reduce((a, b) => a.startDate.isAfter(b.startDate) ? a : b);
-  if (latest == null || latest.startDate.isAfter(dateOnly(today))) {
+  if (latest == null ||
+      latest.startDate.isAfter(dateOnly(today)) ||
+      prediction.isOnHold) {
     return CycleStatus(hormonal: hormonalContraception);
   }
   final day = daysBetween(latest.startDate, today) + 1;

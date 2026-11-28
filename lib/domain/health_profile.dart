@@ -2,6 +2,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:lilith/domain/contraception_schedule.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:meta/meta.dart';
 
 /// A diagnosed condition that affects the cycle.
@@ -44,6 +45,7 @@ enum FertilityTreatment {
 
 const _conditions = SetEquality<ReproductiveCondition>();
 const _treatments = SetEquality<FertilityTreatment>();
+const _factors = ListEquality<LifeFactor>();
 
 /// Conditions, treatments and free-text notes kept beside the cycle data.
 /// The contraception in use, if any. Hormonal methods stop ovulation or
@@ -164,7 +166,11 @@ class HealthProfile {
     this.regularity,
     this.history = const ObstetricHistory(),
     this.contraceptionSchedule,
-  }) : conditions = Set.unmodifiable(conditions),
+    List<LifeFactor> lifeFactors = const [],
+  }) : lifeFactors = List.unmodifiable(
+         lifeFactors.sorted((a, b) => a.start.compareTo(b.start)),
+       ),
+       conditions = Set.unmodifiable(conditions),
        treatments = Set.unmodifiable(treatments);
 
   factory HealthProfile.fromJson(Map<String, dynamic> json) => HealthProfile(
@@ -189,6 +195,10 @@ class HealthProfile {
     contraceptionSchedule: json.containsKey('contraceptionSchedule')
         ? ContraceptionSchedule.tryFromJson(json['contraceptionSchedule'])
         : null,
+    lifeFactors: [
+      if (json['lifeFactors'] case final List<dynamic> factors)
+        for (final f in factors) ?LifeFactor.tryFromJson(f),
+    ],
   );
 
   /// What the app accepts as a usual cycle length, in days.
@@ -216,6 +226,10 @@ class HealthProfile {
   /// When the pill, patch or ring is due, for its reminders.
   final ContraceptionSchedule? contraceptionSchedule;
 
+  /// Pregnancy, breastfeeding and miscarriage, oldest first; predictions
+  /// pause while one is in force.
+  final List<LifeFactor> lifeFactors;
+
   /// Hormonal contraception, said either way: through [contraception] or
   /// the older treatment flag.
   bool get usesHormonalContraception =>
@@ -233,7 +247,8 @@ class HealthProfile {
       contraception == null &&
       regularity == null &&
       history.isEmpty &&
-      contraceptionSchedule == null;
+      contraceptionSchedule == null &&
+      lifeFactors.isEmpty;
 
   /// A null argument means "unchanged"; [unset] names the optional fields
   /// to clear: `usualCycleLength`, `usualPeriodLength`, `birthYear`,
@@ -252,6 +267,7 @@ class HealthProfile {
     CycleRegularity? regularity,
     ObstetricHistory? history,
     ContraceptionSchedule? contraceptionSchedule,
+    List<LifeFactor>? lifeFactors,
     Set<String> unset = const {},
   }) => HealthProfile(
     conditions: conditions ?? this.conditions,
@@ -276,6 +292,7 @@ class HealthProfile {
     contraceptionSchedule: unset.contains('contraceptionSchedule')
         ? null
         : contraceptionSchedule ?? this.contraceptionSchedule,
+    lifeFactors: lifeFactors ?? this.lifeFactors,
   );
 
   Map<String, dynamic> toJson() => {
@@ -290,6 +307,8 @@ class HealthProfile {
     if (!history.isEmpty) 'history': history.toJson(),
     if (contraceptionSchedule != null)
       'contraceptionSchedule': contraceptionSchedule!.toJson(),
+    if (lifeFactors.isNotEmpty)
+      'lifeFactors': [for (final f in lifeFactors) f.toJson()],
   };
 
   @override
@@ -304,7 +323,8 @@ class HealthProfile {
       other.contraception == contraception &&
       other.regularity == regularity &&
       other.history == history &&
-      other.contraceptionSchedule == contraceptionSchedule;
+      other.contraceptionSchedule == contraceptionSchedule &&
+      _factors.equals(other.lifeFactors, lifeFactors);
 
   @override
   int get hashCode => Object.hash(
@@ -318,5 +338,6 @@ class HealthProfile {
     regularity,
     history,
     contraceptionSchedule,
+    _factors.hash(lifeFactors),
   );
 }
