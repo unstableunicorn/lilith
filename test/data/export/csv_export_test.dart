@@ -26,7 +26,7 @@ void main() {
       'pain_0_10,'
       'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes,'
       'contraception,dose,dose_done_at,'
-      'moods,sleep,digestion,skin,discharge,pregnancy_test\r\n',
+      'moods,sleep,digestion,skin,discharge,pregnancy_test,tags\r\n',
     );
   });
 
@@ -50,8 +50,8 @@ void main() {
         ])
         .split('\r\n');
     expect(lines.sublist(1), [
-      '2026-06-04,,,,,,,,,,,,combinedPill,late,2026-06-04T20:05,,,,,,',
-      '2026-06-05,,,,,,,,,,,,combinedPill,missed,,,,,,,',
+      '2026-06-04,,,,,,,,,,,,combinedPill,late,2026-06-04T20:05,,,,,,,',
+      '2026-06-05,,,,,,,,,,,,combinedPill,missed,,,,,,,,',
       '',
     ]);
   });
@@ -94,14 +94,14 @@ void main() {
         'pain_0_10,'
         'symptoms,skin_temp_c,skin_temp_source,ovulation_test,notes,'
         'contraception,dose,dose_done_at,'
-        'moods,sleep,digestion,skin,discharge,pregnancy_test';
+        'moods,sleep,digestion,skin,discharge,pregnancy_test,tags';
     const day1 =
         '2026-06-01,36.4,manual,yes,,medium,5,cramps; fatigue,,,negative,,,,';
     expect(lines, [
       header,
-      '$day1,,,,,,',
-      '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very""",,,,,,,,,',
-      '2026-06-03,37.0,ring,,,,,,,,,,,,,,,,,,',
+      '$day1,,,,,,,',
+      '2026-06-02,,,,,,2,,0.30,watch,,"Tired, ""very""",,,,,,,,,,',
+      '2026-06-03,37.0,ring,,,,,,,,,,,,,,,,,,,',
       '',
     ]);
   });

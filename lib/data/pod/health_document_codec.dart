@@ -122,8 +122,12 @@ class HealthDocumentCodec {
     // Optional and absent until chosen: no version bump.
     if (data.mode case final mode?) 'mode': mode.name,
     'following': ?data.following,
-    if (data.logGroups case final groups?)
+    if (data.logGroups case final groups?) ...{
       'logGroups': [for (final g in groups) g.name],
+      // What there was to choose from, so a group added later can still
+      // start out shown.
+      'logGroupsOffered': [for (final g in LogGroup.values) g.name],
+    },
   });
 
   /// Reads any supported version; blank content is an empty document.
@@ -150,7 +154,10 @@ class HealthDocumentCodec {
             : null,
         mode: AppMode.fromName(doc['mode']),
         following: doc['following'] as String?,
-        logGroups: LogGroup.fromNames(doc['logGroups']),
+        logGroups: LogGroup.chosen(
+          doc['logGroups'],
+          offered: doc['logGroupsOffered'],
+        ),
       );
     } on UnsupportedDocumentVersionException {
       rethrow;

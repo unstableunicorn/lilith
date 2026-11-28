@@ -57,6 +57,7 @@ class CsvExport {
     'skin',
     'discharge',
     'pregnancy_test',
+    'tags',
   ];
 
   ExportFile build(List<ExportRow> rows, {required DateTime today}) =>
@@ -120,6 +121,7 @@ class CsvExport {
     _names(SkinSign.values.where(s.skin.contains)),
     s.discharge?.name ?? '',
     s.pregnancyTest?.name ?? '',
+    s.tags.join('; '),
   ];
 
   String _names(Iterable<Enum> values) => values.map((v) => v.name).join('; ');

@@ -4,6 +4,7 @@
 import 'package:lilith/data/health_repository.dart';
 import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/daily_log.dart';
+import 'package:lilith/domain/tags.dart';
 import 'package:lilith/ui/components/components.dart';
 import 'package:lilith/ui/log/log_view_model.dart';
 import 'package:lilith/ui/shell/shell_tabs.dart';
@@ -33,6 +34,9 @@ abstract final class LogKeys {
   /// A group's heading, there only while the group shows.
   static Key group(LogGroup g) => Key('log.group.${g.name}');
   static Key mood(Mood m) => Key('log.mood.${m.name}');
+  static Key tag(String t) => Key('log.tag.$t');
+  static const Key tagField = Key('log.tagField');
+  static const Key addTag = Key('log.addTag');
   static Key digestion(Digestion d) => Key('log.digestion.${d.name}');
   static Key skin(SkinSign s) => Key('log.skin.${s.name}');
   static Key sleep(SleepQuality? s) => Key('log.sleep.${s?.name ?? 'none'}');
@@ -264,6 +268,13 @@ class _LogViewState extends State<_LogView> {
             value: vm.doseDone,
             onChanged: vm.setDoseDone,
           ),
+        if (vm.shows(LogGroup.tags))
+          _Tags(
+            chosen: vm.signs.tags,
+            suggestions: vm.tagSuggestions,
+            onAdd: vm.addTag,
+            onRemove: vm.removeTag,
+          ),
         const SectionHeading('Note'),
         TextField(
           key: LogKeys.note,
@@ -386,6 +397,96 @@ class _Many<T> extends StatelessWidget {
               selected: chosen.contains(v),
               onSelected: (_) => onToggle(v),
             ),
+        ],
+      ),
+    ],
+  );
+}
+
+/// The person's own tags: the day's as chosen chips, past ones to tap, and
+/// a field for a new one. Holds only the text being typed.
+class _Tags extends StatefulWidget {
+  const _Tags({
+    required this.chosen,
+    required this.suggestions,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<String> chosen;
+  final List<String> Function(String typed) suggestions;
+  final ValueChanged<String> onAdd;
+  final ValueChanged<String> onRemove;
+
+  @override
+  State<_Tags> createState() => _TagsState();
+}
+
+class _TagsState extends State<_Tags> {
+  final _typed = TextEditingController();
+
+  @override
+  void dispose() {
+    _typed.dispose();
+    super.dispose();
+  }
+
+  void _add() {
+    widget.onAdd(_typed.text);
+    _typed.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SectionHeading(key: LogKeys.group(LogGroup.tags), LogGroup.tags.label),
+      ListenableBuilder(
+        listenable: _typed,
+        builder: (context, _) => Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xs,
+          children: [
+            for (final t in widget.chosen)
+              FilterChip(
+                key: LogKeys.tag(t),
+                label: Text(t),
+                selected: true,
+                onSelected: (_) => widget.onRemove(t),
+              ),
+            for (final t in widget.suggestions(_typed.text))
+              FilterChip(
+                key: LogKeys.tag(t),
+                label: Text(t),
+                selected: false,
+                onSelected: (_) => widget.onAdd(t),
+              ),
+          ],
+        ),
+      ),
+      const SizedBox(height: Space.sm),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextField(
+              key: LogKeys.tagField,
+              controller: _typed,
+              maxLength: maxTagLength,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _add(),
+              decoration: const InputDecoration(
+                labelText: 'A tag of your own',
+                hintText: 'Travel, night shift…',
+              ),
+            ),
+          ),
+          const SizedBox(width: Space.sm),
+          FilledButton.tonal(
+            key: LogKeys.addTag,
+            onPressed: _add,
+            child: const Text('Add'),
+          ),
         ],
       ),
     ],

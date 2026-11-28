@@ -115,8 +115,8 @@ void main() {
   });
 
   group('LogGroup', () {
-    test('only moods show until the person chooses', () {
-      expect(LogGroup.defaults, {LogGroup.moods});
+    test('moods and tags show until the person chooses', () {
+      expect(LogGroup.defaults, {LogGroup.moods, LogGroup.tags});
     });
 
     test('reads its names, skipping unknown ones', () {

@@ -54,7 +54,7 @@ void main() {
 
   group('CSV', () {
     test('has a column per group, after the columns it already had', () {
-      expect(CsvExport.header.sublist(CsvExport.header.length - 6), [
+      expect(CsvExport.header.sublist(15, 21), [
         'moods',
         'sleep',
         'digestion',
@@ -70,7 +70,7 @@ void main() {
       expect(
         line,
         '2026-06-02,,,,,,2,cramps,,,positive,,,,,'
-        'happy; calm,poor,constipation; gas,acne,eggWhite,negative',
+        'happy; calm,poor,constipation; gas,acne,eggWhite,negative,',
       );
     });
 
@@ -83,7 +83,7 @@ void main() {
             ),
           ])
           .split('\r\n')[1];
-      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,');
+      expect(line, '2026-06-02,,,,,,1,,,,,,,,,,,,,,,');
     });
   });
 

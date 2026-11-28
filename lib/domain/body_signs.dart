@@ -1,7 +1,9 @@
-// What a day's log holds beyond flow, symptoms and pain: moods and the
-// body's other signs. Each group can be hidden from the Log tab.
+// What a day's log holds beyond flow, symptoms and pain: moods, the
+// body's other signs and the person's own tags. Each group can be hidden
+// from the Log tab.
 
 import 'package:collection/collection.dart';
+import 'package:lilith/domain/tags.dart';
 import 'package:meta/meta.dart';
 
 /// A mood tagged on a day; several can apply.
@@ -78,19 +80,45 @@ enum LogGroup {
   digestion('Digestion'),
   skin('Skin'),
   discharge('Discharge'),
-  pregnancyTest('Pregnancy test');
+  pregnancyTest('Pregnancy test'),
+  tags('Tags');
 
   LogGroup(this.label);
   final String label;
 
-  /// The groups shown until the person chooses: moods only, so Log stays
-  /// short.
-  static const Set<LogGroup> defaults = {moods};
+  /// The groups shown until the person chooses: moods and their own tags,
+  /// so Log stays short.
+  static const Set<LogGroup> defaults = {moods, tags};
 
   /// The groups written as [names]; null when [names] is not a list, and
   /// unknown names are skipped.
   static Set<LogGroup>? fromNames(Object? names) =>
       names is List ? _known(values, names) : null;
+
+  /// The groups there were before a choice recorded what it was made from.
+  static const Set<LogGroup> _first = {
+    moods,
+    sleep,
+    digestion,
+    skin,
+    discharge,
+    pregnancyTest,
+  };
+
+  /// The groups a stored choice shows: those written as [names], and any
+  /// of [defaults] that was not among the [offered] names when the choice
+  /// was made, so a group added later starts out as it would for anyone.
+  /// Null when [names] is not a list: no choice was made.
+  static Set<LogGroup>? chosen(Object? names, {Object? offered}) {
+    final shown = fromNames(names);
+    if (shown == null) return null;
+    final known = offered is List ? _known(values, offered) : _first;
+    return {
+      for (final g in values)
+        if (shown.contains(g) || (defaults.contains(g) && !known.contains(g)))
+          g,
+    };
+  }
 }
 
 /// The one of [values] stored as [name]; null when absent or unknown.
@@ -108,6 +136,7 @@ Set<T> _known<T extends Enum>(List<T> values, Object? names) => {
 const _moods = SetEquality<Mood>();
 const _digestion = SetEquality<Digestion>();
 const _skin = SetEquality<SkinSign>();
+const _tags = ListEquality<String>();
 
 @immutable
 class BodySigns {
@@ -118,7 +147,9 @@ class BodySigns {
     Set<SkinSign> skin = const {},
     this.discharge,
     this.pregnancyTest,
-  }) : moods = Set.unmodifiable(moods),
+    List<String> tags = const [],
+  }) : tags = cleanTags(tags),
+       moods = Set.unmodifiable(moods),
        digestion = Set.unmodifiable(digestion),
        skin = Set.unmodifiable(skin);
 
@@ -131,6 +162,10 @@ class BodySigns {
           skin: _known(SkinSign.values, json['skin']),
           discharge: _one(Discharge.values, json['discharge']),
           pregnancyTest: _one(PregnancyTest.values, json['pregnancyTest']),
+          tags: switch (json['tags']) {
+            final List<dynamic> tags => tags.whereType<String>().toList(),
+            _ => const [],
+          },
         )
       : BodySigns();
 
@@ -143,6 +178,10 @@ class BodySigns {
   final Discharge? discharge;
   final PregnancyTest? pregnancyTest;
 
+  /// The person's own tags for the day, cleaned and A to Z; see
+  /// [cleanTags].
+  final List<String> tags;
+
   /// True when nothing is recorded.
   bool get isEmpty =>
       moods.isEmpty &&
@@ -150,10 +189,11 @@ class BodySigns {
       digestion.isEmpty &&
       skin.isEmpty &&
       discharge == null &&
-      pregnancyTest == null;
+      pregnancyTest == null &&
+      tags.isEmpty;
 
-  /// What goes to someone the day is shared with: everything but the
-  /// pregnancy test, which is never shared.
+  /// What goes to someone the day is shared with: everything, tags too,
+  /// but the pregnancy test, which is never shared.
   BodySigns get shared => copyWith(clearPregnancyTest: true);
 
   /// A copy with the given fields replaced. The `clear…` flags unset a
@@ -168,6 +208,7 @@ class BodySigns {
     bool clearDischarge = false,
     PregnancyTest? pregnancyTest,
     bool clearPregnancyTest = false,
+    List<String>? tags,
   }) => BodySigns(
     moods: moods ?? this.moods,
     sleep: clearSleep ? null : (sleep ?? this.sleep),
@@ -177,10 +218,12 @@ class BodySigns {
     pregnancyTest: clearPregnancyTest
         ? null
         : (pregnancyTest ?? this.pregnancyTest),
+    tags: tags ?? this.tags,
   );
 
   /// What is recorded, in words, in the order of the Log tab: "happy,
-  /// calm", "sleep poor", "discharge egg-white", "pregnancy test negative".
+  /// calm", "sleep poor", "discharge egg-white", "pregnancy test negative",
+  /// then the tags as written.
   List<String> get summaryParts => [
     for (final m in Mood.values.where(moods.contains)) m.label.toLowerCase(),
     if (sleep case final s?) 'sleep ${s.label.toLowerCase()}',
@@ -190,6 +233,7 @@ class BodySigns {
       '${s.label.toLowerCase()} skin',
     if (discharge case final d?) 'discharge ${d.label.toLowerCase()}',
     if (pregnancyTest case final t?) 'pregnancy test ${t.label.toLowerCase()}',
+    ...tags,
   ];
 
   Map<String, dynamic> toJson() => {
@@ -199,6 +243,7 @@ class BodySigns {
     if (skin.isNotEmpty) 'skin': [for (final s in skin) s.name],
     'discharge': ?discharge?.name,
     'pregnancyTest': ?pregnancyTest?.name,
+    if (tags.isNotEmpty) 'tags': tags,
   };
 
   @override
@@ -209,7 +254,8 @@ class BodySigns {
       _digestion.equals(other.digestion, digestion) &&
       _skin.equals(other.skin, skin) &&
       other.discharge == discharge &&
-      other.pregnancyTest == pregnancyTest;
+      other.pregnancyTest == pregnancyTest &&
+      _tags.equals(other.tags, tags);
 
   @override
   int get hashCode => Object.hash(
@@ -219,5 +265,6 @@ class BodySigns {
     _skin.hash(skin),
     discharge,
     pregnancyTest,
+    _tags.hash(tags),
   );
 }

@@ -73,27 +73,35 @@ void main() {
   });
 
   group('HealthData.shownLogGroups', () {
-    test('only moods show until the person chooses', () {
-      expect(HealthData.empty.shownLogGroups, {LogGroup.moods});
+    test('moods and tags show until the person chooses', () {
+      expect(HealthData.empty.shownLogGroups, {LogGroup.moods, LogGroup.tags});
     });
 
     test('showing a group adds it and keeps the rest', () {
       final data = HealthData.empty.withLogGroup(LogGroup.sleep, shown: true);
-      expect(data.shownLogGroups, {LogGroup.moods, LogGroup.sleep});
+      expect(data.shownLogGroups, {
+        LogGroup.moods,
+        LogGroup.sleep,
+        LogGroup.tags,
+      });
       expect(data, isNot(HealthData.empty));
       expect(data.hashCode, isNot(HealthData.empty.hashCode));
     });
 
     test('hiding a group removes it, moods included', () {
       final data = HealthData.empty.withLogGroup(LogGroup.moods, shown: false);
-      expect(data.shownLogGroups, isEmpty);
+      expect(data.shownLogGroups, {LogGroup.tags});
     });
 
     test('the choice survives another change', () {
       final data = HealthData.empty
           .withLogGroup(LogGroup.skin, shown: true)
           .withDailyLog(DailyLog(date: day, painLevel: 2));
-      expect(data.shownLogGroups, {LogGroup.moods, LogGroup.skin});
+      expect(data.shownLogGroups, {
+        LogGroup.moods,
+        LogGroup.skin,
+        LogGroup.tags,
+      });
     });
 
     test('round-trips in the pod document without a version bump', () {
@@ -102,22 +110,76 @@ void main() {
           .withLogGroup(LogGroup.discharge, shown: true);
       final json = jsonDecode(codec.encode(data)) as Map<String, dynamic>;
       expect(json['version'], 8);
-      expect(json['logGroups'], ['discharge']);
+      expect(json['logGroups'], ['discharge', 'tags']);
       expect(codec.decode(codec.encode(data)).shownLogGroups, {
         LogGroup.discharge,
+        LogGroup.tags,
       });
     });
 
+    HealthData allHidden() => HealthData.empty
+        .withLogGroup(LogGroup.moods, shown: false)
+        .withLogGroup(LogGroup.tags, shown: false);
+
     test('hiding everything is kept, not read as no choice', () {
-      final data = HealthData.empty.withLogGroup(LogGroup.moods, shown: false);
-      expect(codec.decode(codec.encode(data)).shownLogGroups, isEmpty);
+      expect(allHidden().shownLogGroups, isEmpty);
+      expect(codec.decode(codec.encode(allHidden())).shownLogGroups, isEmpty);
     });
 
-    test('no choice writes no key, and a document without one shows moods', () {
+    test('no choice writes no key, and a document without one shows moods '
+        'and tags', () {
       final json =
           jsonDecode(codec.encode(HealthData.empty)) as Map<String, dynamic>;
       expect(json.containsKey('logGroups'), isFalse);
-      expect(codec.decode('{"version":8}').shownLogGroups, {LogGroup.moods});
+      expect(json.containsKey('logGroupsOffered'), isFalse);
+      expect(codec.decode('{"version":8}').shownLogGroups, {
+        LogGroup.moods,
+        LogGroup.tags,
+      });
+    });
+
+    test('a choice is written with the groups there were to choose from', () {
+      final json =
+          jsonDecode(codec.encode(allHidden())) as Map<String, dynamic>;
+      expect(json['logGroupsOffered'], [
+        for (final g in LogGroup.values) g.name,
+      ]);
+    });
+
+    test('a choice made before Tags existed gets Tags, which shows from '
+        'the start', () {
+      expect(
+        codec.decode('{"version":8,"logGroups":["sleep"]}').shownLogGroups,
+        {LogGroup.sleep, LogGroup.tags},
+      );
+      expect(codec.decode('{"version":8,"logGroups":[]}').shownLogGroups, {
+        LogGroup.tags,
+      });
+    });
+
+    test('Tags hidden once it was there to choose stays hidden', () {
+      expect(
+        codec
+            .decode(
+              '{"version":8,"logGroups":["sleep"],'
+              '"logGroupsOffered":["moods","sleep","tags"]}',
+            )
+            .shownLogGroups,
+        {LogGroup.sleep},
+      );
+    });
+
+    test('a group that was not there to choose and is off at first '
+        'stays off', () {
+      expect(
+        codec
+            .decode(
+              '{"version":8,"logGroups":["moods"],'
+              '"logGroupsOffered":["moods","tags"]}',
+            )
+            .shownLogGroups,
+        {LogGroup.moods},
+      );
     });
   });
 }

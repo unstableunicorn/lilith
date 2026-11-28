@@ -128,6 +128,8 @@ void main() {
       await fillIn(tester);
       final signs = find.byKey(ShareKeys.includeSigns);
       expect(signs, findsOneWidget);
+      expect(find.text('Include moods, body signs and tags'), findsOneWidget);
+      expect(find.textContaining('skin, discharge or tags.'), findsOneWidget);
       await tester.ensureVisible(signs);
       expect(tester.widget<SwitchListTile>(signs).value, isFalse);
       await tester.tap(signs);
