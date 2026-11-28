@@ -106,9 +106,11 @@ void main() {
       expect(vm.signs, BodySigns.none);
     });
 
-    test('only moods show until other groups are turned on', () {
+    test('only the default groups show until others are turned on', () {
       expect(vm.shows(LogGroup.moods), isTrue);
-      for (final g in LogGroup.values.where((g) => g != LogGroup.moods)) {
+      for (final g in LogGroup.values.where(
+        (g) => !LogGroup.defaults.contains(g),
+      )) {
         expect(vm.shows(g), isFalse, reason: g.name);
       }
     });
@@ -170,7 +172,9 @@ void main() {
       for (final m in Mood.values) {
         expect(find.byKey(LogKeys.mood(m)), findsOneWidget);
       }
-      for (final g in LogGroup.values.where((g) => g != LogGroup.moods)) {
+      for (final g in LogGroup.values.where(
+        (g) => !LogGroup.defaults.contains(g),
+      )) {
         expect(find.byKey(LogKeys.group(g)), findsNothing, reason: g.name);
       }
       expect(find.byKey(LogKeys.sleep(SleepQuality.good)), findsNothing);

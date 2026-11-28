@@ -117,12 +117,12 @@ void main() {
         .widget<SwitchListTile>(find.byKey(SettingsKeys.logGroup(g)))
         .value;
 
-    testWidgets('Log shows: a switch per group, only moods on at first', (
+    testWidgets('Log shows: a switch per group, moods and tags on at first', (
       tester,
     ) async {
       await pump(tester, health: health);
       for (final g in LogGroup.values) {
-        expect(on(tester, g), g == LogGroup.moods, reason: g.name);
+        expect(on(tester, g), LogGroup.defaults.contains(g), reason: g.name);
       }
       await expectAccessible(tester);
     });
@@ -138,7 +138,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(SettingsKeys.logGroup(LogGroup.moods)));
       await tester.pumpAndSettle();
-      expect(health.data.shownLogGroups, {LogGroup.sleep});
+      expect(health.data.shownLogGroups, {LogGroup.sleep, LogGroup.tags});
       expect(on(tester, LogGroup.sleep), isTrue);
       expect(on(tester, LogGroup.moods), isFalse);
     });

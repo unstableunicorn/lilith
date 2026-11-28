@@ -9,6 +9,7 @@ import 'package:lilith/domain/contraception_schedule.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/day.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/tags.dart' as tags;
 import 'package:lilith/ui/core/dates.dart';
 
 class LogViewModel extends ChangeNotifier {
@@ -113,6 +114,7 @@ class LogViewModel extends ChangeNotifier {
     LogGroup.skin => signs.skin.isNotEmpty,
     LogGroup.discharge => signs.discharge != null,
     LogGroup.pregnancyTest => signs.pregnancyTest != null,
+    LogGroup.tags => signs.tags.isNotEmpty,
   };
 
   void _sign(BodySigns signs) => _edit(_draft.copyWith(signs: signs));
@@ -135,6 +137,26 @@ class LogViewModel extends ChangeNotifier {
   );
   void setPregnancyTest(PregnancyTest? result) => _sign(
     signs.copyWith(pregnancyTest: result, clearPregnancyTest: result == null),
+  );
+
+  /// Adds [raw] to the day's tags, under the spelling it was logged with
+  /// before if it was. A blank, or a tag the day has, changes nothing.
+  void addTag(String raw) {
+    final tag = tags.knownSpelling(_repo.data.dailyLogs, raw) ?? raw;
+    final next = tags.withTag(signs.tags, tag);
+    if (next.length != signs.tags.length) _sign(signs.copyWith(tags: next));
+  }
+
+  /// Takes [tag] off the day.
+  void removeTag(String tag) =>
+      _sign(signs.copyWith(tags: tags.withoutTag(signs.tags, tag)));
+
+  /// Past tags to offer while [typed] is in the field: other days' tags
+  /// that the day does not have yet.
+  List<String> tagSuggestions(String typed) => tags.tagSuggestions(
+    _repo.data.dailyLogs,
+    typed: typed,
+    chosen: signs.tags,
   );
 
   /// The day's note as typed; blank removes it.

@@ -208,10 +208,10 @@ class _ShareViewState extends State<_ShareView> {
           SwitchListTile(
             key: ShareKeys.includeSigns,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Include moods and body signs'),
+            title: const Text('Include moods, body signs and tags'),
             subtitle: const Text(
-              'Off: they do not see your moods, sleep, digestion, skin or '
-              'discharge. A pregnancy test is never shared.',
+              'Off: they do not see your moods, sleep, digestion, skin, '
+              'discharge or tags. A pregnancy test is never shared.',
             ),
             value: vm.includeSigns,
             onChanged: (on) => vm.setIncludeSigns(on: on),
