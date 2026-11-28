@@ -21,6 +21,7 @@ class SharedPhases {
     DateTime? ovulation,
     this.fertileWindow,
     this.fertileMode = FertileWindowMode.hidden,
+    this.paused = false,
   }) : updatedOn = dateOnly(updatedOn),
        periods = List.unmodifiable(periods),
        nextPeriod = nextPeriod == null ? null : dateOnly(nextPeriod),
@@ -54,6 +55,7 @@ class SharedPhases {
         (m) => m.name == json['fertileMode'],
         orElse: () => FertileWindowMode.hidden,
       ),
+      paused: json['paused'] == true,
     );
   }
 
@@ -76,6 +78,10 @@ class SharedPhases {
 
   /// The sharer's own setting, which picks the disclaimer.
   final FertileWindowMode fertileMode;
+
+  /// True while a life factor holds the sharer's predictions; which one is
+  /// not said.
+  final bool paused;
 
   /// Something to show: at least one period.
   bool get hasData => periods.isNotEmpty;
@@ -125,6 +131,7 @@ class SharedPhases {
         'basis': w.basis.name,
       },
     'fertileMode': fertileMode.name,
+    if (paused) 'paused': true,
   };
 
   @override
@@ -138,7 +145,8 @@ class SharedPhases {
       other.fertileWindow?.start == fertileWindow?.start &&
       other.fertileWindow?.end == fertileWindow?.end &&
       other.fertileWindow?.basis == fertileWindow?.basis &&
-      other.fertileMode == fertileMode;
+      other.fertileMode == fertileMode &&
+      other.paused == paused;
 
   @override
   int get hashCode => Object.hash(
@@ -150,6 +158,7 @@ class SharedPhases {
     fertileWindow?.start,
     fertileWindow?.end,
     fertileMode,
+    paused,
   );
 
   static bool _samePeriods(List<PeriodEvent> a, List<PeriodEvent> b) {
@@ -181,6 +190,7 @@ SharedPhases sharedPhases(
     nights: data.wearableNights,
     usualCycleLength: data.profile.usualCycleLength,
     suppressShift: hormonal,
+    factors: data.profile.lifeFactors,
   );
   return SharedPhases(
     updatedOn: today,
@@ -199,5 +209,6 @@ SharedPhases sharedPhases(
             hormonalContraception: hormonal,
           ),
     fertileMode: fertileWindowMode,
+    paused: prediction.isOnHold,
   );
 }

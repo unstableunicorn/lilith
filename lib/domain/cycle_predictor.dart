@@ -6,6 +6,7 @@
 // next period. Without a visible rise, the average cycle length is used.
 
 import 'package:lilith/domain/day.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/domain/wearable_night.dart';
@@ -30,6 +31,13 @@ enum PredictionMethod {
   usualCycleLength,
   cycleAverage,
   temperatureShift,
+
+  /// A life factor is in force: nothing is predicted.
+  paused,
+
+  /// A life factor has ended and no period has been logged since: nothing
+  /// to predict from until one is.
+  awaitingPeriod,
 }
 
 enum PredictionConfidence { none, low, medium, high }
@@ -50,7 +58,17 @@ class CyclePrediction {
     this.periodCount = 0,
     this.shiftSuppressed = false,
     this.shiftSeries = TemperatureSeries.none,
+    this.pausedBy,
   });
+
+  /// The life factor in force, when [method] is [PredictionMethod.paused].
+  final LifeFactor? pausedBy;
+
+  /// True when nothing is predicted because of a life factor, in force or
+  /// just ended.
+  bool get isOnHold =>
+      method == PredictionMethod.paused ||
+      method == PredictionMethod.awaitingPeriod;
 
   final PredictionMethod method;
   final PredictionConfidence confidence;
@@ -124,6 +142,7 @@ class CyclePredictor {
     int? usualCycleLength,
     bool suppressShift = false,
     PredictionConfidence? maxConfidence,
+    List<LifeFactor> factors = const [],
   }) {
     final result = _predict(
       readings: readings,
@@ -132,8 +151,10 @@ class CyclePredictor {
       today: today,
       usualCycleLength: usualCycleLength,
       suppressShift: suppressShift,
+      factors: factors,
     );
-    if (maxConfidence == null ||
+    if (result.isOnHold ||
+        maxConfidence == null ||
         result.confidence.index <= maxConfidence.index) {
       return result;
     }
@@ -161,24 +182,42 @@ class CyclePredictor {
     required DateTime today,
     required int? usualCycleLength,
     required bool suppressShift,
+    required List<LifeFactor> factors,
   }) {
     final now = dateOnly(today);
     final sorted = [...periods]
       ..sort((a, b) => a.startDate.compareTo(b.startDate));
-    if (sorted.isEmpty) {
+    final pausedBy = activeFactor(factors, sorted, today: now);
+    if (sorted.isEmpty && pausedBy == null) {
       return const CyclePrediction(
         method: PredictionMethod.insufficientData,
         confidence: PredictionConfidence.none,
       );
     }
     final starts = sorted.map((p) => p.startDate).toList();
+    // A cycle that overlaps a life factor says nothing about a usual one.
+    final cycleLengths = [
+      for (var i = 1; i < starts.length; i++)
+        if (!cycleOverlapsFactor(starts[i - 1], starts[i], factors, sorted))
+          daysBetween(starts[i - 1], starts[i]),
+    ].where((d) => d > 10 && d < 90).toList();
+    if (pausedBy != null ||
+        factorSinceLastPeriod(factors, sorted, today: now)) {
+      return CyclePrediction(
+        method: pausedBy != null
+            ? PredictionMethod.paused
+            : PredictionMethod.awaitingPeriod,
+        confidence: PredictionConfidence.none,
+        averageCycleLength: cycleLengths.isEmpty
+            ? null
+            : cycleLengths.reduce((a, b) => a + b) / cycleLengths.length,
+        cycleCount: cycleLengths.length,
+        pausedBy: pausedBy,
+      );
+    }
 
     final lastStart = starts.last;
     final currentCycleDay = daysBetween(lastStart, now) + 1;
-    final cycleLengths = [
-      for (var i = 1; i < starts.length; i++)
-        daysBetween(starts[i - 1], starts[i]),
-    ].where((d) => d > 10 && d < 90).toList();
     final average = cycleLengths.isEmpty
         ? null
         : cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;

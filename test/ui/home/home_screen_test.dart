@@ -7,6 +7,8 @@ import 'package:lilith/domain/body_signs.dart';
 import 'package:lilith/domain/cycle_phase.dart';
 import 'package:lilith/domain/daily_log.dart';
 import 'package:lilith/domain/data_protection.dart';
+import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/domain/period_event.dart';
 import 'package:lilith/domain/pod_provider.dart';
 import 'package:lilith/domain/share.dart';
@@ -90,6 +92,48 @@ void main() {
 
   group('once loaded', () {
     setUp(() => health.load());
+
+    testWidgets('under a life factor the card says why and counts no days', (
+      tester,
+    ) async {
+      await health.apply(
+        (d) => d
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13)))
+            .withProfile(
+              HealthProfile(
+                lifeFactors: [
+                  LifeFactor(
+                    kind: LifeFactorKind.breastfeeding,
+                    start: DateTime(2026, 5, 20),
+                  ),
+                ],
+              ),
+            ),
+      );
+      await pump(tester);
+      expect(find.byKey(HomeKeys.prediction), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(HomeKeys.paused)).data,
+        'Predictions are paused while you are breastfeeding. They start '
+        'again when you log a period.',
+      );
+      expect(find.byKey(HomeKeys.daysUntil), findsNothing);
+      expect(find.byKey(HomeKeys.lastPeriod), findsNothing);
+      expect(find.byKey(HomeKeys.logPeriod), findsOneWidget);
+      await expectAccessible(tester);
+    });
+
+    testWidgets('without a life factor nothing says paused', (tester) async {
+      await health.apply(
+        (d) => d
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 4, 15)))
+            .withPeriod(PeriodEvent(startDate: DateTime(2026, 5, 13))),
+      );
+      await pump(tester);
+      expect(find.byKey(HomeKeys.paused), findsNothing);
+      expect(find.byKey(HomeKeys.daysUntil), findsOneWidget);
+    });
 
     testWidgets('shows the fact of the day and opens Learn', (tester) async {
       await pump(tester);

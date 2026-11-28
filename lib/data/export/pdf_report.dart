@@ -14,6 +14,7 @@ import 'package:lilith/domain/export_rows.dart';
 import 'package:lilith/domain/fertile_window.dart';
 import 'package:lilith/domain/health_data.dart';
 import 'package:lilith/domain/health_profile.dart';
+import 'package:lilith/domain/life_factor.dart';
 import 'package:lilith/domain/page_settings.dart';
 import 'package:lilith/ui/home/home_view_model.dart' show confidenceCapFor;
 import 'package:pdf/pdf.dart';
@@ -114,6 +115,7 @@ ReportContent reportContent(
     usualCycleLength: data.profile.usualCycleLength,
     suppressShift: data.profile.usesHormonalContraception,
     maxConfidence: confidenceCapFor(data.profile.regularity),
+    factors: data.profile.lifeFactors,
   );
   final window = fertileWindowMode == FertileWindowMode.hidden
       ? null
@@ -224,9 +226,13 @@ List<(String, String)> _summary(
           PredictionMethod.temperatureShift => 'from the temperature shift',
           PredictionMethod.usualCycleLength => 'from your usual cycle length',
           PredictionMethod.cycleAverage => 'from the average cycle length',
-          PredictionMethod.insufficientData => 'no basis',
+          _ => 'no basis',
         }})',
       ),
+    if (p.pausedBy case final factor?)
+      ('Predictions', 'Paused: ${factor.kind.label.toLowerCase()}')
+    else if (p.isOnHold)
+      ('Predictions', 'Paused until the next period is logged'),
     ('Days in this export', '${rows.length}'),
     (
       'Readings in this export',
@@ -285,8 +291,27 @@ List<(String, String)> _profile(HealthProfile profile) {
           if (profile.history.lastPregnancyYear case final y?) 'last in $y',
         ].join(', '),
       ),
+    if (profile.lifeFactors.isNotEmpty)
+      (
+        'Pregnancy and breastfeeding',
+        profile.lifeFactors.map(_factor).join('; '),
+      ),
     if (profile.notes.trim().isNotEmpty) ('Notes', profile.notes.trim()),
   ];
+}
+
+/// "Pregnant from 2026-05-10 (ongoing), due 2027-02-08", "Pregnant from
+/// 2026-05-10 to 2026-05-15", "Miscarriage on 2025-11-03".
+String _factor(LifeFactor f) {
+  final label = f.kind.label;
+  if (f.kind == LifeFactorKind.miscarriage) {
+    return '$label on ${isoDay(f.start)}';
+  }
+  if (f.end case final end?) {
+    return '$label from ${isoDay(f.start)} to ${isoDay(end)}';
+  }
+  return '$label from ${isoDay(f.start)} (ongoing)'
+      '${f.dueDate == null ? '' : ', due ${isoDay(f.dueDate!)}'}';
 }
 
 List<CycleRow> _cycles(HealthData data, List<ExportRow> rows) {

@@ -36,6 +36,7 @@ abstract final class HomeKeys {
   static const Key midPeriod = Key('home.midPeriod');
   static const Key notBleeding = Key('home.notBleeding');
   static const Key prediction = Key('home.prediction');
+  static const Key paused = Key('home.paused');
   static const Key estimateNote = Key('home.estimateNote');
   static const Key fertileWindow = Key('home.fertileWindow');
   static const Key disclaimerConceive = Key('home.disclaimerConceive');
@@ -351,7 +352,7 @@ class _PredictionCard extends StatelessWidget {
             Text(key: HomeKeys.lastPeriod, line),
             const SizedBox(height: Space.sm),
           ],
-          Text(vm.howText(p)),
+          Text(key: p.isOnHold ? HomeKeys.paused : null, vm.howText(p)),
           if (p.estimatedOvulation != null)
             Padding(
               padding: const EdgeInsets.only(top: Space.sm),

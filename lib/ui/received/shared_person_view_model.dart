@@ -16,6 +16,7 @@ import 'package:lilith/domain/temperature_reading.dart';
 import 'package:lilith/ui/components/trend_chart.dart';
 import 'package:lilith/ui/core/dates.dart';
 import 'package:lilith/ui/core/forecast_text.dart' as text;
+import 'package:lilith/ui/core/life_factor_text.dart';
 import 'package:lilith/ui/history/history_view_model.dart';
 import 'package:lilith/ui/log/dose_summary.dart' as dose;
 import 'package:lilith/ui/log/log_summary.dart';
@@ -75,7 +76,7 @@ class SharedPersonViewModel extends ChangeNotifier {
   String? get phasesCycleLine {
     final p = phases;
     final start = p?.periods.lastOrNull?.startDate;
-    if (p == null || start == null) return null;
+    if (p == null || start == null || p.paused) return null;
     return 'Cycle day ${p.cycleDayOn(today)}, since '
         '${formatShortDate(start, today: today)}';
   }
@@ -121,12 +122,18 @@ class SharedPersonViewModel extends ChangeNotifier {
       periods: d.periods,
       today: today,
       nights: d.wearableNights,
+      factors: d.profile.lifeFactors,
     ),
     null => null,
   };
 
-  /// "Period expected today", "… in 4 days, around 12 Jun", or null.
+  /// "Period expected today", "… in 4 days, around 12 Jun", why their
+  /// predictions are paused, or null.
   String? get nextPeriodText {
+    if (prediction case final p? when p.isOnHold) {
+      return pauseText(p, today: today, theirs: true);
+    }
+    if (phases?.paused ?? false) return phasesPausedText;
     final date = prediction?.predictedNextPeriod ?? phases?.nextPeriod;
     if (date == null) return null;
     final days = daysBetween(today, dateOnly(date));

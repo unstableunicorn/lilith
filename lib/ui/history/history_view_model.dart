@@ -81,8 +81,11 @@ class HistoryViewModel extends ChangeNotifier {
   bool get hasCycles => _repo.data.periods.isNotEmpty;
 
   /// Over every cycle, whatever the filters; null with fewer than two.
-  CycleStatistics? get statistics =>
-      cycleStatisticsFor(_repo.data.periods, today: today);
+  CycleStatistics? get statistics => cycleStatisticsFor(
+    _repo.data.periods,
+    today: today,
+    factors: _repo.data.profile.lifeFactors,
+  );
 
   /// E.g. "26 to 30 days, average 28.0, usually within ±2.0 days, over 3
   /// cycles".
@@ -370,6 +373,7 @@ class HistoryViewModel extends ChangeNotifier {
     nights: _repo.data.wearableNights,
     usualCycleLength: _repo.data.profile.usualCycleLength,
     suppressShift: _repo.data.profile.usesHormonalContraception,
+    factors: _repo.data.profile.lifeFactors,
   );
 
   DateTime? _month;
